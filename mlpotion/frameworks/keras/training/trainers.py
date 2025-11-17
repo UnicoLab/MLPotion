@@ -6,6 +6,8 @@ from keras import Model
 from loguru import logger
 
 from mlpotion.core.protocols import ModelTrainerProtocol  # adjust import
+from mlpotion.utils import trycatch
+from mlpotion.core.exceptions import ModelTrainerError
 
 
 @dataclass(slots=True)
@@ -85,6 +87,10 @@ class KerasModelTrainer(ModelTrainerProtocol[Model]):
     # ------------------------------------------------------------------ #
     # Public API (protocol implementation)
     # ------------------------------------------------------------------ #
+    @trycatch(
+        error=ModelTrainerError,
+        success_msg="✅ Successfully trained Keras model",
+    )
     def train(self, model: Model, data: Any, **kwargs: Any) -> dict[str, list[float]]:
         """Train a Keras model on the provided data.
 

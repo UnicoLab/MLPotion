@@ -57,3 +57,24 @@ class ModelPersistenceError(MLPotionError):
     """Error during model persistence."""
 
     pass
+
+
+class ModelEvaluatorError(MLPotionError):
+    """Error during model evaluation."""
+
+    pass
+
+class ModelTrainerError(MLPotionError):
+    """Error during model training."""
+
+    pass
+
+class ModelInspectorError(MLPotionError):
+    """Error during model inspection."""
+
+    pass
+
+class ModelExporterError(MLPotionError):
+    """Error during model export."""
+
+    pass

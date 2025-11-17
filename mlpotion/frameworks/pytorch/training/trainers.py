@@ -10,6 +10,8 @@ from mlpotion.core.exceptions import TrainingError
 from mlpotion.core.results import TrainingResult
 from mlpotion.frameworks.pytorch.config import PyTorchTrainingConfig
 from mlpotion.core.protocols import ModelTrainerProtocol
+from mlpotion.utils import trycatch
+from mlpotion.core.exceptions import ModelTrainerError
 from loguru import logger
 
 
@@ -31,6 +33,10 @@ class PyTorchModelTrainer(ModelTrainerProtocol[nn.Module]):
           Fallback name; if max_batches_per_epoch is not set, this is used.
     """
 
+    @trycatch(
+        error=ModelTrainerError,
+        success_msg="✅ Successfully trained PyTorch model",
+    )
     def train(
         self,
         model: nn.Module,
@@ -190,7 +196,7 @@ class PyTorchModelTrainer(ModelTrainerProtocol[nn.Module]):
         if name == "rmsprop":
             return torch.optim.RMSprop(model.parameters(), lr=lr)
 
-        raise ValueError(f"Unknown optimizer: {config.optimizer!r}")
+        raise TrainingError(f"Unknown optimizer: {config.optimizer!r}")
 
     def _create_loss_fn(
         self,

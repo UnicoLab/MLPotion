@@ -10,6 +10,8 @@ from mlpotion.core.exceptions import ExportError
 from mlpotion.core.results import ExportResult
 from mlpotion.frameworks.pytorch.config import PyTorchExportConfig
 from mlpotion.core.protocols import ModelExporter
+from mlpotion.utils import trycatch
+from mlpotion.core.exceptions import ModelExporterError
 
 
 @dataclass(slots=True)
@@ -38,6 +40,10 @@ class PyTorchModelExporter(ModelExporter[nn.Module]):
     # ------------------------------------------------------------------ #
     # Public API
     # ------------------------------------------------------------------ #
+    @trycatch(
+        error=ModelExporterError,
+        success_msg="✅ Successfully Exported model",
+    )
     def export(
         self,
         model: nn.Module,

@@ -10,6 +10,8 @@ from mlpotion.core.exceptions import EvaluationError
 from mlpotion.core.results import EvaluationResult
 from mlpotion.frameworks.pytorch.config import PyTorchEvaluationConfig
 from mlpotion.core.protocols import ModelEvaluatorProtocol
+from mlpotion.core.exceptions import ModelEvaluatorError
+from mlpotion.utils import trycatch
 from loguru import logger
 
 
@@ -34,6 +36,10 @@ class PyTorchModelEvaluator(ModelEvaluatorProtocol):
           If present and not None, evaluation will stop after this many batches.
     """
 
+    @trycatch(
+        error=ModelEvaluatorError,
+        success_msg="✅ Successfully evaluated PyTorch model",
+    )
     def evaluate(
         self,
         model: nn.Module,

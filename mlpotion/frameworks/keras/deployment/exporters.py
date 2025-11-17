@@ -6,6 +6,8 @@ from keras import Model, InputSpec
 from loguru import logger
 
 from mlpotion.core.protocols import ModelExporterProtocol
+from mlpotion.utils import trycatch
+from mlpotion.core.exceptions import ModelExporterError
 
 
 class KerasModelExporter(ModelExporterProtocol[Model]):
@@ -86,6 +88,10 @@ class KerasModelExporter(ModelExporterProtocol[Model]):
     # ------------------------------------------------------------------ #
     # Public API (protocol implementation)
     # ------------------------------------------------------------------ #
+    @trycatch(
+        error=ModelExporterError,
+        success_msg="✅ Successfully Exported model",
+    )
     def export(self, model: Model, path: str, **kwargs: Any) -> None:
         """Export a Keras model to disk.
 

@@ -6,6 +6,8 @@ from keras import Model
 from loguru import logger
 
 from mlpotion.core.protocols import ModelEvaluatorProtocol
+from mlpotion.utils import trycatch
+from mlpotion.core.exceptions import ModelEvaluatorError
 
 
 @dataclass(slots=True)
@@ -69,6 +71,10 @@ class KerasModelEvaluator(ModelEvaluatorProtocol[Model]):
     # ------------------------------------------------------------------ #
     # Public API (protocol implementation)
     # ------------------------------------------------------------------ #
+    @trycatch(
+        error=ModelEvaluatorError,
+        success_msg="✅ Successfully evaluated Keras model",
+    )
     def evaluate(self, model: Model, data: Any, **kwargs: Any) -> dict[str, float]:
         """Evaluate a Keras model on the given data.
 

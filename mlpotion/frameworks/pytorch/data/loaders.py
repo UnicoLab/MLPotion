@@ -4,6 +4,9 @@ from typing import Any, Generic, TypeVar
 from loguru import logger
 from torch.utils.data import DataLoader, Dataset, IterableDataset
 
+from mlpotion.utils import trycatch
+from mlpotion.core.exceptions import DataLoadingError
+
 T_co = TypeVar("T_co", covariant=True)
 
 
@@ -59,6 +62,10 @@ class PyTorchDataLoaderFactory(Generic[T_co]):
     # ------------------------------------------------------------------ #
     # Public API
     # ------------------------------------------------------------------ #
+    @trycatch(
+        error=DataLoadingError,
+        success_msg="✅ Successfully Loading data",
+    )
     def load(
         self,
         dataset: Dataset[T_co] | IterableDataset[T_co],

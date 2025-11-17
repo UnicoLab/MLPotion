@@ -5,6 +5,8 @@ from typing import Any, Callable, Type
 
 from loguru import logger
 
+from mlpotion.core.exceptions import MLPotionError
+
 
 class trycatch:
     """Decorator for wrapping methods with unified exception handling and logging.
@@ -40,6 +42,16 @@ class trycatch:
 
             except self.error:
                 # Let known custom errors propagate unchanged
+                raise
+
+            except MLPotionError:
+                # Let all MLPotionError subclasses propagate unchanged
+                # This includes ExportError, EvaluationError, TrainingError, etc.
+                raise
+
+            except (RuntimeError, TypeError, ValueError, AttributeError, KeyError, IndexError):
+                # Let standard Python exceptions propagate unchanged
+                # These are often used for validation and should not be wrapped
                 raise
 
             except Exception as exc:

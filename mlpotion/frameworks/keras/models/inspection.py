@@ -6,7 +6,8 @@ from loguru import logger
 import keras  # pure Keras 3 import
 
 from mlpotion.core.protocols import ModelInspectorProtocol
-
+from mlpotion.utils import trycatch
+from mlpotion.core.exceptions import ModelInspectorError
 
 ModelLike = Any  # usually keras.Model, but duck-typed on attributes
 
@@ -55,6 +56,11 @@ class KerasModelInspector(ModelInspectorProtocol[ModelLike]):
     include_layers: bool = True
     include_signatures: bool = True
 
+
+    @trycatch(
+        error=ModelInspectorError,
+        success_msg="✅ Successfully inspected Keras model",
+    )
     def inspect(self, model: ModelLike) -> dict[str, Any]:
         """Inspect a Keras model-like object and return structured metadata."""
         if not isinstance(model, keras.Model):
