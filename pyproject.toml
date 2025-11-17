@@ -5,9 +5,9 @@ description = "Atomic Steps for ML Pipelines, framework agnostic, modular"
 authors = ["Piotr Laczkowski <piotr@unicolab.ai>"]
 license = "MIT"
 readme = "README.md"
-homepage = "https://github.com/piotrlaczkowski/mlpotion"
-repository = "https://github.com/piotrlaczkowski/mlpotion"
-documentation = "https://github.com/piotrlaczkowski/mlpotion#readme"
+homepage = "https://github.com/UnicoLab/MLPotion"
+repository = "https://github.com/UnicoLab/MLPotion"
+documentation = "https://github.com/UnicoLab/MLPotion#readme"
 keywords = ["machine-learning", "mlops", "tensorflow", "pytorch", "keras", "pipeline", "zenml"]
 classifiers = [
     "Development Status :: 3 - Alpha",
