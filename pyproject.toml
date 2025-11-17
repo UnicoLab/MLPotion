@@ -1,0 +1,246 @@
+[tool.poetry]
+name = "mlpotion"
+version = "0.1.0"
+description = "Atomic Steps for ML Pipelines, framework agnostic, modular"
+authors = ["Piotr Laczkowski <piotr@unicolab.ai>"]
+license = "MIT"
+readme = "README.md"
+homepage = "https://github.com/piotrlaczkowski/mlpotion"
+repository = "https://github.com/piotrlaczkowski/mlpotion"
+documentation = "https://github.com/piotrlaczkowski/mlpotion#readme"
+keywords = ["machine-learning", "mlops", "tensorflow", "pytorch", "keras", "pipeline", "zenml"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
+]
+packages = [{include = "mlpotion"}]
+
+[tool.poetry.dependencies]
+python = "^3.10,<3.12"
+
+# Core dependencies (always installed)
+pydantic = "^2.5"
+typing-extensions = "^4.8"
+numpy = "^1.24"
+pandas = "^2.1"
+
+# Optional framework dependencies - Keras (standalone)
+keras = {version = "^3.0", optional = true}
+
+# Optional framework dependencies - TensorFlow
+tensorflow = {version = "^2.15", optional = true}
+
+# Optional framework dependencies - PyTorch
+torch = {version = "^2.1", optional = true}
+torchvision = {version = "^0.16", optional = true}
+
+# Optional framework dependencies - JAX (for Keras backend)
+jax = {version = "^0.4.0", optional = true, extras = ["cpu"]}
+
+# Optional integration dependencies
+zenml = {version = ">0.80.0", optional = true}
+pydantic-settings = "^2.12.0"
+loguru = "^0.7.3"
+
+[tool.poetry.extras]
+# Individual framework extras
+keras = ["keras"]
+tensorflow = ["tensorflow", "keras"]
+pytorch = ["torch", "torchvision"]
+
+# Keras with specific backends
+keras-tensorflow = ["keras", "tensorflow"]
+keras-pytorch = ["keras", "torch"]
+keras-jax = ["keras", "jax"]
+
+# Integration extras
+zenml = ["zenml"]
+
+# Combined extras
+tensorflow-zenml = ["tensorflow", "keras", "zenml"]
+pytorch-zenml = ["torch", "torchvision", "zenml"]
+
+# Everything
+all = ["tensorflow", "keras", "torch", "torchvision", "jax", "zenml"]
+
+[tool.poetry.group.dev.dependencies]
+# Testing
+pytest = "^7.4"
+pytest-cov = "^4.1"
+pytest-xdist = "^3.5"
+pytest-mock = "^3.12"
+
+# Type checking
+mypy = "^1.7"
+types-pyyaml = "^6.0"
+
+# Code formatting and linting
+black = "^23.11"
+ruff = "^0.1.0"
+isort = "^5.12"
+
+# Pre-commit hooks
+pre-commit = "^3.5"
+ipykernel = "^7.1.0"
+
+[tool.poetry.group.docs]
+optional = true
+
+[tool.poetry.group.docs.dependencies]
+mkdocs = "^1.5"
+mkdocs-material = "^9.4"
+mkdocstrings = "^0.24"
+mkdocstrings-python = "^1.7"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 88
+target-version = ['py310', 'py311']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+[tool.ruff]
+line-length = 88
+target-version = "py310"
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "N",   # pep8-naming
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "SIM", # flake8-simplify
+]
+ignore = [
+    "E501",  # line too long (handled by black)
+    "B008",  # do not perform function calls in argument defaults
+    "B905",  # zip() without an explicit strict= parameter
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401", "F403"]  # Allow unused imports in __init__.py
+"tests/**/*.py" = ["S101"]  # Allow assert in tests
+
+[tool.ruff.lint.isort]
+known-first-party = ["mlpotion"]
+force-single-line = false
+lines-after-imports = 2
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+disallow_untyped_defs = true
+disallow_any_generics = true
+check_untyped_defs = true
+no_implicit_reexport = true
+plugins = ["pydantic.mypy"]
+
+# Per-module options
+[[tool.mypy.overrides]]
+module = [
+    "tensorflow.*",
+    "torch.*",
+    "torchvision.*",
+    "keras.*",
+    "jax.*",
+    "zenml.*",
+    "pandas.*",
+    "numpy.*",
+]
+ignore_missing_imports = true
+
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
+warn_required_dynamic_aliases = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "-v",
+    "--strict-markers",
+    "--cov=mlpotion",
+    "--cov-report=html",
+    "--cov-report=term-missing",
+    "--cov-report=xml",
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "tensorflow: marks tests requiring TensorFlow",
+    "pytorch: marks tests requiring PyTorch",
+    "keras: marks tests requiring Keras",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+]
+filterwarnings = [
+    "error",
+    "ignore::UserWarning",
+    "ignore::DeprecationWarning",
+]
+
+[tool.coverage.run]
+source = ["mlpotion"]
+omit = [
+    "*/tests/*",
+    "*/test_*.py",
+    "*/__pycache__/*",
+    "*/site-packages/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
+show_missing = true
+precision = 2
+
+[tool.coverage.html]
+directory = "htmlcov"
+
+[tool.isort]
+profile = "black"
+line_length = 88
+known_first_party = ["mlpotion"]
+skip_gitignore = true
