@@ -7,10 +7,11 @@ import tensorflow as tf
 from loguru import logger
 
 from mlpotion.core.exceptions import DataLoadingError
+from mlpotion.core.protocols import DataLoader
 from mlpotion.utils import trycatch
 
 
-class TFCSVDataLoader:
+class TFCSVDataLoader(DataLoader[tf.data.Dataset]):
     """Load CSV files into TensorFlow datasets.
 
     Args:
@@ -182,7 +183,7 @@ class TFCSVDataLoader:
         return dataset
 
 
-class TFRecordDataLoader:
+class TFRecordDataLoader(DataLoader[tf.data.Dataset]):
     """Loader for TFRecord files into tf.data.Dataset.
 
     Args:

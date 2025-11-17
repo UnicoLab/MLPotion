@@ -13,7 +13,7 @@ from mlpotion.frameworks.keras.config import ModelLoadingConfig, KerasCSVTransfo
 from mlpotion.core.exceptions import DataTransformationError
 from mlpotion.core.protocols import DataTransformer
 from mlpotion.core.results import TransformationResult
-from mlpotion.frameworks.keras.data.loaders import CSVDataLoader
+from mlpotion.frameworks.keras.data.loaders import CSVDataLoader, CSVSequence
 from mlpotion.frameworks.keras.models.inspection import KerasModelInspector
 from mlpotion.frameworks.keras.deployment.persistence import KerasModelPersistence
 from mlpotion.frameworks.keras.utils.formatter import KerasPredictionFormatter
@@ -21,7 +21,7 @@ from mlpotion.utils import trycatch
 
 
 @dataclass(slots=True)
-class CSVDataTransformer(DataTransformer):
+class CSVDataTransformer(DataTransformer[CSVSequence, keras.Model]):
     """Transform tabular data to CSV using a Keras model (no TensorFlow).
 
     This class is the Keras/pandas analogue of TFDataToCSVTransformer:

@@ -35,7 +35,7 @@ class TestPyTorchDataLoaderFactory(unittest.TestCase):
     # ------------------------------------------------------------------ #
     # Map-style Dataset behaviour
     # ------------------------------------------------------------------ #
-    def test_create_with_map_dataset_shuffle_true_uses_random_sampler(self) -> None:
+    def test_load_with_map_dataset_shuffle_true_uses_random_sampler(self) -> None:
         """With shuffle=True and a map-style Dataset, RandomSampler should be used."""
         dataset = _SimpleDataset(n=10)
         factory = PyTorchDataLoaderFactory[int](
@@ -46,14 +46,14 @@ class TestPyTorchDataLoaderFactory(unittest.TestCase):
             drop_last=True,
         )
 
-        loader = factory.create(dataset)
+        loader = factory.load(dataset)
 
         self.assertEqual(loader.batch_size, 4)
         self.assertTrue(loader.drop_last)
         # For map-style datasets, DataLoader exposes a sampler
         self.assertIsInstance(loader.sampler, RandomSampler)
 
-    def test_create_with_map_dataset_shuffle_false_uses_sequential_sampler(self) -> None:
+    def test_load_with_map_dataset_shuffle_false_uses_sequential_sampler(self) -> None:
         """With shuffle=False and a map-style Dataset, SequentialSampler should be used."""
         dataset = _SimpleDataset(n=10)
         factory = PyTorchDataLoaderFactory[int](
@@ -62,7 +62,7 @@ class TestPyTorchDataLoaderFactory(unittest.TestCase):
             num_workers=0,
         )
 
-        loader = factory.create(dataset)
+        loader = factory.load(dataset)
 
         self.assertEqual(loader.batch_size, 4)
         self.assertIsInstance(loader.sampler, SequentialSampler)
@@ -77,12 +77,12 @@ class TestPyTorchDataLoaderFactory(unittest.TestCase):
         effective = factory._resolve_shuffle(is_iterable=True)
         self.assertFalse(effective)
 
-    def test_create_with_iterable_dataset_iterates_all_items(self) -> None:
-        """create() with IterableDataset should still produce a working DataLoader."""
+    def test_load_with_iterable_dataset_iterates_all_items(self) -> None:
+        """load() with IterableDataset should still produce a working DataLoader."""
         dataset = _SimpleIterableDataset(n=10)
         factory = PyTorchDataLoaderFactory[int](batch_size=4, shuffle=True)
 
-        loader = factory.create(dataset)
+        loader = factory.load(dataset)
         # Items will be batched; each batch is a tensor of shape (batch_size,)
         all_items: list[int] = []
         for batch in loader:
@@ -146,12 +146,12 @@ class TestPyTorchDataLoaderFactory(unittest.TestCase):
     # ------------------------------------------------------------------ #
     # Sanity check: batches shape/content for map-style dataset
     # ------------------------------------------------------------------ #
-    def test_create_with_map_dataset_produces_correct_batch_shapes(self) -> None:
+    def test_load_with_map_dataset_produces_correct_batch_shapes(self) -> None:
         """DataLoader produced by factory should yield batched tensors of expected shape."""
         dataset = _SimpleDataset(n=9)
         factory = PyTorchDataLoaderFactory[int](batch_size=4, shuffle=False)
 
-        loader = factory.create(dataset)
+        loader = factory.load(dataset)
         batches = list(loader)
 
         # 9 elements with batch_size=4 -> 3 batches: 4, 4, 1

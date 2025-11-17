@@ -1,6 +1,4 @@
 """PyTorch model evaluation."""
-
-import logging
 import time
 from typing import Any, Callable
 
@@ -11,11 +9,11 @@ from torch.utils.data import DataLoader
 from mlpotion.core.exceptions import EvaluationError
 from mlpotion.core.results import EvaluationResult
 from mlpotion.frameworks.pytorch.config import PyTorchEvaluationConfig
+from mlpotion.core.protocols import ModelEvaluatorProtocol
+from loguru import logger
 
-logger = logging.getLogger(__name__)
 
-
-class PyTorchModelEvaluator:
+class PyTorchModelEvaluator(ModelEvaluatorProtocol):
     """Generic evaluator for PyTorch models.
 
     This evaluator makes minimal assumptions about the model and data:

@@ -2,10 +2,11 @@
 
 import tensorflow as tf
 from mlpotion.core.config import OptimizationConfig
+from mlpotion.core.protocols import DatasetOptimizer
 from loguru import logger
 
 
-class TFDatasetOptimizer:
+class TFDatasetOptimizer(DatasetOptimizer[tf.data.Dataset]):
     """Optimize TensorFlow datasets for training performance.
 
     Example:

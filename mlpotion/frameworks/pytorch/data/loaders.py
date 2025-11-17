@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, TypeVar, Generic
+from typing import Any, Generic, TypeVar
 
 from loguru import logger
 from torch.utils.data import DataLoader, Dataset, IterableDataset
@@ -59,11 +59,11 @@ class PyTorchDataLoaderFactory(Generic[T_co]):
     # ------------------------------------------------------------------ #
     # Public API
     # ------------------------------------------------------------------ #
-    def create(
+    def load(
         self,
         dataset: Dataset[T_co] | IterableDataset[T_co],
     ) -> DataLoader[T_co]:
-        """Create a configured :class:`DataLoader` from a dataset.
+        """Load a configured :class:`DataLoader` from a dataset.
 
         This method is aware of :class:`IterableDataset` vs map-style
         :class:`Dataset` and will:

@@ -1,8 +1,4 @@
 """PyTorch model training."""
-
-from __future__ import annotations
-
-import logging
 import time
 from typing import Any, Callable
 
@@ -13,11 +9,11 @@ from torch.utils.data import DataLoader
 from mlpotion.core.exceptions import TrainingError
 from mlpotion.core.results import TrainingResult
 from mlpotion.frameworks.pytorch.config import PyTorchTrainingConfig
+from mlpotion.core.protocols import ModelTrainerProtocol
+from loguru import logger
 
-logger = logging.getLogger(__name__)
 
-
-class PyTorchModelTrainer:
+class PyTorchModelTrainer(ModelTrainerProtocol[nn.Module]):
     """Generic trainer for PyTorch models.
 
     This trainer makes minimal assumptions about the model:

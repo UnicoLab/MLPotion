@@ -26,7 +26,7 @@ from mlpotion.utils import trycatch
 
 
 @dataclass(slots=True)
-class TFDataToCSVTransformer(DataTransformer):
+class TFDataToCSVTransformer(DataTransformer[tf.data.Dataset, keras.Model]):
     """Transform TensorFlow data to CSV using a Keras model.
 
     This is the TensorFlow analogue of the Keras CSV transformer:

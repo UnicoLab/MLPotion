@@ -8,6 +8,7 @@ from keras.utils import Sequence
 from loguru import logger
 
 from mlpotion.core.exceptions import DataLoadingError
+from mlpotion.core.protocols import DataLoader
 from mlpotion.utils import trycatch
 
 
@@ -104,7 +105,7 @@ class CSVSequence(Sequence):
 
 
 @dataclass(slots=True)
-class CSVDataLoader:
+class CSVDataLoader(DataLoader[CSVSequence]):
     """Loader for CSV files into a Keras-ready Sequence.
 
     This class is the Keras analogue of your TF/PyTorch CSV loaders:
