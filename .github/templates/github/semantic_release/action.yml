@@ -1,0 +1,173 @@
+name: "Semantic Release"
+description: "Custom implementation of Semantic Release able to handle per project releases"
+
+inputs:
+  PROJECT_NAME:
+    description: "Name of the project to release"
+    required: true
+  PROJECT_DIRECTORY:
+    description: "Folder patht to the project directory"
+    required: true
+  BRANCHES:
+    description: "List of branches for semantic release"
+    required: false
+    default: main
+  GITHUB_TOKEN:
+    description: "Token to use for Github"
+    required: true
+  TEMPLATE_FILE:
+    description: "Semantic release template file"
+    required: false
+    default: .github/templates/github/semantic_release/.releaserc.json.template
+  DRY_RUN:
+    description: "Should we execute in a dry run mode?"
+    required: false
+    default: true
+
+outputs:
+  new_release_version:
+    description: "New TAG attached to the Semantic Release version"
+    value: ${{ steps.semantic-release.outputs.new_release_version }}
+  new_release_published:
+    description: "Whether a new release was published"
+    value: ${{ steps.semantic-release.outputs.new_release_published }}
+  new_release_notes:
+    description: "Release notes for Semantic Release"
+    value: ${{ steps.export-released-notes.outputs.new_release_notes }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: "Creating Project Related Template"
+      id: semantic-release-template
+      shell: bash
+      run: |
+        # creating project name variables
+        export PROJECT_NAME_UPPER=$(echo ${{ inputs.PROJECT_NAME }} | tr 'a-z' 'A-Z')
+        export PROJECT_NAME_LOWER=$(echo ${{ inputs.PROJECT_NAME }} | tr 'A-Z' 'a-z')
+        # populating project specific template for the semantic release
+        envsubst '${PROJECT_NAME_UPPER} ${PROJECT_NAME_LOWER}' < ${{ inputs.TEMPLATE_FILE }} > ${{ inputs.PROJECT_DIRECTORY }}/.releaserc.json
+
+        # Verify the template was created successfully
+        if [ ! -f "${{ inputs.PROJECT_DIRECTORY }}/.releaserc.json" ]; then
+          echo "::error::Failed to create .releaserc.json template"
+          exit 1
+        fi
+
+        # Show the generated template for debugging
+        echo "Generated semantic-release config:"
+        cat ${{ inputs.PROJECT_DIRECTORY }}/.releaserc.json
+
+    - name: "Setup Node"
+      uses: actions/setup-node@v3
+      with:
+        node-version: 20
+
+    - name: "Configure Git user"
+      shell: bash
+      run: |
+        git config user.email "actions@github.com"
+        git config user.name "GitHub Actions"
+
+    - name: "Install semantic-release dependencies"
+      shell: bash
+      run: |
+        echo "Installing semantic-release dependencies..."
+        cd ${{ inputs.PROJECT_DIRECTORY }}
+        npm install --no-package-lock --no-save \
+          semantic-release@24.1.0 \
+          @semantic-release/commit-analyzer \
+          @semantic-release/release-notes-generator \
+          @semantic-release/changelog \
+          @semantic-release/github \
+          @semantic-release/git \
+          @semantic-release/exec \
+          conventional-changelog-conventionalcommits@7.0.2
+
+    - name: "Run Semantic Release"
+      id: semantic-release
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.GITHUB_TOKEN }}
+      run: |
+        cd ${{ inputs.PROJECT_DIRECTORY }}
+
+        # Run semantic-release
+        DRY_RUN_FLAG=""
+        if [ "${{ inputs.DRY_RUN }}" = "true" ]; then
+          DRY_RUN_FLAG="--dry-run"
+        fi
+
+        # Run semantic-release and capture the output
+        npx semantic-release $DRY_RUN_FLAG --branches ${{ inputs.BRANCHES }} > semantic-release-output.txt 2>&1 || true
+
+        # Display output for debugging
+        cat semantic-release-output.txt
+
+        # Check if a release was created or would be created (in dry-run)
+        if grep -q "The next release version is" semantic-release-output.txt || grep -q "Published release" semantic-release-output.txt; then
+          # Try different patterns to extract the version
+          if grep -q "The next release version is" semantic-release-output.txt; then
+            NEW_RELEASE_VERSION=$(grep -o "The next release version is [0-9]\+\.[0-9]\+\.[0-9]\+" semantic-release-output.txt | grep -o "[0-9]\+\.[0-9]\+\.[0-9]\+")
+          else
+            NEW_RELEASE_VERSION=$(grep -o "Published release [0-9]\+\.[0-9]\+\.[0-9]\+" semantic-release-output.txt | grep -o "[0-9]\+\.[0-9]\+\.[0-9]\+")
+          fi
+
+          echo "new_release_version=$NEW_RELEASE_VERSION" >> $GITHUB_OUTPUT
+          echo "new_release_published=true" >> $GITHUB_OUTPUT
+
+          # Extract major, minor, patch versions
+          MAJOR=$(echo $NEW_RELEASE_VERSION | cut -d. -f1)
+          MINOR=$(echo $NEW_RELEASE_VERSION | cut -d. -f2)
+          PATCH=$(echo $NEW_RELEASE_VERSION | cut -d. -f3)
+
+          echo "new_release_major_version=$MAJOR" >> $GITHUB_OUTPUT
+          echo "new_release_minor_version=$MINOR" >> $GITHUB_OUTPUT
+          echo "new_release_patch_version=$PATCH" >> $GITHUB_OUTPUT
+
+          # Generate a simplified version of the release notes for output
+          if [ -f "CHANGELOG.md" ]; then
+            # Extract the latest release notes from the changelog
+            RELEASE_NOTES=$(awk '/^## / {if (p) exit; p=1} p' CHANGELOG.md | tail -n +2)
+            echo "new_release_notes<<EOF" >> $GITHUB_OUTPUT
+            echo "$RELEASE_NOTES" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          else
+            echo "new_release_notes=No detailed release notes available" >> $GITHUB_OUTPUT
+          fi
+        else
+          echo "No new version to be released"
+          echo "new_release_published=false" >> $GITHUB_OUTPUT
+          echo "new_release_notes=No release notes available" >> $GITHUB_OUTPUT
+        fi
+
+    - name: "Export released version"
+      id: export-released-version
+      shell: bash
+      run: |
+        if [ "${{ steps.semantic-release.outputs.new_release_version }}" != "" ]; then
+          echo "New release version: ${{ steps.semantic-release.outputs.new_release_version }}"
+        else
+          echo "No new version released"
+        fi
+
+    - name: "Export release notes"
+      id: export-released-notes
+      shell: bash
+      run: |
+        # Just echo the success status - no need to parse the notes again
+        # since they're already captured in the semantic-release step
+        echo "Release notes already captured in previous step"
+
+        # Set the output to match the expected structure
+        echo "new_release_notes=Release notes available in CHANGELOG.md" >> $GITHUB_OUTPUT
+
+    - name: "Release summary"
+      if: steps.semantic-release.outputs.new_release_published == 'true'
+      shell: bash
+      run: |
+        echo "A new release has been published!"
+        echo "Version: ${{ steps.semantic-release.outputs.new_release_version }}"
+        echo "Major: ${{ steps.semantic-release.outputs.new_release_major_version }}"
+        echo "Minor: ${{ steps.semantic-release.outputs.new_release_minor_version }}"
+        echo "Patch: ${{ steps.semantic-release.outputs.new_release_patch_version }}"

@@ -1,0 +1,216 @@
+name: "Semantic Release"
+
+on:
+  workflow_dispatch:
+    inputs:
+      DRY_RUN:
+        required: false
+        default: false
+        type: boolean
+        description: "Run in dry run mode (no actual release)"
+      RELEASE_VERSION:
+        required: false
+        type: string
+        description: "Manually specify release version (only for manual publish/docs jobs)"
+      SKIP_RELEASE:
+        required: false
+        default: false
+        type: boolean
+        description: "Skip semantic release and use existing version (for recovery)"
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  SEMANTIC_RELEASE:
+    if: ${{ !inputs.SKIP_RELEASE }}
+    runs-on: ubuntu-latest
+    outputs:
+      new_release_version: ${{ steps.semantic-release.outputs.new_release_version }}
+      release_created: ${{ steps.semantic-release.outputs.new_release_published }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Semantic Release
+        id: semantic-release
+        uses: "UnicoLab/keras-data-processor/.github/templates/github/semantic_release@main"
+        with:
+          PROJECT_NAME: KDP
+          PROJECT_DIRECTORY: .
+          BRANCHES: main
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DRY_RUN: ${{ inputs.DRY_RUN }}
+
+      - name: Show release information
+        shell: bash
+        run: |
+          echo "Release created: ${{ steps.semantic-release.outputs.new_release_published }}"
+          echo "New version: ${{ steps.semantic-release.outputs.new_release_version }}"
+          echo "Release notes: ${{ steps.semantic-release.outputs.new_release_notes }}"
+
+      - name: Save release version
+        if: steps.semantic-release.outputs.new_release_published == 'true'
+        run: |
+          echo "Saving release version for recovery"
+          mkdir -p .github/recovery
+          echo "${{ steps.semantic-release.outputs.new_release_version }}" > .github/recovery/last_release_version.txt
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
+          git add .github/recovery/last_release_version.txt
+          git commit -m "chore: save last release version for recovery [skip ci]" || echo "No changes to commit"
+          git push || echo "Failed to push recovery file"
+
+  PYPI_PUBLISH:
+    needs: [SEMANTIC_RELEASE]
+    if: ${{ needs.SEMANTIC_RELEASE.outputs.release_created == 'true' || inputs.SKIP_RELEASE }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          ref: main
+          fetch-depth: 1
+
+      - name: Get version to publish
+        id: get_version
+        run: |
+          if [[ "${{ inputs.SKIP_RELEASE }}" == "true" ]]; then
+            if [[ -n "${{ inputs.RELEASE_VERSION }}" ]]; then
+              echo "Using manually specified version: ${{ inputs.RELEASE_VERSION }}"
+              echo "VERSION=${{ inputs.RELEASE_VERSION }}" >> $GITHUB_OUTPUT
+            else
+              if [[ -f ".github/recovery/last_release_version.txt" ]]; then
+                VERSION=$(cat .github/recovery/last_release_version.txt)
+                echo "Using recovered version: $VERSION"
+                echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+              else
+                echo "ERROR: No version specified and no recovery file found"
+                exit 1
+              fi
+            fi
+          else
+            echo "Using version from semantic-release: ${{ needs.SEMANTIC_RELEASE.outputs.new_release_version }}"
+            echo "VERSION=${{ needs.SEMANTIC_RELEASE.outputs.new_release_version }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install poetry
+          poetry config virtualenvs.create false
+
+      - name: Install project dependencies
+        run: |
+          poetry install --all-extras --no-interaction
+
+      - name: Set version for publishing
+        run: |
+          echo "Setting package version to ${{ steps.get_version.outputs.VERSION }}"
+          poetry version ${{ steps.get_version.outputs.VERSION }}
+
+      - name: Build and publish to PyPI
+        id: publish_pypi
+        run: |
+          poetry config pypi-token.pypi ${{ secrets.PYPI_TOKEN }}
+          poetry build
+          poetry publish
+        env:
+          POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_TOKEN }}
+        continue-on-error: true
+
+      - name: Retry PyPI publish on failure
+        if: steps.publish_pypi.outcome == 'failure'
+        run: |
+          echo "First attempt failed, retrying..."
+          sleep 10
+          poetry config pypi-token.pypi ${{ secrets.PYPI_TOKEN }}
+          poetry build
+          poetry publish
+        env:
+          POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_TOKEN }}
+
+  UPDATE_DOCS:
+    needs: [SEMANTIC_RELEASE, PYPI_PUBLISH]
+    if: ${{ (needs.SEMANTIC_RELEASE.outputs.release_created == 'true' && !failure('PYPI_PUBLISH')) || inputs.SKIP_RELEASE }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          ref: main
+          fetch-depth: 1
+
+      - name: Get version for docs
+        id: get_docs_version
+        run: |
+          if [[ "${{ inputs.SKIP_RELEASE }}" == "true" ]]; then
+            if [[ -n "${{ inputs.RELEASE_VERSION }}" ]]; then
+              echo "Using manually specified version: ${{ inputs.RELEASE_VERSION }}"
+              echo "VERSION=${{ inputs.RELEASE_VERSION }}" >> $GITHUB_OUTPUT
+            else
+              if [[ -f ".github/recovery/last_release_version.txt" ]]; then
+                VERSION=$(cat .github/recovery/last_release_version.txt)
+                echo "Using recovered version: $VERSION"
+                echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+              else
+                echo "ERROR: No version specified and no recovery file found"
+                exit 1
+              fi
+            fi
+          else
+            echo "Using version from semantic-release: ${{ needs.SEMANTIC_RELEASE.outputs.new_release_version }}"
+            echo "VERSION=${{ needs.SEMANTIC_RELEASE.outputs.new_release_version }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install poetry
+          poetry config virtualenvs.create false
+          poetry install --only doc --no-interaction
+
+      - name: Fetch gh-pages branch
+        run: |
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
+
+          # Fetch the gh-pages branch
+          git fetch origin gh-pages:gh-pages || echo "No gh-pages branch exists yet"
+
+      - name: Release documentation with mike
+        id: deploy_docs
+        run: |
+          echo "Deploying documentation for version ${{ steps.get_docs_version.outputs.VERSION }}"
+
+          # Attempt to deploy docs
+          mike deploy --push --update-aliases ${{ steps.get_docs_version.outputs.VERSION }} latest
+        continue-on-error: true
+
+      - name: Retry documentation release on failure
+        if: steps.deploy_docs.outcome == 'failure'
+        run: |
+          echo "First documentation deploy attempt failed, retrying..."
+
+          # Force-fetch the latest gh-pages branch
+          git fetch origin gh-pages:gh-pages --force
+
+          # Use the version from recovery process
+          mike deploy --push --update-aliases --force ${{ steps.get_docs_version.outputs.VERSION }} latest
