@@ -1,7 +1,7 @@
 """ZenML steps for PyTorch framework."""
 
 import logging
-from typing import Annotated, Any
+from typing import Annotated, Any, Tuple
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
@@ -140,7 +140,7 @@ def train_model(
     verbose: int = 1,
     max_batches_per_epoch: int | None = None,
     metadata: dict[str, Any] | None = None,
-) -> Annotated[nn.Module, "Trained Model"]:
+) -> Tuple[Annotated[nn.Module, "Trained Model"], Annotated[dict[str, float], "Training Metrics"]]:
     """Train a PyTorch model."""
     logger.info(f"Training model for {epochs} epochs on {device}")
 
@@ -171,8 +171,11 @@ def train_model(
                 "final_metrics": result.metrics,
             }
         )
+    logger.info(f"{result=}")
+    model = result.model
+    metrics = result.metrics
 
-    return result.model
+    return model, metrics
 
 
 @step

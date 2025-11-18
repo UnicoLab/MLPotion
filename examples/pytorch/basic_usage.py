@@ -12,12 +12,12 @@ import torch
 import torch.nn as nn
 
 from mlpotion.frameworks.pytorch import (
-    PyTorchCSVDataset,
-    PyTorchDataLoaderFactory,
-    PyTorchModelEvaluator,
-    PyTorchModelPersistence,
-    PyTorchModelTrainer,
-    PyTorchTrainingConfig,
+    CSVDataset,
+    CSVDataLoader,
+    ModelEvaluator,
+    ModelPersistence,
+    ModelTrainer,
+    ModelTrainingConfig,
 )
 
 
@@ -54,7 +54,7 @@ def main() -> None:
 
     # 1. Load data
     print("\n1. Loading data...")
-    dataset = PyTorchCSVDataset(
+    dataset = CSVDataset(
         file_pattern="examples/data/sample.csv",
         label_name="target",
     )
@@ -62,7 +62,7 @@ def main() -> None:
 
     # 2. Create DataLoader
     print("\n2. Creating DataLoader...")
-    factory = PyTorchDataLoaderFactory(batch_size=8, shuffle=True)
+    factory = CSVDataLoader(batch_size=8, shuffle=True)
     dataloader = factory.load(dataset)
 
     # 3. Create model
@@ -72,14 +72,18 @@ def main() -> None:
 
     # 4. Train model
     print("\n4. Training model...")
-    trainer = PyTorchModelTrainer()
-    config = PyTorchTrainingConfig(
+    trainer = ModelTrainer()
+    config = ModelTrainingConfig(
         epochs=10,
         learning_rate=0.001,
         device="cuda" if torch.cuda.is_available() else "cpu",
         verbose=1,
     )
-    result = trainer.train(model, dataloader, config)
+    result = trainer.train(
+        model=model,
+        dataloader=dataloader,
+        config=config,
+    )
 
     print(f"\nTraining completed!")
     print(f"Training time: {result.training_time:.2f}s")
@@ -87,7 +91,7 @@ def main() -> None:
 
     # 5. Evaluate model
     print("\n5. Evaluating model...")
-    evaluator = PyTorchModelEvaluator()
+    evaluator = ModelEvaluator()
     eval_result = evaluator.evaluate(model, dataloader, config)
 
     print(f"Evaluation completed in {eval_result.evaluation_time:.2f}s")
@@ -97,15 +101,17 @@ def main() -> None:
 
     # 6. Save model
     print("\n6. Saving model...")
-    persistence = PyTorchModelPersistence()
+    persistence = ModelPersistence(
+        path="/tmp/pytorch_model.pth",
+        model=model,
+    )
     model_path = "/tmp/pytorch_model.pth"
-    persistence.save(model, model_path, save_format="state_dict")
+    persistence.save()
     print(f"Model saved to: {model_path}")
 
     # 7. Load model
     print("\n7. Loading model...")
-    loaded_model = SimpleModel(input_dim=10, hidden_dim=64)
-    persistence.load(loaded_model, model_path, load_format="state_dict")
+    loaded_model = persistence.load()
     print(f"Model loaded successfully: {type(loaded_model)}")
 
     print("\n" + "=" * 60)

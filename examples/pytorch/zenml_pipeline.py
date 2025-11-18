@@ -15,7 +15,7 @@ import torch
 import torch.nn as nn
 from zenml import pipeline, step
 
-from mlpotion.frameworks.pytorch import PyTorchTrainingConfig
+from mlpotion.frameworks.pytorch import ModelTrainingConfig
 from mlpotion.integrations.zenml.pytorch.steps import (
     evaluate_model,
     export_model,
@@ -61,22 +61,7 @@ def create_model() -> nn.Module:
     return model
 
 
-@step
-def create_training_config() -> PyTorchTrainingConfig:
-    """Create training configuration.
-
-    Returns:
-        Training configuration with hyperparameters.
-    """
-    return PyTorchTrainingConfig(
-        epochs=10,
-        learning_rate=0.001,
-        device="cuda" if torch.cuda.is_available() else "cpu",
-        verbose=1,
-    )
-
-
-@pipeline
+@pipeline(enable_cache=False)
 def pytorch_training_pipeline(
     file_path: str = "examples/data/sample.csv",
     label_name: str = "target",
@@ -109,44 +94,55 @@ def pytorch_training_pipeline(
 
     # Step 2: Create model and config
     model = create_model()
-    config = create_training_config()
 
     # Step 3: Train model
-    trained_model, training_metrics = train_model(
+    _config_train = {
+        "epochs": 10,
+        "learning_rate": 0.001,
+        "verbose": 1,
+    }
+    model, metrics = train_model(
         model=model,
         dataloader=dataloader,
-        config=config,
+        **_config_train,
     )
 
     # Step 4: Evaluate model
     evaluation_metrics = evaluate_model(
-        model=trained_model,
+        model=model,
         dataloader=dataloader,
-        config=config,
     )
 
     # Step 5: Save model
     save_model(
-        model=trained_model,
-        file_path=model_save_path,
-        save_format="state_dict",
+        model=model,
+        save_path=model_save_path,
     )
 
-    # Step 6: Export model for serving (TorchScript)
+    # # Step 6: Export model for serving (TorchScript)
     export_model(
-        model=trained_model,
+        model=model,
         export_path=export_path,
         export_format="torchscript",
     )
+    return None
+    # return trained_model, training_metrics, evaluation_metrics
 
-    return trained_model, training_metrics, evaluation_metrics
 
-
-def main() -> None:
+if __name__ == "__main__":
     """Run the PyTorch ZenML pipeline."""
     print("=" * 60)
     print("MLPotion - PyTorch ZenML Pipeline")
     print("=" * 60)
+
+    # Initialize ZenML (if not already initialized)
+    try:
+        from zenml.client import Client
+        client = Client()
+        print(f"✅ ZenML initialized. Active stack: {client.active_stack_model.name}")
+    except Exception as e:
+        print(f"⚠️  ZenML client error: {e}")
+        print("Run 'zenml init' if you haven't already")
 
     # Run the pipeline
     print("\nRunning ZenML pipeline...")
@@ -154,12 +150,4 @@ def main() -> None:
 
     print("\n" + "=" * 60)
     print("Pipeline completed successfully!")
-    print("=" * 60)
-    print("\nOutputs:")
-    print(f"  - Trained model: {type(result[0])}")
-    print(f"  - Training metrics: {result[1]}")
-    print(f"  - Evaluation metrics: {result[2]}")
 
-
-if __name__ == "__main__":
-    main()
