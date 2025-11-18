@@ -79,7 +79,24 @@ class PyTorchCSVDataset(Dataset[tuple[torch.Tensor, torch.Tensor] | torch.Tensor
     # ------------------------------------------------------------------ #
     def _resolve_files(self) -> list[Path]:
         """Find CSV files matching the pattern."""
-        files = sorted(Path().glob(self.file_pattern))
+        # Check if file_pattern is an absolute path or contains wildcards
+        pattern_path = Path(self.file_pattern)
+
+        if pattern_path.is_absolute():
+            # For absolute paths without wildcards, check if file exists directly
+            if "*" not in self.file_pattern and "?" not in self.file_pattern:
+                if not pattern_path.exists():
+                    raise DataLoadingError(f"File not found: {self.file_pattern}")
+                files = [pattern_path]
+            else:
+                # For absolute paths with wildcards, use parent directory
+                parent = pattern_path.parent
+                pattern = pattern_path.name
+                files = sorted(parent.glob(pattern))
+        else:
+            # For relative paths, use current directory
+            files = sorted(Path().glob(self.file_pattern))
+
         if not files:
             raise DataLoadingError(f"No files found: {self.file_pattern}")
         logger.info(
@@ -230,7 +247,24 @@ class StreamingPyTorchCSVDataset(
 
     def _resolve_files(self) -> list[Path]:
         """Find CSV files matching the pattern."""
-        files = sorted(Path().glob(self.file_pattern))
+        # Check if file_pattern is an absolute path or contains wildcards
+        pattern_path = Path(self.file_pattern)
+
+        if pattern_path.is_absolute():
+            # For absolute paths without wildcards, check if file exists directly
+            if "*" not in self.file_pattern and "?" not in self.file_pattern:
+                if not pattern_path.exists():
+                    raise DataLoadingError(f"File not found: {self.file_pattern}")
+                files = [pattern_path]
+            else:
+                # For absolute paths with wildcards, use parent directory
+                parent = pattern_path.parent
+                pattern = pattern_path.name
+                files = sorted(parent.glob(pattern))
+        else:
+            # For relative paths, use current directory
+            files = sorted(Path().glob(self.file_pattern))
+
         if not files:
             raise DataLoadingError(f"No files found: {self.file_pattern}")
         logger.info(
