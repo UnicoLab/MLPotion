@@ -21,6 +21,7 @@ from mlpotion.frameworks.tensorflow.config import (
     ModelInspectionConfig,
 )
 from mlpotion.frameworks.tensorflow.data.loaders import TFCSVDataLoader as CSVDataLoader
+from mlpotion.frameworks.tensorflow.data.loaders import TFRecordDataLoader as RecordDataLoader
 from mlpotion.frameworks.tensorflow.data.optimizers import TFDatasetOptimizer as DatasetOptimizer
 from mlpotion.frameworks.tensorflow.deployment.exporters import TFModelExporter as ModelExporter
 from mlpotion.frameworks.tensorflow.deployment.persistence import TFModelPersistence as ModelPersistence
@@ -29,7 +30,8 @@ from mlpotion.frameworks.tensorflow.training.trainers import TFModelTrainer as M
 
 __all__ = [
     # Components
-    "TFCSVDataLoader",
+    "CSVDataLoader",
+    "RecordDataLoader",
     "DatasetOptimizer",
     "ModelTrainer",
     "ModelEvaluator",

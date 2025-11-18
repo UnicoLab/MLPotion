@@ -1,11 +1,23 @@
+import os
+import tempfile
 import unittest
+from pathlib import Path
 
+import numpy as np
+import pandas as pd
 import torch
 from torch.utils.data import Dataset, IterableDataset, RandomSampler, SequentialSampler
 
-from mlpotion.frameworks.pytorch.data.loaders import PyTorchDataLoaderFactory
+from mlpotion.frameworks.pytorch.data.loaders import (
+    PyTorchCSVDataset,
+    StreamingPyTorchCSVDataset,
+    PyTorchDataLoaderFactory,
+)
 
 
+# --------------------------------------------------------------------------- #
+# Simple in-memory datasets for DataLoaderFactory tests
+# --------------------------------------------------------------------------- #
 class _SimpleDataset(Dataset[int]):
     """Small map-style dataset for testing."""
 
@@ -31,6 +43,9 @@ class _SimpleIterableDataset(IterableDataset[int]):
             yield i
 
 
+# --------------------------------------------------------------------------- #
+# Tests for PyTorchDataLoaderFactory
+# --------------------------------------------------------------------------- #
 class TestPyTorchDataLoaderFactory(unittest.TestCase):
     # ------------------------------------------------------------------ #
     # Map-style Dataset behaviour
@@ -163,6 +178,211 @@ class TestPyTorchDataLoaderFactory(unittest.TestCase):
         # Check that the content is sequential since shuffle=False
         concatenated = torch.cat(batches).tolist()
         self.assertListEqual(concatenated, list(range(9)))
+
+
+# --------------------------------------------------------------------------- #
+# Tests for PyTorchCSVDataset
+# --------------------------------------------------------------------------- #
+class TestPyTorchCSVDataset(unittest.TestCase):
+    def _create_temp_csvs(self, tmpdir: str) -> list[str]:
+        """Create a couple of small CSV files in tmpdir and return their paths."""
+        data1 = pd.DataFrame(
+            {
+                "f1": [1.0, 2.0],
+                "f2": [10.0, 20.0],
+                "label": [0.0, 1.0],
+            }
+        )
+        data2 = pd.DataFrame(
+            {
+                "f1": [3.0, 4.0],
+                "f2": [30.0, 40.0],
+                "label": [0.0, 1.0],
+            }
+        )
+        paths: list[str] = []
+        p1 = os.path.join(tmpdir, "part1.csv")
+        p2 = os.path.join(tmpdir, "part2.csv")
+        data1.to_csv(p1, index=False)
+        data2.to_csv(p2, index=False)
+        paths.extend([p1, p2])
+        return paths
+
+    def test_pytorch_csv_dataset_loads_files_and_splits_features_and_labels(self) -> None:
+        """PyTorchCSVDataset should load CSVs, expose correct length and tensors."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            self._create_temp_csvs(tmpdir)
+            pattern = os.path.join(tmpdir, "part*.csv")
+
+            dataset = PyTorchCSVDataset(
+                file_pattern=pattern,
+                label_name="label",
+            )
+
+            # 2 files × 2 rows each = 4 rows total
+            self.assertEqual(len(dataset), 4)
+            self.assertListEqual(dataset._feature_cols, ["f1", "f2"])
+            self.assertIsNotNone(dataset._features_df)
+            self.assertIsNotNone(dataset._labels)
+
+            # Fetch first sample; expect (features, label)
+            item0 = dataset[0]
+            self.assertIsInstance(item0, tuple)
+            x0, y0 = item0
+            self.assertIsInstance(x0, torch.Tensor)
+            self.assertIsInstance(y0, torch.Tensor)
+            self.assertEqual(x0.shape, (2,))  # two feature columns
+            # label is scalar → 0-dim tensor
+            self.assertEqual(y0.shape, torch.Size([]))
+
+    def test_pytorch_csv_dataset_without_label_returns_only_features(self) -> None:
+        """If no label_name is given, __getitem__ should return only feature tensor."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            self._create_temp_csvs(tmpdir)
+            pattern = os.path.join(tmpdir, "part*.csv")
+
+            dataset = PyTorchCSVDataset(
+                file_pattern=pattern,
+                label_name=None,
+            )
+
+            self.assertEqual(len(dataset), 4)
+            item0 = dataset[0]
+            self.assertIsInstance(item0, torch.Tensor)
+            # All columns (f1, f2, label) are treated as features when label_name=None
+            self.assertEqual(item0.shape, (3,))
+
+    def test_pytorch_csv_dataset_column_selection_and_missing_column_error(self) -> None:
+        """column_names should restrict features and raise for missing columns."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            self._create_temp_csvs(tmpdir)
+            pattern = os.path.join(tmpdir, "part*.csv")
+
+            # Column selection
+            dataset = PyTorchCSVDataset(
+                file_pattern=pattern,
+                column_names=["f1"],
+                label_name="label",
+            )
+            self.assertListEqual(dataset._feature_cols, ["f1"])
+            x0, _ = dataset[0]
+            self.assertEqual(x0.shape, (1,))
+
+            # Missing requested column
+            with self.assertRaises(Exception):
+                _ = PyTorchCSVDataset(
+                    file_pattern=pattern,
+                    column_names=["does_not_exist"],
+                    label_name="label",
+                )
+
+    def test_pytorch_csv_dataset_raises_on_no_files_found(self) -> None:
+        """Dataset should raise if the glob pattern matches no files."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            pattern = os.path.join(tmpdir, "nonexistent_*.csv")
+            with self.assertRaises(Exception):
+                _ = PyTorchCSVDataset(
+                    file_pattern=pattern,
+                    label_name="label",
+                )
+
+
+# --------------------------------------------------------------------------- #
+# Tests for StreamingPyTorchCSVDataset
+# --------------------------------------------------------------------------- #
+class TestStreamingPyTorchCSVDataset(unittest.TestCase):
+    def _create_temp_csvs(self, tmpdir: str) -> list[str]:
+        data1 = pd.DataFrame(
+            {
+                "f1": [1.0, 2.0, 3.0],
+                "f2": [10.0, 20.0, 30.0],
+                "label": [0.0, 1.0, 0.0],
+            }
+        )
+        data2 = pd.DataFrame(
+            {
+                "f1": [4.0, 5.0],
+                "f2": [40.0, 50.0],
+                "label": [1.0, 0.0],
+            }
+        )
+        p1 = os.path.join(tmpdir, "s1.csv")
+        p2 = os.path.join(tmpdir, "s2.csv")
+        data1.to_csv(p1, index=False)
+        data2.to_csv(p2, index=False)
+        return [p1, p2]
+
+    def test_streaming_dataset_yields_all_samples_with_labels(self) -> None:
+        """StreamingPyTorchCSVDataset should stream all rows across all files."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            self._create_temp_csvs(tmpdir)
+            pattern = os.path.join(tmpdir, "s*.csv")
+
+            dataset = StreamingPyTorchCSVDataset(
+                file_pattern=pattern,
+                label_name="label",
+                chunksize=2,  # test chunked reading
+            )
+
+            samples = list(dataset)
+            # 3 + 2 rows = 5 total samples
+            self.assertEqual(len(samples), 5)
+
+            for sample in samples:
+                self.assertIsInstance(sample, tuple)
+                x, y = sample
+                self.assertIsInstance(x, torch.Tensor)
+                self.assertIsInstance(y, torch.Tensor)
+                self.assertEqual(x.shape, (2,))  # two feature columns
+                # y is scalar → 0-dim tensor
+                self.assertEqual(y.shape, torch.Size([]))
+
+    def test_streaming_dataset_without_label_yields_only_features(self) -> None:
+        """If label_name is None, streaming dataset should yield only feature tensors."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            self._create_temp_csvs(tmpdir)
+            pattern = os.path.join(tmpdir, "s*.csv")
+
+            dataset = StreamingPyTorchCSVDataset(
+                file_pattern=pattern,
+                label_name=None,
+                chunksize=3,
+            )
+
+            samples = list(dataset)
+            self.assertEqual(len(samples), 5)
+            for x in samples:
+                self.assertIsInstance(x, torch.Tensor)
+                # All columns (f1, f2, label) are treated as features when label_name=None
+                self.assertEqual(x.shape, (3,))
+
+    def test_streaming_dataset_raises_when_label_missing_in_file(self) -> None:
+        """If label_name is configured but missing in CSV, we should raise."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create a CSV without 'label' column
+            df = pd.DataFrame({"f1": [1.0, 2.0], "f2": [3.0, 4.0]})
+            path = os.path.join(tmpdir, "no_label.csv")
+            df.to_csv(path, index=False)
+            pattern = os.path.join(tmpdir, "no_label.csv")
+
+            dataset = StreamingPyTorchCSVDataset(
+                file_pattern=pattern,
+                label_name="label",
+                chunksize=2,
+            )
+
+            with self.assertRaises(Exception):
+                _ = list(dataset)
+
+    def test_streaming_dataset_raises_on_no_files_found(self) -> None:
+        """Streaming dataset should raise if file pattern matches no files."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            pattern = os.path.join(tmpdir, "nothing_here_*.csv")
+            with self.assertRaises(Exception):
+                _ = StreamingPyTorchCSVDataset(
+                    file_pattern=pattern,
+                    label_name="label",
+                )
 
 
 if __name__ == "__main__":

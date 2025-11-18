@@ -1,5 +1,4 @@
-from __future__ import annotations
-
+"""TensorFlow data transformation."""
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Iterable, Iterator, Mapping
