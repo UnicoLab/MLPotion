@@ -1,7 +1,7 @@
 """ZenML steps for Keras framework."""
 
 import logging
-from typing import Annotated, Any
+from typing import Annotated, Any, Tuple
 import keras
 
 try:
@@ -109,7 +109,7 @@ def train_model(
     verbose: int = 1,
     callbacks: list[Any] | None = None,
     metadata: dict[str, Any] | None = None,
-) -> Annotated[keras.Model, "Trained Model"]:
+) -> Tuple[Annotated[keras.Model, "Trained Model"], Annotated[dict[str, float], "Training Metrics"]]:
     """Train a Keras model."""
     logger.info(f"Training model for {epochs} epochs")
 
@@ -134,11 +134,17 @@ def train_model(
         compile_params=compile_params,
         fit_params=fit_params,
     )
+    # Convert History → simple metrics dict (last epoch values)
+    training_metrics: dict[str, float] = {}
+    if hasattr(history, "history") and isinstance(history.history, dict):
+        for key, values in history.history.items():
+            if values:
+                training_metrics[key] = float(values[-1])
 
     if metadata:
         log_step_metadata(metadata={**metadata, "history": history})
 
-    return model
+    return model, training_metrics
 
 
 @step

@@ -47,7 +47,7 @@ torchvision = {version = "^0.16", optional = true}
 jax = {version = "^0.4.0", optional = true, extras = ["cpu"]}
 
 # Optional integration dependencies
-zenml = {version = ">0.80.0", optional = true}
+zenml = {version = ">0.80.0", optional = true, extras = ["local"]}
 pydantic-settings = "^2.12.0"
 loguru = "^0.7.3"
 

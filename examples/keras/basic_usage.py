@@ -76,35 +76,45 @@ def main() -> None:
         learning_rate=0.001,
         validation_split=0.2,
         verbose=1,
+    ).dict()
+
+    result = trainer.train(
+        model=model,
+        data=dataset,
+        **config,
     )
-    result = trainer.train(model, dataset, config)
 
     print(f"\nTraining completed!")
-    print(f"Training time: {result.training_time:.2f}s")
-    print(f"Final training loss: {result.metrics.get('loss', 'N/A'):.4f}")
-    if "val_loss" in result.metrics:
-        print(f"Final validation loss: {result.metrics['val_loss']:.4f}")
+    print(f"Final training results: {result}")
 
     # 4. Evaluate model
     print("\n4. Evaluating model...")
     evaluator = KerasModelEvaluator()
-    eval_result = evaluator.evaluate(model, dataset, config)
+    eval_result = evaluator.evaluate(
+        model=model,
+        data=dataset,
+        **config,
+    )
 
-    print(f"Evaluation completed in {eval_result.evaluation_time:.2f}s")
-    print(f"Evaluation metrics:")
-    for metric_name, metric_value in eval_result.metrics.items():
-        print(f"  - {metric_name}: {metric_value:.4f}")
+    print(f"Evaluation completed!")
+    print(f"Evaluation results: {eval_result}")
 
     # 5. Save model
     print("\n5. Saving model...")
-    persistence = KerasModelPersistence()
     model_path = "/tmp/keras_model.keras"
-    persistence.save(model, model_path, save_format="keras")
+
+    persistence = KerasModelPersistence(
+        path=model_path,
+        model=model,
+    )
+    persistence.save(
+        save_format="keras",
+    )
     print(f"Model saved to: {model_path}")
 
     # 6. Load model
     print("\n6. Loading model...")
-    loaded_model = persistence.load(model_path)
+    loaded_model = persistence.load()
     print(f"Model loaded successfully: {type(loaded_model)}")
 
     print("\n" + "=" * 60)
