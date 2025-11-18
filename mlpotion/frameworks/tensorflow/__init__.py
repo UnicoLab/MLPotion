@@ -9,7 +9,17 @@ from mlpotion.utils.framework import require_framework
 require_framework("tensorflow", "mlpotion[tensorflow]")
 
 # Safe to import TensorFlow components now
-from mlpotion.frameworks.tensorflow.config import TensorFlowTrainingConfig
+from mlpotion.frameworks.tensorflow.config import (
+    ModelTrainingConfig,
+    ModelEvaluationConfig,
+    ModelExportConfig,
+    DataLoadingConfig,
+    DataOptimizationConfig,
+    ModelLoadingConfig,
+    ModelPersistenceConfig,
+    DataTransformationConfig,
+    ModelInspectionConfig,
+)
 from mlpotion.frameworks.tensorflow.data.loaders import TFCSVDataLoader
 from mlpotion.frameworks.tensorflow.data.optimizers import TFDatasetOptimizer
 from mlpotion.frameworks.tensorflow.deployment.exporters import TFModelExporter
@@ -18,7 +28,17 @@ from mlpotion.frameworks.tensorflow.evaluation.evaluators import TFModelEvaluato
 from mlpotion.frameworks.tensorflow.training.trainers import TFModelTrainer
 
 __all__ = [
-    "TensorFlowTrainingConfig",
+    # Configs
+    "ModelTrainingConfig",
+    "ModelEvaluationConfig",
+    "ModelExportConfig",
+    "DataLoadingConfig",
+    "DataOptimizationConfig",
+    "ModelLoadingConfig",
+    "ModelPersistenceConfig",
+    "DataTransformationConfig",
+    "ModelInspectionConfig",
+    # Components
     "TFCSVDataLoader",
     "TFDatasetOptimizer",
     "TFModelTrainer",

@@ -7,7 +7,7 @@ from torch.utils.data import DataLoader, TensorDataset
 
 from mlpotion.core.exceptions import TrainingError
 from mlpotion.core.results import TrainingResult
-from mlpotion.frameworks.pytorch.config import PyTorchTrainingConfig
+from mlpotion.frameworks.pytorch.config import ModelTrainingConfig
 from mlpotion.frameworks.pytorch.training import PyTorchModelTrainer
 from tests.core import TestBase  # provides common setup (e.g. temp dirs, seeds)
 
@@ -42,7 +42,7 @@ class TestPyTorchModelTrainer(TestBase):
     def test_train_supervised_returns_training_result(self) -> None:
         """Supervised training should produce a valid TrainingResult."""
         trainer = PyTorchModelTrainer()
-        config = PyTorchTrainingConfig(
+        config = ModelTrainingConfig(
             epochs=3,
             learning_rate=1e-2,
             optimizer="adam",
@@ -72,7 +72,7 @@ class TestPyTorchModelTrainer(TestBase):
     def test_train_unsupervised_inputs_only(self) -> None:
         """Training should work when batches contain only inputs (autoencoder-style)."""
         trainer = PyTorchModelTrainer()
-        config = PyTorchTrainingConfig(
+        config = ModelTrainingConfig(
             epochs=2,
             learning_rate=1e-2,
             optimizer="adam",
@@ -120,7 +120,7 @@ class TestPyTorchModelTrainer(TestBase):
         trainer = PyTorchModelTrainer()
 
         max_batches = 3
-        config = PyTorchTrainingConfig(
+        config = ModelTrainingConfig(
             epochs=1,
             learning_rate=1e-2,
             optimizer="adam",
@@ -163,7 +163,7 @@ class TestPyTorchModelTrainer(TestBase):
 
         max_batches = 4
         # Only max_batches provided (legacy / fallback name)
-        config = PyTorchTrainingConfig(
+        config = ModelTrainingConfig(
             epochs=1,
             learning_rate=1e-2,
             optimizer="adam",
@@ -193,7 +193,7 @@ class TestPyTorchModelTrainer(TestBase):
         """Training with validation should record val_loss and best_epoch."""
         trainer = PyTorchModelTrainer()
         # Use the same loader as validation for simplicity
-        config = PyTorchTrainingConfig(
+        config = ModelTrainingConfig(
             epochs=2,
             learning_rate=1e-2,
             optimizer="adam",
@@ -226,7 +226,7 @@ class TestPyTorchModelTrainer(TestBase):
         empty_loader = DataLoader(empty_dataset, batch_size=4)
 
         trainer = PyTorchModelTrainer()
-        config = PyTorchTrainingConfig(
+        config = ModelTrainingConfig(
             epochs=1,
             learning_rate=1e-2,
             optimizer="adam",
@@ -246,7 +246,7 @@ class TestPyTorchModelTrainer(TestBase):
     def test_train_with_unknown_optimizer_raises_training_error(self) -> None:
         """Unknown optimizer name should result in TrainingError."""
         trainer = PyTorchModelTrainer()
-        config = PyTorchTrainingConfig(
+        config = ModelTrainingConfig(
             epochs=1,
             learning_rate=1e-3,
             optimizer="unknown_optimizer",

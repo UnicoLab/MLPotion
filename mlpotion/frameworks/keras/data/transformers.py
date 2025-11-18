@@ -8,7 +8,7 @@ import keras
 from keras.utils import Sequence
 from loguru import logger
 
-from mlpotion.frameworks.keras.config import ModelLoadingConfig, KerasCSVTransformationConfig
+from mlpotion.frameworks.keras.config import ModelLoadingConfig, DataTransformationConfig
 
 from mlpotion.core.exceptions import DataTransformationError
 from mlpotion.core.protocols import DataTransformer
@@ -129,7 +129,7 @@ class CSVDataTransformer(DataTransformer[CSVSequence, keras.Model]):
         self,
         dataset: Any,
         model: keras.Model,
-        config: KerasCSVTransformationConfig,
+        config: DataTransformationConfig,
         **kwargs: Any,
     ) -> TransformationResult:
         """Transform dataset using a Keras model and save predictions as CSV.
@@ -261,7 +261,7 @@ class CSVDataTransformer(DataTransformer[CSVSequence, keras.Model]):
 
         return None
 
-    def _resolve_output_path(self, config: KerasCSVTransformationConfig) -> str:
+    def _resolve_output_path(self, config: DataTransformationConfig) -> str:
         """Determine and store the data_output_path used for saving results."""
         if self.data_output_path is not None:
             return self.data_output_path

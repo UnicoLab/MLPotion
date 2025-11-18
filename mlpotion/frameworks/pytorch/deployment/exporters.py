@@ -8,7 +8,7 @@ from loguru import logger
 
 from mlpotion.core.exceptions import ExportError
 from mlpotion.core.results import ExportResult
-from mlpotion.frameworks.pytorch.config import PyTorchExportConfig
+from mlpotion.frameworks.pytorch.config import ModelExportConfig
 from mlpotion.core.protocols import ModelExporter
 from mlpotion.utils import trycatch
 from mlpotion.core.exceptions import ModelExporterError
@@ -28,7 +28,7 @@ class PyTorchModelExporter(ModelExporter[nn.Module]):
         ```python
         exporter = PyTorchModelExporter()
 
-        config = PyTorchExportConfig(
+        config = ModelExportConfig(
             export_path="models/model",
             format="torchscript",
             jit_mode="script",
@@ -47,7 +47,7 @@ class PyTorchModelExporter(ModelExporter[nn.Module]):
     def export(
         self,
         model: nn.Module,
-        config: PyTorchExportConfig,
+        config: ModelExportConfig,
     ) -> ExportResult:
         """Main entry point for exporting a model.
 
@@ -127,7 +127,7 @@ class PyTorchModelExporter(ModelExporter[nn.Module]):
         self,
         model: nn.Module,
         export_root: Path,
-        config: PyTorchExportConfig,
+        config: ModelExportConfig,
         device: torch.device,
     ) -> Path:
         """Export model as TorchScript (.pt)."""
@@ -162,7 +162,7 @@ class PyTorchModelExporter(ModelExporter[nn.Module]):
         self,
         model: nn.Module,
         export_root: Path,
-        config: PyTorchExportConfig,
+        config: ModelExportConfig,
         device: torch.device,
     ) -> Path:
         """Export model as ONNX (.onnx)."""

@@ -1,7 +1,7 @@
 """TensorFlow dataset optimization."""
 
 import tensorflow as tf
-from mlpotion.core.config import OptimizationConfig
+from mlpotion.frameworks.tensorflow.config import DataOptimizationConfig
 from mlpotion.core.protocols import DatasetOptimizer
 from loguru import logger
 
@@ -76,7 +76,7 @@ class TFDatasetOptimizer(DatasetOptimizer[tf.data.Dataset]):
         return dataset
 
     @classmethod
-    def from_config(cls, config: OptimizationConfig) -> "TFDatasetOptimizer":
+    def from_config(cls, config: DataOptimizationConfig) -> "TFDatasetOptimizer":
         """Create optimizer from configuration.
 
         Args:

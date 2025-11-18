@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from loguru import logger
 
-from mlpotion.frameworks.keras.config import KerasCSVTransformationConfig
+from mlpotion.frameworks.keras.config import DataTransformationConfig
 from mlpotion.core.exceptions import DataTransformationError
 from mlpotion.core.results import TransformationResult
 from mlpotion.frameworks.keras.data.loaders import CSVSequence, CSVDataLoader
@@ -44,9 +44,9 @@ class TestCSVDataTransformer(TestBase):
         self,
         data_output_path: str,
         per_batch: bool = False,
-    ) -> KerasCSVTransformationConfig:
-        """Create a minimal KerasCSVTransformationConfig for tests."""
-        return KerasCSVTransformationConfig(
+    ) -> DataTransformationConfig:
+        """Create a minimal DataTransformationConfig for tests."""
+        return DataTransformationConfig(
             data_output_path=data_output_path,
             data_output_per_batch=per_batch,
             # leave optional fields (file_pattern, model_path, batch_size, config) as defaults
@@ -77,7 +77,7 @@ class TestCSVDataTransformer(TestBase):
         # Avoid automatic input_columns from inspection to keep all columns
         transformer.input_columns = []  # falsy → use all columns
 
-        config = KerasCSVTransformationConfig(data_output_path=str(out_path))
+        config = DataTransformationConfig(data_output_path=str(out_path))
 
         result = transformer.transform(
             dataset=None,
@@ -367,7 +367,7 @@ class TestCSVDataTransformer(TestBase):
         cfg_path = self.temp_dir / "cfg.csv"
 
         transformer = CSVDataTransformer(data_output_path=str(attr_path))
-        config = KerasCSVTransformationConfig(data_output_path=str(cfg_path))
+        config = DataTransformationConfig(data_output_path=str(cfg_path))
 
         resolved = transformer._resolve_output_path(config=config)
         self.assertEqual(resolved, str(attr_path))
@@ -379,7 +379,7 @@ class TestCSVDataTransformer(TestBase):
         cfg_path = self.temp_dir / "cfg.csv"
 
         transformer = CSVDataTransformer(data_output_path=None)
-        config = KerasCSVTransformationConfig(data_output_path=str(cfg_path))
+        config = DataTransformationConfig(data_output_path=str(cfg_path))
 
         resolved = transformer._resolve_output_path(config=config)
         self.assertEqual(resolved, str(cfg_path))

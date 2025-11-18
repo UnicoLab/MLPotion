@@ -10,7 +10,7 @@ import pandas as pd
 import tensorflow as tf
 from loguru import logger
 
-from mlpotion.core.config import (
+from mlpotion.frameworks.tensorflow.config import (
     DataTransformationConfig,
     DataLoadingConfig,
     ModelLoadingConfig,

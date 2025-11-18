@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader
 
 from mlpotion.core.exceptions import TrainingError
 from mlpotion.core.results import TrainingResult
-from mlpotion.frameworks.pytorch.config import PyTorchTrainingConfig
+from mlpotion.frameworks.pytorch.config import ModelTrainingConfig
 from mlpotion.core.protocols import ModelTrainerProtocol
 from mlpotion.utils import trycatch
 from mlpotion.core.exceptions import ModelTrainerError
@@ -26,7 +26,7 @@ class PyTorchModelTrainer(ModelTrainerProtocol[nn.Module]):
     - Any `nn.Module` is supported as long as its outputs/targets are compatible
       with the configured loss function.
 
-    Optional config fields (if present on PyTorchTrainingConfig):
+    Optional config fields (if present on ModelTrainingConfig):
         - max_batches_per_epoch: Optional[int]
           Limit the number of batches processed in each epoch.
         - max_batches: Optional[int]
@@ -41,7 +41,7 @@ class PyTorchModelTrainer(ModelTrainerProtocol[nn.Module]):
         self,
         model: nn.Module,
         dataloader: DataLoader[Any],
-        config: PyTorchTrainingConfig,
+        config: ModelTrainingConfig,
         validation_dataloader: DataLoader[Any] | None = None,
     ) -> TrainingResult[nn.Module]:
         """Train a PyTorch model.
@@ -181,7 +181,7 @@ class PyTorchModelTrainer(ModelTrainerProtocol[nn.Module]):
     def _create_optimizer(
         self,
         model: nn.Module,
-        config: PyTorchTrainingConfig,
+        config: ModelTrainingConfig,
     ) -> torch.optim.Optimizer:
         """Create optimizer from config."""
         name = (config.optimizer or "adam").lower()
@@ -200,7 +200,7 @@ class PyTorchModelTrainer(ModelTrainerProtocol[nn.Module]):
 
     def _create_loss_fn(
         self,
-        config: PyTorchTrainingConfig,
+        config: ModelTrainingConfig,
     ) -> Callable[[torch.Tensor, torch.Tensor], torch.Tensor]:
         """Create loss function from config.
 

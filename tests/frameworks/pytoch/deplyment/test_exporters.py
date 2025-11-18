@@ -8,7 +8,7 @@ import torch.nn as nn
 
 from mlpotion.core.exceptions import ExportError
 from mlpotion.core.results import ExportResult
-from mlpotion.frameworks.pytorch.config import PyTorchExportConfig
+from mlpotion.frameworks.pytorch.config import ModelExportConfig
 from mlpotion.frameworks.pytorch.deployment.exporters import PyTorchModelExporter
 from tests.core import TestBase  # provides temp_dir, setUp/tearDown
 import importlib.util
@@ -40,7 +40,7 @@ class TestPyTorchModelExporter(TestBase):
     def test_export_torchscript_script_creates_pt_file(self) -> None:
         """TorchScript script mode should create a .pt file and return ExportResult."""
         out_base = self.temp_dir / "script_model"
-        config = PyTorchExportConfig(
+        config = ModelExportConfig(
             export_path=str(out_base),
             format="torchscript",
             device="cpu",
@@ -62,7 +62,7 @@ class TestPyTorchModelExporter(TestBase):
     def test_export_torchscript_trace_requires_example_input(self) -> None:
         """TorchScript trace mode should fail without example_input."""
         out_base = self.temp_dir / "trace_model"
-        config = PyTorchExportConfig(
+        config = ModelExportConfig(
             export_path=str(out_base),
             format="torchscript",
             device="cpu",
@@ -76,7 +76,7 @@ class TestPyTorchModelExporter(TestBase):
     def test_export_torchscript_trace_creates_pt_file(self) -> None:
         """TorchScript trace mode should use example_input and create .pt file."""
         out_base = self.temp_dir / "trace_model"
-        config = PyTorchExportConfig(
+        config = ModelExportConfig(
             export_path=str(out_base),
             format="torchscript",
             device="cpu",
@@ -103,7 +103,7 @@ class TestPyTorchModelExporter(TestBase):
     def test_export_onnx_requires_example_input(self) -> None:
         """ONNX export must fail if example_input is not provided."""
         out_base = self.temp_dir / "onnx_model"
-        config = PyTorchExportConfig(
+        config = ModelExportConfig(
             export_path=str(out_base),
             format="onnx",
             device="cpu",
@@ -117,7 +117,7 @@ class TestPyTorchModelExporter(TestBase):
     def test_export_onnx_creates_onnx_file(self) -> None:
         """ONNX export should create a .onnx file."""
         out_base = self.temp_dir / "onnx_model"
-        config = PyTorchExportConfig(
+        config = ModelExportConfig(
             export_path=str(out_base),
             format="onnx",
             device="cpu",
@@ -142,7 +142,7 @@ class TestPyTorchModelExporter(TestBase):
     def test_export_state_dict_creates_pth_file(self) -> None:
         """state_dict export should create a .pth file that can be loaded."""
         out_base = self.temp_dir / "weights"
-        config = PyTorchExportConfig(
+        config = ModelExportConfig(
             export_path=str(out_base),
             format="state_dict",
             device="cpu",
@@ -166,7 +166,7 @@ class TestPyTorchModelExporter(TestBase):
     def test_export_unknown_format_raises_export_error(self) -> None:
         """Unknown export format should raise ExportError."""
         out_base = self.temp_dir / "unknown"
-        config = PyTorchExportConfig(
+        config = ModelExportConfig(
             export_path=str(out_base),
             format="weird_format",
             device="cpu",

@@ -3,7 +3,7 @@ import unittest
 import tensorflow as tf
 from loguru import logger
 
-from mlpotion.core.config import OptimizationConfig
+from mlpotion.frameworks.tensorflow.config import DataOptimizationConfig
 from mlpotion.frameworks.tensorflow.data.optimizers import TFDatasetOptimizer
 from tests.core import TestBase  # provides temp_dir, setUpClass/tearDownClass, setUp/tearDown
 
@@ -82,13 +82,13 @@ class TestTFDatasetOptimizer(TestBase):
         self.assertCountEqual(vals, list(range(10)))  # order-insensitive
 
     # ------------------------------------------------------------------ #
-    # from_config(): construction from OptimizationConfig
+    # from_config(): construction from DataOptimizationConfig
     # ------------------------------------------------------------------ #
     def test_from_config_creates_optimizer_with_matching_fields(self) -> None:
         """from_config() should transfer config fields onto the optimizer."""
         logger.info("Testing TFDatasetOptimizer.from_config")
 
-        config = OptimizationConfig(
+        config = DataOptimizationConfig(
             batch_size=16,
             shuffle_buffer_size=128,
             prefetch=False,

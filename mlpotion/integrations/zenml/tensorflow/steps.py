@@ -6,11 +6,11 @@ from zenml import log_step_metadata, step
 from loguru import logger
 
 # loading
-from mlpotion.core.config import DataLoadingConfig
+from mlpotion.frameworks.tensorflow.config import DataLoadingConfig
 from mlpotion.frameworks.tensorflow.data.loaders import TFCSVDataLoader
 
 # optimizing
-from mlpotion.core.config import OptimizationConfig
+from mlpotion.frameworks.tensorflow.config import DataOptimizationConfig
 from mlpotion.frameworks.tensorflow.data.optimizers import TFDatasetOptimizer
 
 logger = logging.getLogger(__name__)
@@ -58,7 +58,7 @@ def optimize_data(
     """Optimize TensorFlow dataset for training performance."""
     logger.info("Optimizing dataset for training performance")
 
-    config = OptimizationConfig(
+    config = DataOptimizationConfig(
         batch_size=batch_size,
         shuffle_buffer_size=shuffle_buffer_size,
         prefetch=prefetch,
