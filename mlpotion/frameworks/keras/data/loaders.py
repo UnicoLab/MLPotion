@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from glob import glob
 from pathlib import Path
 from typing import Any
 
@@ -205,11 +206,12 @@ class CSVDataLoader(DataLoader[CSVSequence]):
     # ------------------------------------------------------------------ #
     def _get_files(self) -> list[Path]:
         """Return sorted list of files matching the pattern."""
-        files = sorted(Path().glob(self.file_pattern))
-        if not files:
+        file_paths = sorted(glob(self.file_pattern))
+        if not file_paths:
             raise DataLoadingError(
                 f"No CSV files found matching pattern: {self.file_pattern}"
             )
+        files = [Path(f) for f in file_paths]
         logger.info(
             "Found {count} CSV file(s) matching pattern: {pattern}",
             count=len(files),

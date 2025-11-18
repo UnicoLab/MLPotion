@@ -11,17 +11,16 @@
 *.pywzzz
 *_pycache_*
 
+# Coverage files
 htmlcov/
 .coverage
 .coverage.*
-.coverage.*.*
-.coverage.*.*.*
-.coverage.*.*.*.*
-.coverage.*.*.*.*.*
-.coverage.*.*.*.*.*.*
-.coverage.*.*.*.*.*.*.*
-.coverage.*.*.*.*.*.*.*.*
-.coverage.*.*.*.*.*.*.*.*.*
-.coverage.*.*.*.*.*.*.*.*.*.*
+coverage.xml
+*.coverage
 
+# Test artifacts
+*.csv
+data_*.csv
+
+# macOS
 .DS_Store

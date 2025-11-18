@@ -149,15 +149,15 @@ class TestCSVDataLoader(TestBase):
             }
         )
 
-        # Write files into the current (temp) directory
-        self.file1 = Path("data_1.csv")
-        self.file2 = Path("data_2.csv")
+        # Write files into the temp directory
+        self.file1 = self.temp_dir / "data_1.csv"
+        self.file2 = self.temp_dir / "data_2.csv"
 
         data1.to_csv(self.file1, index=False)
         data2.to_csv(self.file2, index=False)
 
-        # RELATIVE pattern – required by Path().glob in CSVDataLoader._get_files
-        self.file_pattern = "data_*.csv"
+        # Use absolute pattern pointing to temp directory
+        self.file_pattern = str(self.temp_dir / "data_*.csv")
 
     # ------------------------------------------------------------------ #
     # Basic loading with labels
