@@ -1,34 +1,61 @@
 """Framework detection and validation utilities."""
-
-import sys
-from typing import Literal
+from typing import Literal, Mapping
+from loguru import logger
+from importlib import import_module
 
 from mlpotion.core.exceptions import FrameworkNotInstalledError
 
-FrameworkName = Literal["tensorflow", "torch"]
+FrameworkName = Literal["tensorflow", "torch", "keras", "jax", "zenml"]
 
 
+class FrameworkChecker:
+    """Utility class to check availability of ML frameworks."""
+
+    _FRAMEWORK_IMPORTS: Mapping[FrameworkName, str] = {
+        "tensorflow": "tensorflow",
+        "torch": "torch",
+        "keras": "keras",
+        "jax": "jax",
+        "zenml": "zenml",
+    }
+
+    @classmethod
+    def is_available(cls, framework: FrameworkName) -> bool:
+        """Check whether a framework is installed and importable.
+
+        Args:
+            framework: Framework identifier supported by this checker.
+
+        Returns:
+            True if the framework can be imported, otherwise False.
+
+        Raises:
+            ValueError: If the provided framework is not known.
+
+        Example:
+            ```python
+            if FrameworkChecker.is_available("torch"):
+                print("PyTorch is installed!")
+            else:
+                print("PyTorch is missing.")
+            ```
+        """
+        if framework not in cls._FRAMEWORK_IMPORTS:
+            msg = f"Unsupported framework: {framework}"
+            logger.error(msg)
+            raise ValueError(msg)
+
+        module_name = cls._FRAMEWORK_IMPORTS[framework]
+
+        try:
+            import_module(module_name)
+            return True
+        except ImportError:
+            return False
+
+# Convenience alias for backwards compatibility
 def is_framework_available(framework: FrameworkName) -> bool:
-    """Check if a framework is available.
-
-    Args:
-        framework: Framework name ("tensorflow" or "torch")
-
-    Returns:
-        True if framework is installed and importable
-    """
-    try:
-        if framework == "tensorflow":
-            import tensorflow
-
-            return True
-        elif framework == "torch":
-            import torch
-
-            return True
-        return False
-    except ImportError:
-        return False
+    return FrameworkChecker.is_available(framework)
 
 
 def require_framework(framework: FrameworkName, install_command: str) -> None:
@@ -44,7 +71,7 @@ def require_framework(framework: FrameworkName, install_command: str) -> None:
     if not is_framework_available(framework):
         raise FrameworkNotInstalledError(
             f"{framework} is not installed. "
-            f"Install it with: pip install {install_command}"
+            f"Install it with: poetry add {install_command}"
         )
 
 
@@ -54,5 +81,5 @@ def get_available_frameworks() -> list[FrameworkName]:
     Returns:
         List of framework names that are installed
     """
-    frameworks: list[FrameworkName] = ["tensorflow", "torch"]
+    frameworks: list[FrameworkName] = list(FrameworkChecker._FRAMEWORK_IMPORTS.keys())
     return [f for f in frameworks if is_framework_available(f)]

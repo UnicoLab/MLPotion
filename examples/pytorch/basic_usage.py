@@ -1,4 +1,12 @@
-"""Basic PyTorch usage WITHOUT ZenML."""
+"""Basic PyTorch usage WITHOUT ZenML.
+
+This example demonstrates the core MLPotion PyTorch workflow:
+1. Load data from CSV
+2. Create a PyTorch model
+3. Train the model
+4. Evaluate the model
+5. Save and export the model
+"""
 
 import torch
 import torch.nn as nn
@@ -7,24 +15,34 @@ from mlpotion.frameworks.pytorch import (
     PyTorchCSVDataset,
     PyTorchDataLoaderFactory,
     PyTorchModelEvaluator,
+    PyTorchModelPersistence,
     PyTorchModelTrainer,
     PyTorchTrainingConfig,
 )
 
 
 class SimpleModel(nn.Module):
-    """Simple feedforward neural network."""
+    """Simple feedforward neural network.
+
+    Args:
+        input_dim: Number of input features.
+        hidden_dim: Size of hidden layer.
+    """
 
     def __init__(self, input_dim: int = 10, hidden_dim: int = 64) -> None:
         super().__init__()
         self.fc1 = nn.Linear(input_dim, hidden_dim)
+        self.dropout1 = nn.Dropout(0.2)
         self.fc2 = nn.Linear(hidden_dim, 32)
+        self.dropout2 = nn.Dropout(0.2)
         self.fc3 = nn.Linear(32, 1)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Forward pass."""
+        """Forward pass through the network."""
         x = torch.relu(self.fc1(x))
+        x = self.dropout1(x)
         x = torch.relu(self.fc2(x))
+        x = self.dropout2(x)
         return self.fc3(x)
 
 
@@ -44,8 +62,8 @@ def main() -> None:
 
     # 2. Create DataLoader
     print("\n2. Creating DataLoader...")
-    factory = PyTorchDataLoaderFactory(batch_size=32, shuffle=True)
-    dataloader = factory.create(dataset)
+    factory = PyTorchDataLoaderFactory(batch_size=8, shuffle=True)
+    dataloader = factory.load(dataset)
 
     # 3. Create model
     print("\n3. Creating model...")
@@ -56,7 +74,7 @@ def main() -> None:
     print("\n4. Training model...")
     trainer = PyTorchModelTrainer()
     config = PyTorchTrainingConfig(
-        epochs=5,
+        epochs=10,
         learning_rate=0.001,
         device="cuda" if torch.cuda.is_available() else "cpu",
         verbose=1,
@@ -72,7 +90,23 @@ def main() -> None:
     evaluator = PyTorchModelEvaluator()
     eval_result = evaluator.evaluate(model, dataloader, config)
 
-    print(f"Evaluation metrics: {eval_result.metrics}")
+    print(f"Evaluation completed in {eval_result.evaluation_time:.2f}s")
+    print(f"Evaluation metrics:")
+    for metric_name, metric_value in eval_result.metrics.items():
+        print(f"  - {metric_name}: {metric_value:.4f}")
+
+    # 6. Save model
+    print("\n6. Saving model...")
+    persistence = PyTorchModelPersistence()
+    model_path = "/tmp/pytorch_model.pth"
+    persistence.save(model, model_path, save_format="state_dict")
+    print(f"Model saved to: {model_path}")
+
+    # 7. Load model
+    print("\n7. Loading model...")
+    loaded_model = SimpleModel(input_dim=10, hidden_dim=64)
+    persistence.load(loaded_model, model_path, load_format="state_dict")
+    print(f"Model loaded successfully: {type(loaded_model)}")
 
     print("\n" + "=" * 60)
     print("Complete!")

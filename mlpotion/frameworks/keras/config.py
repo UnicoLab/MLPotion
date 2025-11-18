@@ -1,4 +1,4 @@
-from typing import Any, Literal, Callable
+from typing import Any, Literal
 
 import keras
 import numpy as np
