@@ -20,11 +20,11 @@ from mlpotion.frameworks.keras.config import (
 )
 from mlpotion.frameworks.keras.data.loaders import CSVDataLoader, CSVSequence
 from mlpotion.frameworks.keras.data.transformers import CSVDataTransformer
-from mlpotion.frameworks.keras.training.trainers import KerasModelTrainer
-from mlpotion.frameworks.keras.evaluation.evaluators import KerasModelEvaluator
-from mlpotion.frameworks.keras.deployment.exporters import KerasModelExporter
-from mlpotion.frameworks.keras.deployment.persistence import KerasModelPersistence
-from mlpotion.frameworks.keras.models.inspection import KerasModelInspector
+from mlpotion.frameworks.keras.training.trainers import ModelTrainer
+from mlpotion.frameworks.keras.evaluation.evaluators import ModelEvaluator
+from mlpotion.frameworks.keras.deployment.exporters import ModelExporter
+from mlpotion.frameworks.keras.deployment.persistence import ModelPersistence
+from mlpotion.frameworks.keras.models.inspection import ModelInspector
 
 logger = logging.getLogger(__name__)
 
@@ -113,7 +113,7 @@ def train_model(
     """Train a Keras model."""
     logger.info(f"Training model for {epochs} epochs")
 
-    trainer = KerasModelTrainer()
+    trainer = ModelTrainer()
 
     compile_params = {
         "optimizer": keras.optimizers.Adam(learning_rate=learning_rate),
@@ -157,7 +157,7 @@ def evaluate_model(
     """Evaluate a Keras model."""
     logger.info("Evaluating model")
 
-    evaluator = KerasModelEvaluator()
+    evaluator = ModelEvaluator()
 
     eval_params = {
         "verbose": verbose,
@@ -185,7 +185,7 @@ def export_model(
     """Export a Keras model to disk."""
     logger.info(f"Exporting model to: {export_path}")
 
-    exporter = KerasModelExporter()
+    exporter = ModelExporter()
 
     config = {}
     if export_format:
@@ -212,7 +212,7 @@ def save_model(
     """Save a Keras model to disk."""
     logger.info(f"Saving model to: {save_path}")
 
-    persistence = KerasModelPersistence(path=save_path, model=model)
+    persistence = ModelPersistence(path=save_path, model=model)
     persistence.save()
 
     if metadata:
@@ -230,7 +230,7 @@ def load_model(
     """Load a Keras model from disk."""
     logger.info(f"Loading model from: {model_path}")
 
-    persistence = KerasModelPersistence(path=model_path)
+    persistence = ModelPersistence(path=model_path)
     model, inspection = persistence.load(inspect=inspect)
 
     if metadata:
@@ -252,7 +252,7 @@ def inspect_model(
     """Inspect a Keras model."""
     logger.info("Inspecting model")
 
-    inspector = KerasModelInspector(
+    inspector = ModelInspector(
         include_layers=include_layers,
         include_signatures=include_signatures,
     )

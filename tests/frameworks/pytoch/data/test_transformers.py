@@ -11,7 +11,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader, Dataset
 
 from mlpotion.frameworks.pytorch.data.transformers import (
-    PyTorchDataToCSVTransformer,
+    DataToCSVTransformer,
 )
 
 
@@ -80,7 +80,7 @@ class _IdentityModel(nn.Module):
         return x
 
 
-class TestPyTorchDataToCSVTransformer(unittest.TestCase):
+class TestDataToCSVTransformer(unittest.TestCase):
     # ------------------------------------------------------------------ #
     # End-to-end: single CSV output (data_output_per_batch=False)
     # ------------------------------------------------------------------ #
@@ -93,7 +93,7 @@ class TestPyTorchDataToCSVTransformer(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             out_path = os.path.join(tmpdir, "preds.csv")
 
-            transformer = PyTorchDataToCSVTransformer(
+            transformer = DataToCSVTransformer(
                 dataloader=dataloader,
                 model=model,
                 data_output_path=out_path,
@@ -145,7 +145,7 @@ class TestPyTorchDataToCSVTransformer(unittest.TestCase):
             # Using a directory-like path (no suffix)
             out_dir = os.path.join(tmpdir, "batches")
 
-            transformer = PyTorchDataToCSVTransformer(
+            transformer = DataToCSVTransformer(
                 dataloader=dataloader,
                 model=model,
                 data_output_path=out_dir,
@@ -191,7 +191,7 @@ class TestPyTorchDataToCSVTransformer(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             out_path = os.path.join(tmpdir, "named_features.csv")
 
-            transformer = PyTorchDataToCSVTransformer(
+            transformer = DataToCSVTransformer(
                 dataloader=dataloader,
                 model=model,
                 data_output_path=out_path,

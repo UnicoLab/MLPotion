@@ -12,7 +12,7 @@ from mlpotion.core.exceptions import DataLoadingError
 
 
 @dataclass(slots=True)
-class PyTorchCSVDataset(Dataset[tuple[torch.Tensor, torch.Tensor] | torch.Tensor]):
+class CSVDataset(Dataset[tuple[torch.Tensor, torch.Tensor] | torch.Tensor]):
     """PyTorch Dataset for CSV files with on-demand tensor conversion.
 
     This is the in-memory analogue of your TF/Keras CSV loaders:
@@ -32,9 +32,10 @@ class PyTorchCSVDataset(Dataset[tuple[torch.Tensor, torch.Tensor] | torch.Tensor
 
     Example:
         ```python
+        from mlpotion.frameworks.pytorch import CSVDataset
         from torch.utils.data import DataLoader
 
-        dataset = PyTorchCSVDataset(
+        dataset = CSVDataset(
             file_pattern="data/train_*.csv",
             label_name="target",
         )
@@ -63,7 +64,7 @@ class PyTorchCSVDataset(Dataset[tuple[torch.Tensor, torch.Tensor] | torch.Tensor
             self._split_features_labels(df)
 
             logger.info(
-                "Initialized PyTorchCSVDataset with "
+                "Initialized CSVDataset with "
                 "n_rows={rows}, n_features={features}, labels={labels}",
                 rows=len(self._features_df) if self._features_df is not None else 0,
                 features=len(self._feature_cols),
@@ -193,7 +194,7 @@ class PyTorchCSVDataset(Dataset[tuple[torch.Tensor, torch.Tensor] | torch.Tensor
 
 
 @dataclass(slots=True)
-class StreamingPyTorchCSVDataset(
+class StreamingCSVDataset(
     IterableDataset[tuple[torch.Tensor, torch.Tensor] | torch.Tensor]
 ):
     """Streaming PyTorch IterableDataset for large CSV files.
@@ -201,8 +202,8 @@ class StreamingPyTorchCSVDataset(
     This dataset reads CSV files in chunks and yields samples one by one,
     avoiding loading the entire dataset into memory.
 
-    It is the streaming analogue to `PyTorchCSVDataset`, similar in spirit
-    to your TF `TFCSVDataLoader` but tailored to PyTorch’s IterableDataset.
+    It is the streaming analogue to `CSVDataset`, similar in spirit
+    to your TF `TFCSVDataLoader` but tailored to PyTorch's IterableDataset.
 
     Args:
         file_pattern: Glob pattern for CSV files.
@@ -213,9 +214,10 @@ class StreamingPyTorchCSVDataset(
 
     Example:
         ```python
+        from mlpotion.frameworks.pytorch import StreamingCSVDataset
         from torch.utils.data import DataLoader
 
-        dataset = StreamingPyTorchCSVDataset(
+        dataset = StreamingCSVDataset(
             file_pattern="data/train_*.csv",
             label_name="target",
             chunksize=4096,
@@ -238,7 +240,7 @@ class StreamingPyTorchCSVDataset(
         """Resolve files eagerly and log basic configuration."""
         self.files = self._resolve_files()
         logger.info(
-            "Initialized StreamingPyTorchCSVDataset with {n_files} file(s), "
+            "Initialized StreamingCSVDataset with {n_files} file(s), "
             "chunksize={chunksize}, label_name={label}",
             n_files=len(self.files),
             chunksize=self.chunksize,

@@ -1,8 +1,5 @@
 """TensorFlow model persistence."""
 
-from mlpotion.frameworks.keras.deployment.persistence import KerasModelPersistence
+from mlpotion.frameworks.keras.deployment.persistence import ModelPersistence
 
-# Create aliases
-TFModelPersistence = KerasModelPersistence
-
-__all__ = ["TFModelPersistence"]
+__all__ = ["ModelPersistence"]

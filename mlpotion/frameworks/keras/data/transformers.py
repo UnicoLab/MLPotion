@@ -14,9 +14,9 @@ from mlpotion.core.exceptions import DataTransformationError
 from mlpotion.core.protocols import DataTransformer
 from mlpotion.core.results import TransformationResult
 from mlpotion.frameworks.keras.data.loaders import CSVDataLoader, CSVSequence
-from mlpotion.frameworks.keras.models.inspection import KerasModelInspector
-from mlpotion.frameworks.keras.deployment.persistence import KerasModelPersistence
-from mlpotion.frameworks.keras.utils.formatter import KerasPredictionFormatter
+from mlpotion.frameworks.keras.models.inspection import ModelInspector
+from mlpotion.frameworks.keras.deployment.persistence import ModelPersistence
+from mlpotion.frameworks.keras.utils.formatter import PredictionFormatter
 from mlpotion.utils import trycatch
 
 
@@ -24,7 +24,7 @@ from mlpotion.utils import trycatch
 class CSVDataTransformer(DataTransformer[CSVSequence, keras.Model]):
     """Transform tabular data to CSV using a Keras model (no TensorFlow).
 
-    This class is the Keras/pandas analogue of TFDataToCSVTransformer:
+    This class is the Keras/pandas analogue of the TensorFlow DataToCSVTransformer:
 
     - Resolves data from:
         * a `CSVDataLoader` (recommended),
@@ -32,9 +32,9 @@ class CSVDataTransformer(DataTransformer[CSVSequence, keras.Model]):
         * the `dataset` argument to `transform(...)` (fallback).
     - Resolves model from:
         * an attached `keras.Model`,
-        * a `KerasModelPersistence` instance (path-based),
+        * a `ModelPersistence` instance (path-based),
         * the `model` argument to `transform(...)` (fallback).
-    - Optionally inspects the model via `KerasModelInspector` to derive
+    - Optionally inspects the model via `ModelInspector` to derive
       input names and use them as `input_columns`.
     - Iterates over batches, runs `model.predict(...)`, and saves:
         * one CSV per batch (when `data_output_per_batch=True`), or
@@ -50,7 +50,7 @@ class CSVDataTransformer(DataTransformer[CSVSequence, keras.Model]):
         data_loader: Optional CSVDataLoader to create a `CSVSequence`.
         dataset: Optional dataset/sequence/iterable to transform.
         model: Optional compiled Keras model.
-        model_persistence: Optional KerasModelPersistence to load the model and
+        model_persistence: Optional ModelPersistence to load the model and
             inspection metadata from disk.
         model_loading_config: Optional model loading config (if used in your
             project; currently only used to resolve path from it).
@@ -97,7 +97,7 @@ class CSVDataTransformer(DataTransformer[CSVSequence, keras.Model]):
 
     # Model sources
     model: keras.Model | None = None
-    model_persistence: KerasModelPersistence | None = None
+    model_persistence: ModelPersistence | None = None
     model_loading_config: ModelLoadingConfig | None = None
     model_path: str | None = None
 
@@ -111,11 +111,11 @@ class CSVDataTransformer(DataTransformer[CSVSequence, keras.Model]):
     input_columns: list[str] | None = None
 
     # Prediction formatting utility
-    prediction_formatter: KerasPredictionFormatter = field(
-        default_factory=KerasPredictionFormatter
+    prediction_formatter: PredictionFormatter = field(
+        default_factory=PredictionFormatter
     )
 
-    # Cached inspection metadata (e.g. from KerasModelPersistence)
+    # Cached inspection metadata (e.g. from ModelPersistence)
     _model_inspection: dict[str, Any] | None = field(default=None, init=False)
 
     # ------------------------------------------------------------------ #
@@ -145,9 +145,9 @@ class CSVDataTransformer(DataTransformer[CSVSequence, keras.Model]):
             1. `self.model` if already set,
             2. `self.model_persistence.load(inspect=True)` if given,
                or `model_path` / `model_loading_config` path via a temporary
-               `KerasModelPersistence`,
+               `ModelPersistence`,
             3. `model` argument as fallback, with inspection run via
-               `KerasModelInspector`.
+               `ModelInspector`.
 
         The model’s input names (from inspection) are used to filter the
         DataFrame columns passed into `model.predict(...)`, unless
@@ -215,14 +215,14 @@ class CSVDataTransformer(DataTransformer[CSVSequence, keras.Model]):
         if self.model is not None:
             logger.info("Using model stored on transformer instance")
             if self._model_inspection is None:
-                logger.info("Inspecting attached model with KerasModelInspector")
-                inspector = KerasModelInspector()
+                logger.info("Inspecting attached model with ModelInspector")
+                inspector = ModelInspector()
                 self._model_inspection = inspector.inspect(self.model)
             return self.model
 
-        # 2) Use KerasModelPersistence if provided
+        # 2) Use ModelPersistence if provided
         if self.model_persistence is not None:
-            logger.info("Loading model via KerasModelPersistence (inspect=True)")
+            logger.info("Loading model via ModelPersistence (inspect=True)")
             model, inspection = self.model_persistence.load(inspect=True)
             self.model = model
             self._model_inspection = inspection
@@ -231,8 +231,8 @@ class CSVDataTransformer(DataTransformer[CSVSequence, keras.Model]):
         # 3) Use model_path / model_loading_config via a temporary persistence
         resolved_path = self._resolve_model_path()
         if resolved_path is not None:
-            logger.info(f"Loading model from path via KerasModelPersistence: {resolved_path}")
-            persistence = KerasModelPersistence(path=resolved_path)
+            logger.info(f"Loading model from path via ModelPersistence: {resolved_path}")
+            persistence = ModelPersistence(path=resolved_path)
             model, inspection = persistence.load(inspect=True)
             self.model = model
             self._model_inspection = inspection
@@ -242,8 +242,8 @@ class CSVDataTransformer(DataTransformer[CSVSequence, keras.Model]):
         if fallback_model is not None:
             logger.info("Using model passed to transform()")
             self.model = fallback_model
-            logger.info("Inspecting fallback model with KerasModelInspector")
-            inspector = KerasModelInspector()
+            logger.info("Inspecting fallback model with ModelInspector")
+            inspector = ModelInspector()
             self._model_inspection = inspector.inspect(fallback_model)
             return fallback_model
 
@@ -426,7 +426,7 @@ class CSVDataTransformer(DataTransformer[CSVSequence, keras.Model]):
         x_np = df_inputs.to_numpy()
         preds = model.predict(x_np, verbose=0)
 
-        # Delegate all prediction-shape handling to KerasPredictionFormatter
+        # Delegate all prediction-shape handling to PredictionFormatter
         df_with_preds = self.prediction_formatter.format(df_inputs, preds)
         return df_with_preds
 

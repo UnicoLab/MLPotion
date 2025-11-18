@@ -5,11 +5,11 @@ import keras
 import numpy as np
 from loguru import logger
 
-from mlpotion.frameworks.keras.models.inspection import KerasModelInspector
+from mlpotion.frameworks.keras.models.inspection import ModelInspector
 from tests.core import TestBase  # provides temp_dir, setUp/tearDown
 
 
-class TestKerasModelInspector(TestBase):
+class TestModelInspector(TestBase):
     def setUp(self) -> None:
         super().setUp()
         logger.info(f"Setting up test model for {self.__class__.__name__}")
@@ -25,7 +25,7 @@ class TestKerasModelInspector(TestBase):
             ]
         )
 
-        self.inspector = KerasModelInspector()
+        self.inspector = ModelInspector()
 
     # ------------------------------------------------------------------ #
     # Basic inspection
@@ -147,7 +147,7 @@ class TestKerasModelInspector(TestBase):
         """When include_layers=False, 'layers' should not be present in output."""
         logger.info("Testing include_layers=False behavior")
 
-        inspector = KerasModelInspector(include_layers=False, include_signatures=True)
+        inspector = ModelInspector(include_layers=False, include_signatures=True)
         info = inspector.inspect(self.model)
         self.assertNotIn("layers", info)
         self.assertIn("signatures", info)
@@ -159,7 +159,7 @@ class TestKerasModelInspector(TestBase):
         """When include_signatures=False, 'signatures' should not be present."""
         logger.info("Testing include_signatures=False behavior")
 
-        inspector = KerasModelInspector(include_layers=True, include_signatures=False)
+        inspector = ModelInspector(include_layers=True, include_signatures=False)
         info = inspector.inspect(self.model)
         self.assertIn("layers", info)
         self.assertNotIn("signatures", info)

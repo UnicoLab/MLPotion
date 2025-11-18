@@ -21,7 +21,7 @@ class ZenMLAdapter:
     Example:
         # Create business logic
         loader = TFCSVDataLoader("data/*.csv")
-        trainer = TFModelTrainer()
+        trainer = ModelTrainer()
 
         # Adapt to ZenML
         load_step = ZenMLAdapter.create_data_loader_step(loader)

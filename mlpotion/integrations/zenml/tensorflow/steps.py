@@ -17,14 +17,14 @@ from mlpotion.frameworks.tensorflow.config import (
     DataOptimizationConfig,
     DataTransformationConfig,
 )
-from mlpotion.frameworks.tensorflow.data.loaders import TFCSVDataLoader
-from mlpotion.frameworks.tensorflow.data.optimizers import TFDatasetOptimizer
-from mlpotion.frameworks.tensorflow.data.transformers import TFDataToCSVTransformer
-from mlpotion.frameworks.tensorflow.training.trainers import TFModelTrainer
-from mlpotion.frameworks.tensorflow.evaluation.evaluators import TFModelEvaluator
-from mlpotion.frameworks.tensorflow.deployment.exporters import TFModelExporter
-from mlpotion.frameworks.tensorflow.deployment.persistence import TFModelPersistence
-from mlpotion.frameworks.tensorflow.models.inspection import TFModelInspector
+from mlpotion.frameworks.tensorflow.data.loaders import CSVDataLoader
+from mlpotion.frameworks.tensorflow.data.optimizers import DatasetOptimizer
+from mlpotion.frameworks.tensorflow.data.transformers import DataToCSVTransformer
+from mlpotion.frameworks.tensorflow.training.trainers import ModelTrainer
+from mlpotion.frameworks.tensorflow.evaluation.evaluators import ModelEvaluator
+from mlpotion.frameworks.tensorflow.deployment.exporters import ModelExporter
+from mlpotion.frameworks.tensorflow.deployment.persistence import ModelPersistence
+from mlpotion.frameworks.tensorflow.models.inspection import ModelInspector
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +49,7 @@ def load_data(
     )
 
     # initializing data loader
-    loader = TFCSVDataLoader(**config.dict())
+    loader = CSVDataLoader(**config.dict())
     # loading data
     dataset = loader.load()
 
@@ -79,7 +79,7 @@ def optimize_data(
         cache=cache,
     )
 
-    optimizer = TFDatasetOptimizer(**config.dict())
+    optimizer = DatasetOptimizer(**config.dict())
     dataset = optimizer.optimize(dataset)
 
     # adding metadata
@@ -100,7 +100,7 @@ def transform_data(
     """Transform data using a TensorFlow model and save predictions to CSV."""
     logger.info(f"Transforming data and saving to: {data_output_path}")
 
-    transformer = TFDataToCSVTransformer(
+    transformer = DataToCSVTransformer(
         dataset=dataset,
         model=model,
         data_output_path=data_output_path,
@@ -137,7 +137,7 @@ def train_model(
     """Train a TensorFlow/Keras model."""
     logger.info(f"Training model for {epochs} epochs")
 
-    trainer = TFModelTrainer()
+    trainer = ModelTrainer()
 
     compile_params = {
         "optimizer": keras.optimizers.Adam(learning_rate=learning_rate),
@@ -180,7 +180,7 @@ def evaluate_model(
     """Evaluate a TensorFlow/Keras model."""
     logger.info("Evaluating model")
 
-    evaluator = TFModelEvaluator()
+    evaluator = ModelEvaluator()
 
     eval_params = {
         "verbose": verbose,
@@ -208,7 +208,7 @@ def export_model(
     """Export a TensorFlow/Keras model to disk."""
     logger.info(f"Exporting model to: {export_path}")
 
-    exporter = TFModelExporter()
+    exporter = ModelExporter()
 
     exporter.export(
         model=model,
@@ -231,7 +231,7 @@ def save_model(
     """Save a TensorFlow/Keras model to disk."""
     logger.info(f"Saving model to: {save_path}")
 
-    persistence = TFModelPersistence(path=save_path, model=model)
+    persistence = ModelPersistence(path=save_path, model=model)
     persistence.save()
 
     if metadata:
@@ -249,7 +249,7 @@ def load_model(
     """Load a TensorFlow/Keras model from disk."""
     logger.info(f"Loading model from: {model_path}")
 
-    persistence = TFModelPersistence(path=model_path)
+    persistence = ModelPersistence(path=model_path)
     model, inspection = persistence.load(inspect=inspect)
 
     if metadata:
@@ -271,7 +271,7 @@ def inspect_model(
     """Inspect a TensorFlow/Keras model."""
     logger.info("Inspecting model")
 
-    inspector = TFModelInspector(
+    inspector = ModelInspector(
         include_layers=include_layers,
         include_signatures=include_signatures,
     )

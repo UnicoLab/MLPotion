@@ -20,13 +20,12 @@ from mlpotion.frameworks.tensorflow.config import (
     DataTransformationConfig,
     ModelInspectionConfig,
 )
-from mlpotion.frameworks.tensorflow.data.loaders import TFCSVDataLoader as CSVDataLoader
-from mlpotion.frameworks.tensorflow.data.loaders import TFRecordDataLoader as RecordDataLoader
-from mlpotion.frameworks.tensorflow.data.optimizers import TFDatasetOptimizer as DatasetOptimizer
-from mlpotion.frameworks.tensorflow.deployment.exporters import TFModelExporter as ModelExporter
-from mlpotion.frameworks.tensorflow.deployment.persistence import TFModelPersistence as ModelPersistence
-from mlpotion.frameworks.tensorflow.evaluation.evaluators import TFModelEvaluator as ModelEvaluator
-from mlpotion.frameworks.tensorflow.training.trainers import TFModelTrainer as ModelTrainer
+from mlpotion.frameworks.tensorflow.data.loaders import CSVDataLoader, RecordDataLoader
+from mlpotion.frameworks.tensorflow.data.optimizers import DatasetOptimizer
+from mlpotion.frameworks.tensorflow.deployment.exporters import ModelExporter
+from mlpotion.frameworks.tensorflow.deployment.persistence import ModelPersistence
+from mlpotion.frameworks.tensorflow.evaluation.evaluators import ModelEvaluator
+from mlpotion.frameworks.tensorflow.training.trainers import ModelTrainer
 
 __all__ = [
     # Components

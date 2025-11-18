@@ -7,13 +7,13 @@ import torch
 
 from mlpotion.core.exceptions import DataLoadingError
 from mlpotion.frameworks.pytorch.data.datasets import (
-    PyTorchCSVDataset,
-    StreamingPyTorchCSVDataset,
+    CSVDataset,
+    StreamingCSVDataset,
 )
 from tests.core import TestBase  # provides temp_dir, setUp/tearDown
 
 
-class TestPyTorchCSVDataset(TestBase):
+class TestCSVDataset(TestBase):
     def setUp(self) -> None:
         super().setUp()
 
@@ -54,13 +54,13 @@ class TestPyTorchCSVDataset(TestBase):
     # Construction & basic properties
     # ------------------------------------------------------------------ #
     def test_init_raises_if_no_files_found(self) -> None:
-        """PyTorchCSVDataset should raise DataLoadingError for empty pattern."""
+        """CSVDataset should raise DataLoadingError for empty pattern."""
         with self.assertRaises(DataLoadingError):
-            _ = PyTorchCSVDataset(file_pattern="no_such_dir_123/*.csv")
+            _ = CSVDataset(file_pattern="no_such_dir_123/*.csv")
 
     def test_len_and_getitem_without_labels(self) -> None:
         """Dataset without labels returns only feature tensors."""
-        dataset = PyTorchCSVDataset(
+        dataset = CSVDataset(
             file_pattern=self.pattern,
             column_names=["feature_0", "feature_1", "target"],
             label_name=None,
@@ -77,7 +77,7 @@ class TestPyTorchCSVDataset(TestBase):
 
     def test_len_and_getitem_with_labels(self) -> None:
         """Dataset with label_name returns (features, label) tuples."""
-        dataset = PyTorchCSVDataset(
+        dataset = CSVDataset(
             file_pattern=self.pattern,
             column_names=["feature_0", "feature_1", "target"],
             label_name="target",
@@ -98,7 +98,7 @@ class TestPyTorchCSVDataset(TestBase):
 
     def test_column_selection_reduces_features(self) -> None:
         """column_names should control which features are exposed."""
-        dataset = PyTorchCSVDataset(
+        dataset = CSVDataset(
             file_pattern=self.pattern,
             column_names=["feature_0"],  # single feature
             label_name=None,
@@ -109,7 +109,7 @@ class TestPyTorchCSVDataset(TestBase):
 
     def test_column_selection_with_label_keeps_requested_features(self) -> None:
         """column_names + label_name should keep requested features and label."""
-        dataset = PyTorchCSVDataset(
+        dataset = CSVDataset(
             file_pattern=self.pattern,
             column_names=["feature_0", "feature_1", "target"],
             label_name="target",
@@ -123,7 +123,7 @@ class TestPyTorchCSVDataset(TestBase):
     def test_column_selection_missing_raises(self) -> None:
         """Missing requested columns should raise DataLoadingError."""
         with self.assertRaises(DataLoadingError):
-            _ = PyTorchCSVDataset(
+            _ = CSVDataset(
                 file_pattern=self.pattern,
                 column_names=["does_not_exist"],
                 label_name=None,
@@ -132,7 +132,7 @@ class TestPyTorchCSVDataset(TestBase):
     def test_label_column_missing_raises(self) -> None:
         """Missing label column should raise DataLoadingError."""
         with self.assertRaises(DataLoadingError):
-            _ = PyTorchCSVDataset(
+            _ = CSVDataset(
                 file_pattern=self.pattern,
                 column_names=["feature_0", "feature_1"],
                 label_name="missing_label",
@@ -140,7 +140,7 @@ class TestPyTorchCSVDataset(TestBase):
 
     def test_custom_dtype_is_respected(self) -> None:
         """dtype parameter should control tensor dtype."""
-        dataset = PyTorchCSVDataset(
+        dataset = CSVDataset(
             file_pattern=self.pattern,
             column_names=["feature_0", "feature_1", "target"],
             label_name="target",
@@ -152,7 +152,7 @@ class TestPyTorchCSVDataset(TestBase):
         self.assertEqual(y0.dtype, torch.float64)
 
 
-class TestStreamingPyTorchCSVDataset(TestBase):
+class TestStreamingCSVDataset(TestBase):
     def setUp(self) -> None:
         super().setUp()
 
@@ -195,16 +195,16 @@ class TestStreamingPyTorchCSVDataset(TestBase):
     # Construction & validation
     # ------------------------------------------------------------------ #
     def test_init_raises_if_no_files_found(self) -> None:
-        """StreamingPyTorchCSVDataset should raise if no files found."""
+        """StreamingCSVDataset should raise if no files found."""
         with self.assertRaises(DataLoadingError):
-            _ = StreamingPyTorchCSVDataset(file_pattern="no_stream_dir_123/*.csv")
+            _ = StreamingCSVDataset(file_pattern="no_stream_dir_123/*.csv")
 
     # ------------------------------------------------------------------ #
     # Iteration without labels
     # ------------------------------------------------------------------ #
     def test_streaming_without_labels_yields_features_only(self) -> None:
         """Streaming dataset without label_name should yield only feature tensors."""
-        dataset = StreamingPyTorchCSVDataset(
+        dataset = StreamingCSVDataset(
             file_pattern=self.stream_pattern,
             column_names=["feature_0", "feature_1"],
             label_name=None,
@@ -226,7 +226,7 @@ class TestStreamingPyTorchCSVDataset(TestBase):
     # ------------------------------------------------------------------ #
     def test_streaming_with_labels_yields_feature_label_tuples(self) -> None:
         """Streaming dataset with label_name yields (x, y) samples."""
-        dataset = StreamingPyTorchCSVDataset(
+        dataset = StreamingCSVDataset(
             file_pattern=self.stream_pattern,
             column_names=["feature_0", "feature_1", "target"],
             label_name="target",
@@ -259,7 +259,7 @@ class TestStreamingPyTorchCSVDataset(TestBase):
         # Pattern that matches only the bad file
         bad_pattern = bad_file.as_posix()
 
-        dataset = StreamingPyTorchCSVDataset(
+        dataset = StreamingCSVDataset(
             file_pattern=bad_pattern,
             column_names=None,
             label_name="target",
@@ -271,13 +271,13 @@ class TestStreamingPyTorchCSVDataset(TestBase):
 
     def test_streaming_respects_chunksize(self) -> None:
         """Streaming should yield all rows regardless of chunksize."""
-        dataset_small_chunk = StreamingPyTorchCSVDataset(
+        dataset_small_chunk = StreamingCSVDataset(
             file_pattern=self.stream_pattern,
             column_names=["feature_0", "feature_1"],
             label_name=None,
             chunksize=1,
         )
-        dataset_large_chunk = StreamingPyTorchCSVDataset(
+        dataset_large_chunk = StreamingCSVDataset(
             file_pattern=self.stream_pattern,
             column_names=["feature_0", "feature_1"],
             label_name=None,
@@ -292,7 +292,7 @@ class TestStreamingPyTorchCSVDataset(TestBase):
 
     def test_streaming_custom_dtype_is_respected(self) -> None:
         """dtype parameter should control tensor dtype in streaming dataset."""
-        dataset = StreamingPyTorchCSVDataset(
+        dataset = StreamingCSVDataset(
             file_pattern=self.stream_pattern,
             column_names=["feature_0", "feature_1", "target"],
             label_name="target",

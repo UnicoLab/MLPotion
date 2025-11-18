@@ -1,7 +1,7 @@
 """PyTorch model training components."""
 
-from mlpotion.frameworks.pytorch.training.trainers import PyTorchModelTrainer
+from mlpotion.frameworks.pytorch.training.trainers import ModelTrainer
 
 __all__ = [
-    "PyTorchModelTrainer",
+    "ModelTrainer",
 ]

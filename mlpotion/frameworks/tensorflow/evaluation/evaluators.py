@@ -1,8 +1,5 @@
 """TensorFlow model evaluators."""
 
-from mlpotion.frameworks.keras.evaluation.evaluators import KerasModelEvaluator
+from mlpotion.frameworks.keras.evaluation.evaluators import ModelEvaluator
 
-# Create alias
-TFModelEvaluator = KerasModelEvaluator
-
-__all__ = ["TFModelEvaluator"]
+__all__ = ["ModelEvaluator"]

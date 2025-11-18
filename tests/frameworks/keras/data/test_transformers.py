@@ -11,7 +11,7 @@ from mlpotion.core.exceptions import DataTransformationError
 from mlpotion.core.results import TransformationResult
 from mlpotion.frameworks.keras.data.loaders import CSVSequence, CSVDataLoader
 from mlpotion.frameworks.keras.data.transformers import CSVDataTransformer
-from mlpotion.frameworks.keras.deployment.persistence import KerasModelPersistence
+from mlpotion.frameworks.keras.deployment.persistence import ModelPersistence
 from tests.core import TestBase  # provides temp_dir, setUp/tearDown
 
 
@@ -289,13 +289,13 @@ class TestCSVDataTransformer(TestBase):
         self.assertIn("input_names", transformer._model_inspection)
 
     def test_load_model_and_inspection_uses_model_persistence(self) -> None:
-        """_load_model_and_inspection should use KerasModelPersistence when provided."""
+        """_load_model_and_inspection should use ModelPersistence when provided."""
         logger.info("Testing _load_model_and_inspection with model_persistence")
 
         mock_model = MagicMock(spec=keras.Model)
         inspection = {"input_names": ["x"]}
 
-        mock_persistence = MagicMock(spec=KerasModelPersistence)
+        mock_persistence = MagicMock(spec=ModelPersistence)
         mock_persistence.load.return_value = (mock_model, inspection)
 
         transformer = CSVDataTransformer(model_persistence=mock_persistence)

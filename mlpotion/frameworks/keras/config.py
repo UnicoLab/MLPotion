@@ -32,7 +32,7 @@ class DataTransformationConfig(BaseSettings):
             want the transformer (or a CSVDataLoader) to discover files.
             Not used directly by CSVDataTransformer, but reserved for future use.
         model_path: Optional path to a saved Keras model. Used when you want
-            the transformer to resolve the model via KerasModelPersistence.
+            the transformer to resolve the model via ModelPersistence.
         data_output_path: Target path for transformed CSV data. If
             `data_output_per_batch=False`, this is a single CSV file. If True,
             this is treated as a directory (or its parent directory is used).

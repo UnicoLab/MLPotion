@@ -4,14 +4,14 @@ import tensorflow as tf
 from loguru import logger
 
 from mlpotion.frameworks.tensorflow.config import DataOptimizationConfig
-from mlpotion.frameworks.tensorflow.data.optimizers import TFDatasetOptimizer
+from mlpotion.frameworks.tensorflow.data.optimizers import DatasetOptimizer
 from tests.core import TestBase  # provides temp_dir, setUpClass/tearDownClass, setUp/tearDown
 
 
-class TestTFDatasetOptimizer(TestBase):
+class TestDatasetOptimizer(TestBase):
     def setUp(self) -> None:
         super().setUp()
-        logger.info("Setting up TFDatasetOptimizer tests")
+        logger.info("Setting up DatasetOptimizer tests")
 
         # Simple 1D dataset: 10 elements [0..9]
         self.raw_dataset = tf.data.Dataset.from_tensor_slices(tf.range(10, dtype=tf.int32))
@@ -21,9 +21,9 @@ class TestTFDatasetOptimizer(TestBase):
     # ------------------------------------------------------------------ #
     def test_optimize_batches_and_prefetches_by_default(self) -> None:
         """optimize() should batch and prefetch with default settings."""
-        logger.info("Testing TFDatasetOptimizer default behavior")
+        logger.info("Testing DatasetOptimizer default behavior")
 
-        optimizer = TFDatasetOptimizer()  # batch_size=32, prefetch=True, no shuffle/cache
+        optimizer = DatasetOptimizer()  # batch_size=32, prefetch=True, no shuffle/cache
         optimized = optimizer.optimize(self.raw_dataset)
 
         self.assertIsInstance(optimized, tf.data.Dataset)
@@ -43,9 +43,9 @@ class TestTFDatasetOptimizer(TestBase):
     # ------------------------------------------------------------------ #
     def test_optimize_respects_custom_batch_size(self) -> None:
         """optimize() should respect the configured batch_size."""
-        logger.info("Testing TFDatasetOptimizer with custom batch size")
+        logger.info("Testing DatasetOptimizer with custom batch size")
 
-        optimizer = TFDatasetOptimizer(batch_size=4, prefetch=False)
+        optimizer = DatasetOptimizer(batch_size=4, prefetch=False)
         optimized = optimizer.optimize(self.raw_dataset)
 
         batches = list(optimized)
@@ -63,9 +63,9 @@ class TestTFDatasetOptimizer(TestBase):
     # ------------------------------------------------------------------ #
     def test_optimize_with_shuffle_and_cache_preserves_elements(self) -> None:
         """Using shuffle and cache should not change the multiset of elements."""
-        logger.info("Testing TFDatasetOptimizer with shuffle and cache")
+        logger.info("Testing DatasetOptimizer with shuffle and cache")
 
-        optimizer = TFDatasetOptimizer(
+        optimizer = DatasetOptimizer(
             batch_size=3,
             shuffle_buffer_size=10,
             prefetch=False,
@@ -86,7 +86,7 @@ class TestTFDatasetOptimizer(TestBase):
     # ------------------------------------------------------------------ #
     def test_from_config_creates_optimizer_with_matching_fields(self) -> None:
         """from_config() should transfer config fields onto the optimizer."""
-        logger.info("Testing TFDatasetOptimizer.from_config")
+        logger.info("Testing DatasetOptimizer.from_config")
 
         config = DataOptimizationConfig(
             batch_size=16,
@@ -95,7 +95,7 @@ class TestTFDatasetOptimizer(TestBase):
             cache=True,
         )
 
-        optimizer = TFDatasetOptimizer.from_config(config)
+        optimizer = DatasetOptimizer.from_config(config)
 
         self.assertEqual(optimizer.batch_size, 16)
         self.assertEqual(optimizer.shuffle_buffer_size, 128)

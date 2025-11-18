@@ -9,13 +9,13 @@ from torch.utils.data import DataLoader
 from mlpotion.core.exceptions import TrainingError
 from mlpotion.core.results import TrainingResult
 from mlpotion.frameworks.pytorch.config import ModelTrainingConfig
-from mlpotion.core.protocols import ModelTrainerProtocol
+from mlpotion.core.protocols import ModelTrainer as ModelTrainerProtocol
 from mlpotion.utils import trycatch
 from mlpotion.core.exceptions import ModelTrainerError
 from loguru import logger
 
 
-class PyTorchModelTrainer(ModelTrainerProtocol[nn.Module]):
+class ModelTrainer(ModelTrainerProtocol[nn.Module, DataLoader]):
     """Generic trainer for PyTorch models.
 
     This trainer makes minimal assumptions about the model:

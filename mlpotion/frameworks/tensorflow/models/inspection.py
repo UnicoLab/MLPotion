@@ -1,12 +1,8 @@
 """TensorFlow model inspection.
 
-Re-exports Keras model inspection with TensorFlow-friendly names.
+Re-exports Keras model inspection with unified API.
 """
 
-from mlpotion.frameworks.keras.models.inspection import KerasModelInspector
+from mlpotion.frameworks.keras.models.inspection import ModelInspector
 
-# Create TensorFlow-named alias
-# Users see "TFModelTrainer", internally uses KerasModelTrainer
-TFModelInspector= KerasModelInspector
-
-__all__ = ["TFModelInspector"]
+__all__ = ["ModelInspector"]

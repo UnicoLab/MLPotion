@@ -5,11 +5,11 @@ import keras
 import numpy as np
 from loguru import logger
 
-from mlpotion.frameworks.keras.evaluation.evaluators import KerasModelEvaluator  # adjust path if needed
+from mlpotion.frameworks.keras.evaluation.evaluators import ModelEvaluator
 from tests.core import TestBase  # provides temp_dir, setUp/tearDown
 
 
-class TestKerasModelEvaluator(TestBase):
+class TestModelEvaluator(TestBase):
     def setUp(self) -> None:
         super().setUp()
         logger.info(f"Setting up test data for {self.__class__.__name__}")
@@ -33,7 +33,7 @@ class TestKerasModelEvaluator(TestBase):
             ]
         )
 
-        self.evaluator = KerasModelEvaluator()
+        self.evaluator = ModelEvaluator()
 
     # ------------------------------------------------------------------ #
     # Happy path: compile + evaluate in one shot with (x, y) tuple

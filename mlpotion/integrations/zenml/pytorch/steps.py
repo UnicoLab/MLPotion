@@ -21,14 +21,14 @@ from mlpotion.frameworks.pytorch.config import (
     ModelExportConfig,
 )
 from mlpotion.frameworks.pytorch.data.datasets import (
-    PyTorchCSVDataset,
-    StreamingPyTorchCSVDataset,
+    CSVDataset,
+    StreamingCSVDataset,
 )
-from mlpotion.frameworks.pytorch.data.loaders import PyTorchDataLoaderFactory
-from mlpotion.frameworks.pytorch.training.trainers import PyTorchModelTrainer
-from mlpotion.frameworks.pytorch.evaluation.evaluators import PyTorchModelEvaluator
-from mlpotion.frameworks.pytorch.deployment.exporters import PyTorchModelExporter
-from mlpotion.frameworks.pytorch.deployment.persistence import PyTorchModelPersistence
+from mlpotion.frameworks.pytorch.data.loaders import CSVDataLoader
+from mlpotion.frameworks.pytorch.training.trainers import ModelTrainer
+from mlpotion.frameworks.pytorch.evaluation.evaluators import ModelEvaluator
+from mlpotion.frameworks.pytorch.deployment.exporters import ModelExporter
+from mlpotion.frameworks.pytorch.deployment.persistence import ModelPersistence
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +53,7 @@ def load_csv_data(
     torch_dtype = getattr(torch, dtype)
 
     # Create dataset
-    dataset = PyTorchCSVDataset(
+    dataset = CSVDataset(
         file_pattern=file_path,
         column_names=column_names,
         label_name=label_name,
@@ -70,8 +70,8 @@ def load_csv_data(
         drop_last=drop_last,
     )
 
-    # Create DataLoader using factory (exclude fields not accepted by PyTorchDataLoaderFactory)
-    loader_factory = PyTorchDataLoaderFactory(**config.dict(exclude={"file_pattern", "config"}))
+    # Create DataLoader using factory (exclude fields not accepted by CSVDataLoader)
+    loader_factory = CSVDataLoader(**config.dict(exclude={"file_pattern", "config"}))
     dataloader = loader_factory.load(dataset)
 
     if metadata:
@@ -99,7 +99,7 @@ def load_streaming_csv_data(
     torch_dtype = getattr(torch, dtype)
 
     # Create streaming dataset
-    dataset = StreamingPyTorchCSVDataset(
+    dataset = StreamingCSVDataset(
         file_pattern=file_path,
         column_names=column_names,
         label_name=label_name,
@@ -117,8 +117,8 @@ def load_streaming_csv_data(
         drop_last=False,
     )
 
-    # Create DataLoader using factory (exclude fields not accepted by PyTorchDataLoaderFactory)
-    loader_factory = PyTorchDataLoaderFactory(**config.dict(exclude={"file_pattern", "config"}))
+    # Create DataLoader using factory (exclude fields not accepted by CSVDataLoader)
+    loader_factory = CSVDataLoader(**config.dict(exclude={"file_pattern", "config"}))
     dataloader = loader_factory.load(dataset)
 
     if metadata:
@@ -154,7 +154,7 @@ def train_model(
         max_batches_per_epoch=max_batches_per_epoch,
     )
 
-    trainer = PyTorchModelTrainer()
+    trainer = ModelTrainer()
     result = trainer.train(
         model=model,
         dataloader=dataloader,
@@ -198,7 +198,7 @@ def evaluate_model(
         framework_options={"loss_fn": loss_fn, "max_batches": max_batches},
     )
 
-    evaluator = PyTorchModelEvaluator()
+    evaluator = ModelEvaluator()
     result = evaluator.evaluate(
         model=model,
         dataloader=dataloader,
@@ -243,7 +243,7 @@ def export_model(
         opset_version=opset_version,
     )
 
-    exporter = PyTorchModelExporter()
+    exporter = ModelExporter()
     result = exporter.export(model=model, config=config)
 
     if metadata:
@@ -269,7 +269,7 @@ def save_model(
     """Save a PyTorch model to disk (state_dict or full model)."""
     logger.info(f"Saving model to: {save_path}")
 
-    persistence = PyTorchModelPersistence(path=save_path, model=model)
+    persistence = ModelPersistence(path=save_path, model=model)
     persistence.save(save_full_model=save_full_model)
 
     if metadata:
@@ -295,7 +295,7 @@ def load_model(
     """Load a PyTorch model from disk."""
     logger.info(f"Loading model from: {model_path}")
 
-    persistence = PyTorchModelPersistence(path=model_path)
+    persistence = ModelPersistence(path=model_path)
     model = persistence.load(
         model_class=model_class,
         map_location=map_location,

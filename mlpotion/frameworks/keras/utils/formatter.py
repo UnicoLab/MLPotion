@@ -7,7 +7,7 @@ from loguru import logger
 
 
 @dataclass(slots=True)
-class KerasPredictionFormatter:
+class PredictionFormatter:
     """Format Keras model predictions into a pandas DataFrame (no TensorFlow).
 
     This class is backend-agnostic as long as predictions are convertible
@@ -22,6 +22,7 @@ class KerasPredictionFormatter:
         import keras
         import numpy as np
         import pandas as pd
+        from mlpotion.frameworks.keras import PredictionFormatter
 
         df = pd.DataFrame({"feature": np.arange(5)})
         model = keras.Sequential(
@@ -33,7 +34,7 @@ class KerasPredictionFormatter:
 
         preds = model.predict(df[["feature"]].to_numpy())
 
-        formatter = KerasPredictionFormatter()
+        formatter = PredictionFormatter()
         df_with_preds = formatter.format(df, preds)
         print(df_with_preds.head())
         ```

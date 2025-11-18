@@ -1,9 +1,9 @@
 """TensorFlow model deployment components."""
 
-from mlpotion.frameworks.tensorflow.deployment.exporters import TFModelExporter
-from mlpotion.frameworks.tensorflow.deployment.persistence import TFModelPersistence
+from mlpotion.frameworks.tensorflow.deployment.exporters import ModelExporter
+from mlpotion.frameworks.tensorflow.deployment.persistence import ModelPersistence
 
 __all__ = [
-    "TFModelExporter",
-    "TFModelPersistence",
+    "ModelExporter",
+    "ModelPersistence",
 ]

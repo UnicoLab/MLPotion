@@ -265,7 +265,7 @@ class TestTensorFlowZenMLSteps(TestBase):
 
         logger.info("✓ inspect_model step working correctly")
 
-    @pytest.mark.skip(reason="TFDataToCSVTransformer config needs refactoring for ZenML step usage")
+    @pytest.mark.skip(reason="DataToCSVTransformer config needs refactoring for ZenML step usage")
     def test_transform_data_step(self) -> None:
         """Test transform_data ZenML step."""
         logger.info("Testing transform_data step")

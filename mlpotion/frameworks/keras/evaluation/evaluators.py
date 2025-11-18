@@ -3,15 +3,16 @@ from typing import Any, Mapping
 
 import keras
 from keras import Model
+from keras.utils import Sequence
 from loguru import logger
 
-from mlpotion.core.protocols import ModelEvaluatorProtocol
+from mlpotion.core.protocols import ModelEvaluator as ModelEvaluatorProtocol
 from mlpotion.utils import trycatch
 from mlpotion.core.exceptions import ModelEvaluatorError
 
 
 @dataclass(slots=True)
-class KerasModelEvaluator(ModelEvaluatorProtocol[Model]):
+class ModelEvaluator(ModelEvaluatorProtocol[Model, Sequence]):
     """Generic evaluator for Keras 3 models (pure `keras`, no `tensorflow` import).
 
     This class implements `ModelEvaluatorProtocol[keras.Model]` and wraps
@@ -38,6 +39,7 @@ class KerasModelEvaluator(ModelEvaluatorProtocol[Model]):
         ```python
         import numpy as np
         import keras
+        from mlpotion.frameworks.keras import ModelEvaluator
 
         x_test = np.random.rand(100, 32).astype("float32")
         y_test = np.random.randint(0, 2, size=(100,))
@@ -50,7 +52,7 @@ class KerasModelEvaluator(ModelEvaluatorProtocol[Model]):
             ]
         )
 
-        evaluator = KerasModelEvaluator()
+        evaluator = ModelEvaluator()
 
         # Compile + evaluate in one shot
         metrics = evaluator.evaluate(
@@ -98,7 +100,7 @@ class KerasModelEvaluator(ModelEvaluatorProtocol[Model]):
 
         if kwargs:
             logger.warning(
-                "Unused evaluation kwargs in KerasModelEvaluator: "
+                "Unused evaluation kwargs in ModelEvaluator: "
                 f"{list(kwargs.keys())}"
             )
 
@@ -132,7 +134,7 @@ class KerasModelEvaluator(ModelEvaluatorProtocol[Model]):
     def _validate_model(self, model: Model) -> None:
         if not isinstance(model, keras.Model):
             raise TypeError(
-                f"KerasModelEvaluator expects a keras.Model, got {type(model)!r}"
+                f"ModelEvaluator expects a keras.Model, got {type(model)!r}"
             )
 
     def _is_compiled(self, model: Model) -> bool:
@@ -159,7 +161,7 @@ class KerasModelEvaluator(ModelEvaluatorProtocol[Model]):
             raise RuntimeError(
                 "Model does not appear to be compiled and no `compile_params` "
                 "were provided. Please compile the model manually or pass "
-                "compile_params to KerasModelEvaluator.evaluate."
+                "compile_params to ModelEvaluator.evaluate."
             )
 
         logger.info("Compiling model with provided compile_params.")

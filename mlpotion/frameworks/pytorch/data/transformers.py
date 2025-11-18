@@ -20,11 +20,11 @@ from mlpotion.frameworks.pytorch.config import (
     ModelLoadingConfig,
 )
 from mlpotion.frameworks.pytorch.data.loaders import (
-    PyTorchCSVDataset,
-    StreamingPyTorchCSVDataset,
-    PyTorchDataLoaderFactory,
+    CSVDataset,
+    StreamingCSVDataset,
+    CSVDataLoader,
 )
-from mlpotion.frameworks.pytorch.deployment.persistence import PyTorchModelPersistence
+from mlpotion.frameworks.pytorch.deployment.persistence import ModelPersistence as PyTorchModelPersistence
 from mlpotion.utils import trycatch
 
 
@@ -32,7 +32,7 @@ from mlpotion.utils import trycatch
 # Simple prediction → DataFrame helper
 # --------------------------------------------------------------------------- #
 @dataclass(slots=True)
-class PyTorchPredictionFormatter:
+class PredictionFormatter:
     """Attach PyTorch model predictions to a pandas DataFrame.
 
     - If predictions are 1D → single column ``pred``.
@@ -84,7 +84,7 @@ class PyTorchPredictionFormatter:
 # Main transformer
 # --------------------------------------------------------------------------- #
 @dataclass(slots=True)
-class PyTorchDataToCSVTransformer(
+class DataToCSVTransformer(
     DataTransformer[DataLoader[Any] | None, nn.Module | None]
 ):
     """Transform PyTorch DataLoader batches to CSV using a PyTorch model.
@@ -92,17 +92,17 @@ class PyTorchDataToCSVTransformer(
     This is the PyTorch analogue of your TF/Keras CSV transformers:
 
     - Resolves data from:
-        * a :class:`DataLoadingConfig` → :class:`PyTorchCSVDataset` or
-          :class:`StreamingPyTorchCSVDataset` + :class:`PyTorchDataLoaderFactory`,
+        * a :class:`DataLoadingConfig` → :class:`CSVDataset` or
+          :class:`StreamingCSVDataset` + :class:`CSVDataLoader`,
         * an explicit :class:`Dataset` / :class:`IterableDataset`,
         * a pre-built :class:`DataLoader` passed to :meth:`transform`.
 
     - Resolves model from:
         * an attached :class:`nn.Module`,
-        * a :class:`ModelLoadingConfig` / path via :class:`PyTorchModelPersistence`,
+        * a :class:`ModelLoadingConfig` / path via :class:`ModelPersistence`,
         * a model instance passed to :meth:`transform`.
 
-    - Uses :class:`PyTorchPredictionFormatter` to attach predictions to each batch
+    - Uses :class:`PredictionFormatter` to attach predictions to each batch
       as columns in a :class:`pandas.DataFrame`.
 
     - Saves either:
@@ -131,7 +131,7 @@ class PyTorchDataToCSVTransformer(
         model_input_feature_names:
             Optional ordered list of feature names used when building the
             feature DataFrame. If not provided, and the dataset exposes a
-            ``_feature_cols`` attribute (like :class:`PyTorchCSVDataset`),
+            ``_feature_cols`` attribute (like :class:`CSVDataset`),
             those are used instead; otherwise generic names are generated.
         data_output_path:
             Base path for CSV output. Can be a directory (for per-batch
@@ -144,9 +144,9 @@ class PyTorchDataToCSVTransformer(
 
         # DataLoader configuration (used when we build it ourselves)
         batch_size:
-            Batch size for :class:`PyTorchDataLoaderFactory`.
+            Batch size for :class:`CSVDataLoader`.
         shuffle:
-            Shuffle flag for :class:`PyTorchDataLoaderFactory`.
+            Shuffle flag for :class:`CSVDataLoader`.
         num_workers:
             Number of worker processes.
         pin_memory:
@@ -186,8 +186,8 @@ class PyTorchDataToCSVTransformer(
     prefetch_factor: int | None = None
 
     # Internal
-    _prediction_formatter: PyTorchPredictionFormatter = field(
-        default_factory=PyTorchPredictionFormatter,
+    _prediction_formatter: PredictionFormatter = field(
+        default_factory=PredictionFormatter,
         init=False,
     )
     _feature_names: list[str] | None = field(default=None, init=False)
@@ -263,7 +263,9 @@ class PyTorchDataToCSVTransformer(
 
         Example:
             ```python
-            transformer = PyTorchDataToCSVTransformer(
+            from mlpotion.frameworks.pytorch import DataToCSVTransformer
+
+            transformer = DataToCSVTransformer(
                 data_loading_config=data_cfg,
                 model_loading_config=model_cfg,
                 data_output_per_batch=False,
@@ -349,12 +351,12 @@ class PyTorchDataToCSVTransformer(
             }
 
             if streaming:
-                dataset = StreamingPyTorchCSVDataset(
+                dataset = StreamingCSVDataset(
                     chunksize=cfg.get("chunksize", 1024),
                     **dataset_kwargs,
                 )
             else:
-                dataset = PyTorchCSVDataset(**dataset_kwargs)
+                dataset = CSVDataset(**dataset_kwargs)
 
             self.dataset = dataset
             loader = self._build_dataloader_from_dataset(dataset)
@@ -370,7 +372,7 @@ class PyTorchDataToCSVTransformer(
         dataset: Dataset[Any] | IterableDataset[Any],
     ) -> DataLoader[Any]:
         """Wrap a Dataset/IterableDataset in a DataLoader via the factory."""
-        factory = PyTorchDataLoaderFactory[Any](
+        factory = CSVDataLoader[Any](
             batch_size=self.batch_size,
             shuffle=self.shuffle,
             num_workers=self.num_workers,
@@ -399,7 +401,7 @@ class PyTorchDataToCSVTransformer(
             logger.info("Using model stored on transformer instance.")
             return self.model
 
-        # 3) ModelLoadingConfig → PyTorchModelPersistence
+        # 3) ModelLoadingConfig → ModelPersistence
         if self.model_loading_config is not None:
             model_path = getattr(self.model_loading_config, "model_path", None)
             if model_path is None:
@@ -408,7 +410,7 @@ class PyTorchDataToCSVTransformer(
                 )
 
             logger.info(
-                "Loading model via PyTorchModelPersistence from: {path}",
+                "Loading model via ModelPersistence from: {path}",
                 path=model_path,
             )
 

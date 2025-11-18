@@ -15,32 +15,32 @@ from mlpotion.frameworks.tensorflow.config import (
     ModelLoadingConfig,
 )
 from mlpotion.core.exceptions import DataTransformationError
-from mlpotion.core.protocols import DataTransformer
+from mlpotion.core.protocols import DataTransformer as DataTransformerProtocol
 from mlpotion.core.results import TransformationResult
-from mlpotion.frameworks.keras.deployment.persistence import KerasModelPersistence
-from mlpotion.frameworks.keras.models.inspection import KerasModelInspector
-from mlpotion.frameworks.keras.utils.formatter import KerasPredictionFormatter
-from mlpotion.frameworks.tensorflow.data.loaders import TFCSVDataLoader
+from mlpotion.frameworks.keras.deployment.persistence import ModelPersistence
+from mlpotion.frameworks.keras.models.inspection import ModelInspector
+from mlpotion.frameworks.keras.utils.formatter import PredictionFormatter
+from mlpotion.frameworks.tensorflow.data.loaders import CSVDataLoader
 from mlpotion.utils import trycatch
 
 
 @dataclass(slots=True)
-class TFDataToCSVTransformer(DataTransformer[tf.data.Dataset, keras.Model]):
+class DataToCSVTransformer(DataTransformerProtocol[tf.data.Dataset, keras.Model]):
     """Transform TensorFlow data to CSV using a Keras model.
 
     This is the TensorFlow analogue of the Keras CSV transformer:
 
     - Resolves data from:
-        * a `DataLoadingConfig` → `TFCSVDataLoader`,
+        * a `DataLoadingConfig` → `CSVDataLoader`,
         * an explicit `dataset` (tf.data.Dataset),
         * the `dataset` argument to `transform(...)` (fallback).
     - Resolves model from:
         * an attached `keras.Model`,
-        * a `ModelLoadingConfig` / path via `KerasModelPersistence`,
+        * a `ModelLoadingConfig` / path via `ModelPersistence`,
         * the `model` argument to `transform(...)` (fallback).
-    - Optionally uses `KerasModelInspector` to derive input names from the model,
+    - Optionally uses `ModelInspector` to derive input names from the model,
       and restricts batch features to those inputs.
-    - Uses `KerasPredictionFormatter` to attach predictions to each batch
+    - Uses `PredictionFormatter` to attach predictions to each batch
       as columns in a pandas DataFrame.
     - Saves either:
         * one CSV per batch (`data_output_per_batch=True`), or
@@ -51,9 +51,9 @@ class TFDataToCSVTransformer(DataTransformer[tf.data.Dataset, keras.Model]):
           is `dict[str, tf.Tensor]`.
 
     Args:
-        data_loading_config: Optional DataLoadingConfig for TFCSVDataLoader.
+        data_loading_config: Optional DataLoadingConfig for CSVDataLoader.
         model_loading_config: Optional ModelLoadingConfig used to resolve
-            model path for KerasModelPersistence.
+            model path for ModelPersistence.
         model: Optional compiled Keras model.
         dataset: Optional tf.data.Dataset.
         model_input_signature: Optional mapping of input name → TensorSpec.
@@ -83,8 +83,8 @@ class TFDataToCSVTransformer(DataTransformer[tf.data.Dataset, keras.Model]):
 
     # Internal / derived state
     _model_inspection: dict[str, Any] | None = field(default=None, init=False)
-    _prediction_formatter: KerasPredictionFormatter = field(
-        default_factory=KerasPredictionFormatter,
+    _prediction_formatter: PredictionFormatter = field(
+        default_factory=PredictionFormatter,
         init=False,
     )
 
@@ -139,13 +139,13 @@ class TFDataToCSVTransformer(DataTransformer[tf.data.Dataset, keras.Model]):
         Resolution order:
 
         - Dataset:
-            1. If `data_loading_config` is set → use `TFCSVDataLoader`.
+            1. If `data_loading_config` is set → use `CSVDataLoader`.
             2. Else, if `self.dataset` is set → use it.
             3. Else, use `dataset` argument.
 
         - Model:
             1. If `self.model` is set → use it, and inspect if needed.
-            2. Else, if `model_loading_config` is set → use `KerasModelPersistence`.
+            2. Else, if `model_loading_config` is set → use `ModelPersistence`.
             3. Else, use `model` argument and inspect it.
 
         `config.data_output_path` is used as a fallback output path when the
@@ -181,13 +181,13 @@ class TFDataToCSVTransformer(DataTransformer[tf.data.Dataset, keras.Model]):
     ) -> tf.data.Dataset:
         """Resolve dataset from DataLoadingConfig, instance attribute, or argument."""
         if self.data_loading_config is not None:
-            logger.info("Loading dataset via TFCSVDataLoader and DataLoadingConfig")
+            logger.info("Loading dataset via CSVDataLoader and DataLoadingConfig")
             cfg = (
                 self.data_loading_config.model_dump()
                 if hasattr(self.data_loading_config, "model_dump")
                 else self.data_loading_config.dict()
             )
-            loader = TFCSVDataLoader(
+            loader = CSVDataLoader(
                 file_pattern=cfg["file_pattern"],
                 batch_size=cfg.get("batch_size", 32),
                 column_names=cfg.get("column_names"),
@@ -217,13 +217,13 @@ class TFDataToCSVTransformer(DataTransformer[tf.data.Dataset, keras.Model]):
         self,
         fallback_model: keras.Model | None = None,
     ) -> keras.Model:
-        """Resolve model and inspection metadata using KerasModelPersistence/Inspector."""
+        """Resolve model and inspection metadata using ModelPersistence/Inspector."""
         # 1) Attached model
         if self.model is not None:
             logger.info("Using model stored on transformer instance")
             if self._model_inspection is None:
-                logger.info("Inspecting attached model with KerasModelInspector")
-                inspector = KerasModelInspector()
+                logger.info("Inspecting attached model with ModelInspector")
+                inspector = ModelInspector()
                 self._model_inspection = inspector.inspect(self.model)
             return self.model
 
@@ -235,10 +235,10 @@ class TFDataToCSVTransformer(DataTransformer[tf.data.Dataset, keras.Model]):
                     "ModelLoadingConfig must define `model_path`."
                 )
             logger.info(
-                "Loading model via KerasModelPersistence (inspect=True) "
+                "Loading model via ModelPersistence (inspect=True) "
                 f"from: {model_path}"
             )
-            persistence = KerasModelPersistence(path=model_path)
+            persistence = ModelPersistence(path=model_path)
             model, inspection = persistence.load(inspect=True)
             self.model = model
             self._model_inspection = inspection
@@ -248,8 +248,8 @@ class TFDataToCSVTransformer(DataTransformer[tf.data.Dataset, keras.Model]):
         if fallback_model is not None:
             logger.info("Using model passed to transform()")
             self.model = fallback_model
-            logger.info("Inspecting fallback model with KerasModelInspector")
-            inspector = KerasModelInspector()
+            logger.info("Inspecting fallback model with ModelInspector")
+            inspector = ModelInspector()
             self._model_inspection = inspector.inspect(fallback_model)
             return fallback_model
 
@@ -336,7 +336,7 @@ class TFDataToCSVTransformer(DataTransformer[tf.data.Dataset, keras.Model]):
 
             if not isinstance(features, Mapping):
                 raise DataTransformationError(
-                    "TFDataToCSVTransformer expects dataset elements where the "
+                    "DataToCSVTransformer expects dataset elements where the "
                     "features part is a Mapping[str, tf.Tensor]. "
                     f"Got type: {type(features)!r}"
                 )

@@ -11,7 +11,7 @@ from mlpotion.core.protocols import DataLoader
 from mlpotion.utils import trycatch
 
 
-class TFCSVDataLoader(DataLoader[tf.data.Dataset]):
+class CSVDataLoader(DataLoader[tf.data.Dataset]):
     """Load CSV files into TensorFlow datasets.
 
     Args:
@@ -26,7 +26,7 @@ class TFCSVDataLoader(DataLoader[tf.data.Dataset]):
 
     Example:
         ```python
-        from mlpotion.frameworks.tensorflow.data.loaders import TFCSVDataLoader
+        from mlpotion.frameworks.tensorflow import CSVDataLoader
         from mlpotion.core.config import DataLoadingConfig
 
         # setup config with validation
@@ -37,7 +37,7 @@ class TFCSVDataLoader(DataLoader[tf.data.Dataset]):
             shuffle=True,
         )
         # create loader with config
-        loader = TFCSVDataLoader(config=config)
+        loader = CSVDataLoader(config=config)
         # load dataset
         dataset = loader.load()
         # use dataset
@@ -176,7 +176,7 @@ class TFCSVDataLoader(DataLoader[tf.data.Dataset]):
 
         Example:
             ```python
-            loader = TFCSVDataLoader(
+            loader = CSVDataLoader(
                 file_pattern="data/*.csv",
                 label_name="target",
                 config={"num_epochs": 1, "shuffle": True},
@@ -215,7 +215,7 @@ class TFCSVDataLoader(DataLoader[tf.data.Dataset]):
         return dataset
 
 
-class TFRecordDataLoader(DataLoader[tf.data.Dataset]):
+class RecordDataLoader(DataLoader[tf.data.Dataset]):
     """Loader for TFRecord files into tf.data.Dataset.
 
     Args:

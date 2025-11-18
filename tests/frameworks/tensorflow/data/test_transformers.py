@@ -10,15 +10,15 @@ from loguru import logger
 
 from mlpotion.core.exceptions import DataTransformationError
 from mlpotion.core.results import TransformationResult
-from mlpotion.frameworks.tensorflow.data.transformers import TFDataToCSVTransformer
-from mlpotion.frameworks.keras.utils.formatter import KerasPredictionFormatter
+from mlpotion.frameworks.tensorflow.data.transformers import DataToCSVTransformer
+from mlpotion.frameworks.keras.utils.formatter import PredictionFormatter
 from tests.core import TestBase  # provides temp_dir, setUp/tearDown
 
 
-class TestTFDataToCSVTransformer(TestBase):
+class TestDataToCSVTransformer(TestBase):
     def setUp(self) -> None:
         super().setUp()
-        logger.info(f"Setting up TFDataToCSVTransformer tests in {self.temp_dir}")
+        logger.info(f"Setting up DataToCSVTransformer tests in {self.temp_dir}")
 
         # simple numeric data
         self.n_samples = 10
@@ -66,7 +66,7 @@ class TestTFDataToCSVTransformer(TestBase):
         logger.info("Testing __post_init__ with missing data sources")
 
         with self.assertRaises(DataTransformationError) as ctx:
-            TFDataToCSVTransformer(
+            DataToCSVTransformer(
                 data_loading_config=None,
                 dataset=None,
                 model=self.model,
@@ -81,7 +81,7 @@ class TestTFDataToCSVTransformer(TestBase):
         ds = self.dataset_features_only
 
         with self.assertRaises(DataTransformationError) as ctx:
-            TFDataToCSVTransformer(
+            DataToCSVTransformer(
                 data_loading_config=dummy_cfg,
                 dataset=ds,
                 model=self.model,
@@ -93,7 +93,7 @@ class TestTFDataToCSVTransformer(TestBase):
         logger.info("Testing __post_init__ with missing model sources")
 
         with self.assertRaises(DataTransformationError) as ctx:
-            TFDataToCSVTransformer(
+            DataToCSVTransformer(
                 data_loading_config=MagicMock(),
                 dataset=None,
                 model=None,
@@ -109,7 +109,7 @@ class TestTFDataToCSVTransformer(TestBase):
         logger.info("Testing __post_init__ with both model sources")
 
         with self.assertRaises(DataTransformationError) as ctx:
-            TFDataToCSVTransformer(
+            DataToCSVTransformer(
                 data_loading_config=MagicMock(),
                 dataset=None,
                 model=self.model,
@@ -124,13 +124,13 @@ class TestTFDataToCSVTransformer(TestBase):
     # _load_data
     # ------------------------------------------------------------------ #
     @patch(
-        "mlpotion.frameworks.tensorflow.data.transformers.TFCSVDataLoader",
+        "mlpotion.frameworks.tensorflow.data.transformers.CSVDataLoader",
         autospec=True,
     )
     def test_load_data_uses_data_loading_config_and_tf_csv_loader(
         self, loader_cls_mock: MagicMock
     ) -> None:
-        """_load_data should construct TFCSVDataLoader with config and call load()."""
+        """_load_data should construct CSVDataLoader with config and call load()."""
         logger.info("Testing _load_data with DataLoadingConfig")
 
         # Dummy config object that returns a simple dict
@@ -147,7 +147,7 @@ class TestTFDataToCSVTransformer(TestBase):
 
         cfg = DummyDataLoadingConfig()
 
-        transformer = TFDataToCSVTransformer(
+        transformer = DataToCSVTransformer(
             data_loading_config=cfg,
             dataset=None,
             model=self.model,
@@ -174,7 +174,7 @@ class TestTFDataToCSVTransformer(TestBase):
         """_load_data should return self.dataset when set."""
         logger.info("Testing _load_data using existing dataset attribute")
 
-        transformer = TFDataToCSVTransformer(
+        transformer = DataToCSVTransformer(
             data_loading_config=None,
             dataset=self.dataset_features_only,
             model=self.model,
@@ -189,7 +189,7 @@ class TestTFDataToCSVTransformer(TestBase):
 
         # To bypass __post_init__ data validation, give a dummy data_loading_config,
         # then override after construction.
-        transformer = TFDataToCSVTransformer(
+        transformer = DataToCSVTransformer(
             data_loading_config=MagicMock(),
             dataset=None,
             model=self.model,
@@ -208,7 +208,7 @@ class TestTFDataToCSVTransformer(TestBase):
         """When model is attached, it should be reused and inspected."""
         logger.info("Testing _load_model_and_inspection with attached model")
 
-        transformer = TFDataToCSVTransformer(
+        transformer = DataToCSVTransformer(
             data_loading_config=None,
             dataset=self.dataset_features_only,
             model=self.model,
@@ -220,13 +220,13 @@ class TestTFDataToCSVTransformer(TestBase):
         self.assertIn("input_names", transformer._model_inspection)
 
     @patch(
-        "mlpotion.frameworks.tensorflow.data.transformers.KerasModelPersistence",
+        "mlpotion.frameworks.tensorflow.data.transformers.ModelPersistence",
         autospec=True,
     )
     def test_load_model_and_inspection_uses_model_loading_config(
         self, persistence_cls_mock: MagicMock
     ) -> None:
-        """_load_model_and_inspection should use KerasModelPersistence if config given."""
+        """_load_model_and_inspection should use ModelPersistence if config given."""
         logger.info("Testing _load_model_and_inspection with ModelLoadingConfig")
 
         # Dummy config with model_path attribute
@@ -242,7 +242,7 @@ class TestTFDataToCSVTransformer(TestBase):
         persistence_instance = persistence_cls_mock.return_value
         persistence_instance.load.return_value = (mock_model, inspection)
 
-        transformer = TFDataToCSVTransformer(
+        transformer = DataToCSVTransformer(
             data_loading_config=None,
             dataset=self.dataset_features_only,
             model=None,
@@ -265,7 +265,7 @@ class TestTFDataToCSVTransformer(TestBase):
 
         # Construct with a dummy model source so __post_init__ passes,
         # then remove it to force fallback on argument.
-        transformer = TFDataToCSVTransformer(
+        transformer = DataToCSVTransformer(
             data_loading_config=None,
             dataset=self.dataset_features_only,
             model=self.model,
@@ -286,7 +286,7 @@ class TestTFDataToCSVTransformer(TestBase):
 
         # Bypass __post_init__ model validation by constructing with a dummy
         # model_loading_config, then remove it.
-        transformer = TFDataToCSVTransformer(
+        transformer = DataToCSVTransformer(
             data_loading_config=None,
             dataset=self.dataset_features_only,
             model=self.model,
@@ -305,7 +305,7 @@ class TestTFDataToCSVTransformer(TestBase):
         """If model_input_signature is set, its keys should be returned."""
         logger.info("Testing _get_model_input_keys from model_input_signature")
 
-        transformer = TFDataToCSVTransformer(
+        transformer = DataToCSVTransformer(
             data_loading_config=None,
             dataset=self.dataset_features_only,
             model=self.model,
@@ -322,7 +322,7 @@ class TestTFDataToCSVTransformer(TestBase):
         """_get_model_input_keys should strip ':0' suffix from input_names."""
         logger.info("Testing _get_model_input_keys name normalization from inspection")
 
-        transformer = TFDataToCSVTransformer(
+        transformer = DataToCSVTransformer(
             data_loading_config=None,
             dataset=self.dataset_features_only,
             model=self.model,
@@ -337,7 +337,7 @@ class TestTFDataToCSVTransformer(TestBase):
         """If no signature and no inspection, None should be returned."""
         logger.info("Testing _get_model_input_keys with no metadata")
 
-        transformer = TFDataToCSVTransformer(
+        transformer = DataToCSVTransformer(
             data_loading_config=None,
             dataset=self.dataset_features_only,
             model=self.model,
@@ -360,7 +360,7 @@ class TestTFDataToCSVTransformer(TestBase):
             "b": tf.constant([3.0, 4.0], dtype=tf.float32),
         }
 
-        transformer = TFDataToCSVTransformer(
+        transformer = DataToCSVTransformer(
             data_loading_config=None,
             dataset=self.dataset_features_only,
             model=self.model,
@@ -379,7 +379,7 @@ class TestTFDataToCSVTransformer(TestBase):
             "vec": tf.constant([[1.0, 2.0], [3.0, 4.0]], dtype=tf.float32),
         }
 
-        transformer = TFDataToCSVTransformer(
+        transformer = DataToCSVTransformer(
             data_loading_config=None,
             dataset=self.dataset_features_only,
             model=self.model,
@@ -404,7 +404,7 @@ class TestTFDataToCSVTransformer(TestBase):
             }
         )
 
-        transformer = TFDataToCSVTransformer(
+        transformer = DataToCSVTransformer(
             data_loading_config=None,
             dataset=self.dataset_features_only,
             model=self.model,
@@ -427,7 +427,7 @@ class TestTFDataToCSVTransformer(TestBase):
             }
         )
 
-        transformer = TFDataToCSVTransformer(
+        transformer = DataToCSVTransformer(
             data_loading_config=None,
             dataset=self.dataset_features_only,
             model=self.model,
@@ -452,7 +452,7 @@ class TestTFDataToCSVTransformer(TestBase):
             }
         )
 
-        transformer = TFDataToCSVTransformer(
+        transformer = DataToCSVTransformer(
             data_loading_config=None,
             dataset=self.dataset_features_only,
             model=self.model,
@@ -473,7 +473,7 @@ class TestTFDataToCSVTransformer(TestBase):
         logger.info("Testing _iter_batches with features-only dataset")
 
         ds = self.dataset_features_only
-        transformer = TFDataToCSVTransformer(
+        transformer = DataToCSVTransformer(
             data_loading_config=None,
             dataset=ds,
             model=self.model,
@@ -497,7 +497,7 @@ class TestTFDataToCSVTransformer(TestBase):
         logger.info("Testing _iter_batches with (features, labels) dataset")
 
         ds = self.dataset_with_labels
-        transformer = TFDataToCSVTransformer(
+        transformer = DataToCSVTransformer(
             data_loading_config=None,
             dataset=ds,
             model=self.model,
@@ -517,7 +517,7 @@ class TestTFDataToCSVTransformer(TestBase):
 
         ds = tf.data.Dataset.from_tensor_slices(tf.range(5, dtype=tf.float32))
 
-        transformer = TFDataToCSVTransformer(
+        transformer = DataToCSVTransformer(
             data_loading_config=None,
             dataset=ds,
             model=self.model,
@@ -528,21 +528,21 @@ class TestTFDataToCSVTransformer(TestBase):
             _ = list(transformer._iter_batches(ds))
 
     # ------------------------------------------------------------------ #
-    # _transform_batch + KerasPredictionFormatter integration
+    # _transform_batch + PredictionFormatter integration
     # ------------------------------------------------------------------ #
-    @patch.object(KerasPredictionFormatter, "format", autospec=True)
+    @patch.object(PredictionFormatter, "format", autospec=True)
     def test_transform_batch_uses_prediction_formatter(
         self, format_mock: MagicMock
     ) -> None:
-        """_transform_batch should delegate prediction formatting to KerasPredictionFormatter."""
-        logger.info("Testing _transform_batch uses KerasPredictionFormatter")
+        """_transform_batch should delegate prediction formatting to PredictionFormatter."""
+        logger.info("Testing _transform_batch uses PredictionFormatter")
 
         features = {
             "x0": tf.constant([1.0, 2.0], dtype=tf.float32),
             "x1": tf.constant([3.0, 4.0], dtype=tf.float32),
         }
 
-        transformer = TFDataToCSVTransformer(
+        transformer = DataToCSVTransformer(
             data_loading_config=None,
             dataset=self.dataset_features_only,
             model=self.model,
@@ -577,7 +577,7 @@ class TestTFDataToCSVTransformer(TestBase):
             "x1": tf.constant(self.features[:, 1]),
         }
 
-        transformer = TFDataToCSVTransformer(
+        transformer = DataToCSVTransformer(
             data_loading_config=None,
             dataset=self.dataset_features_only,
             model=self.model,
@@ -589,7 +589,7 @@ class TestTFDataToCSVTransformer(TestBase):
 
         df_out = transformer._transform_batch(features=features, model=self.model)
         self.assertEqual(df_out.shape[0], self.n_samples)
-        # two inputs + prediction column (KerasPredictionFormatter default name)
+        # two inputs + prediction column (PredictionFormatter default name)
         self.assertIn("prediction", df_out.columns)
         self.assertIn("x0", df_out.columns)
         self.assertIn("x1", df_out.columns)
@@ -601,7 +601,7 @@ class TestTFDataToCSVTransformer(TestBase):
         """_save_full_data_from_batches should raise if data_output_path is None."""
         logger.info("Testing _save_full_data_from_batches without data_output_path")
 
-        transformer = TFDataToCSVTransformer(
+        transformer = DataToCSVTransformer(
             data_loading_config=None,
             dataset=self.dataset_features_only,
             model=self.model,
@@ -615,7 +615,7 @@ class TestTFDataToCSVTransformer(TestBase):
         """_save_data_per_batch should raise if data_output_path is None."""
         logger.info("Testing _save_data_per_batch without data_output_path")
 
-        transformer = TFDataToCSVTransformer(
+        transformer = DataToCSVTransformer(
             data_loading_config=None,
             dataset=self.dataset_features_only,
             model=self.model,
@@ -633,7 +633,7 @@ class TestTFDataToCSVTransformer(TestBase):
         df2 = pd.DataFrame({"x0": [3, 4], "prediction": [0.3, 0.4]})
         out_path = self.temp_dir / "full_preds.csv"
 
-        transformer = TFDataToCSVTransformer(
+        transformer = DataToCSVTransformer(
             data_loading_config=None,
             dataset=self.dataset_features_only,
             model=self.model,
@@ -657,7 +657,7 @@ class TestTFDataToCSVTransformer(TestBase):
 
         out_dir = self.temp_dir / "batches"
 
-        transformer = TFDataToCSVTransformer(
+        transformer = DataToCSVTransformer(
             data_loading_config=None,
             dataset=self.dataset_features_only,
             model=self.model,
@@ -690,7 +690,7 @@ class TestTFDataToCSVTransformer(TestBase):
         attr_path = self.temp_dir / "attr.csv"
         cfg_path = self.temp_dir / "cfg.csv"
 
-        transformer = TFDataToCSVTransformer(
+        transformer = DataToCSVTransformer(
             data_loading_config=None,
             dataset=self.dataset_features_only,
             model=self.model,
@@ -709,7 +709,7 @@ class TestTFDataToCSVTransformer(TestBase):
 
         cfg_path = self.temp_dir / "cfg.csv"
 
-        transformer = TFDataToCSVTransformer(
+        transformer = DataToCSVTransformer(
             data_loading_config=None,
             dataset=self.dataset_features_only,
             model=self.model,
@@ -734,7 +734,7 @@ class TestTFDataToCSVTransformer(TestBase):
 
         out_path = self.temp_dir / "predictions.csv"
 
-        transformer = TFDataToCSVTransformer(
+        transformer = DataToCSVTransformer(
             data_loading_config=None,
             dataset=ds,
             model=self.model,

@@ -6,12 +6,12 @@ from keras import Model
 from loguru import logger
 
 from mlpotion.core.exceptions import ModelPersistenceError
-from mlpotion.core.protocols import ModelPersistence
-from mlpotion.frameworks.keras.models.inspection import KerasModelInspector
+from mlpotion.core.protocols import ModelPersistence as ModelPersistenceProtocol
+from mlpotion.frameworks.keras.models.inspection import ModelInspector
 from mlpotion.utils import trycatch
 
 
-class KerasModelPersistence(ModelPersistence[Model]):
+class ModelPersistence(ModelPersistenceProtocol[Model]):
     """Simple persistence helper for Keras models.
 
     This class focuses on **whole-model** save/load using the native
@@ -27,7 +27,7 @@ class KerasModelPersistence(ModelPersistence[Model]):
         - `keras.models.load_model("model.h5")`
         - `keras.models.load_model("some/dir")`
 
-    Additionally, after loading, it can run a `KerasModelInspector` to
+    Additionally, after loading, it can run a `ModelInspector` to
     collect useful introspection metadata (input/output signatures, etc).
 
     Args:
@@ -39,7 +39,7 @@ class KerasModelPersistence(ModelPersistence[Model]):
 
         ```python
         import keras
-        from mlpotion.frameworks.keras import KerasModelPersistence
+        from mlpotion.frameworks.keras import ModelPersistence
 
         model = keras.Sequential(
             [
@@ -50,7 +50,7 @@ class KerasModelPersistence(ModelPersistence[Model]):
         )
 
         # Create persistence helper bound to a path and model
-        persistence = KerasModelPersistence(
+        persistence = ModelPersistence(
             path="artifacts/my_model.keras",
             model=model,
         )
@@ -59,7 +59,7 @@ class KerasModelPersistence(ModelPersistence[Model]):
         persistence.save()
 
         # Later: load the model from disk
-        loader = KerasModelPersistence(path="artifacts/my_model.keras")
+        loader = ModelPersistence(path="artifacts/my_model.keras")
         loaded_model, inspection = loader.load()
         ```
 
@@ -67,7 +67,7 @@ class KerasModelPersistence(ModelPersistence[Model]):
         Overwriting and controlling inspection:
 
         ```python
-        persistence = KerasModelPersistence(
+        persistence = ModelPersistence(
             path="artifacts/my_model.keras",
             model=model,
         )
@@ -141,7 +141,7 @@ class KerasModelPersistence(ModelPersistence[Model]):
 
         Example:
             ```python
-            persistence = KerasModelPersistence(
+            persistence = ModelPersistence(
                 path="models/my_model.keras",
                 model=my_model,
             )
@@ -177,7 +177,7 @@ class KerasModelPersistence(ModelPersistence[Model]):
         """Load a Keras model from disk and optionally inspect it.
 
         Args:
-            inspect: If True, run `KerasModelInspector` on the loaded
+            inspect: If True, run `ModelInspector` on the loaded
                 model and return its metadata as a dict. If False, skip
                 inspection and return `None` for the metadata.
             **kwargs: Extra keyword arguments forwarded to
@@ -193,7 +193,7 @@ class KerasModelPersistence(ModelPersistence[Model]):
 
         Example:
             ```python
-            loader = KerasModelPersistence(path="models/my_model.keras")
+            loader = ModelPersistence(path="models/my_model.keras")
             model, inspection = loader.load()
 
             # Optionally update the instance's model reference:
@@ -209,8 +209,8 @@ class KerasModelPersistence(ModelPersistence[Model]):
 
         inspection_result: dict[str, Any] | None = None
         if inspect:
-            logger.info("Inspecting loaded Keras model with KerasModelInspector.")
-            inspector = KerasModelInspector()
+            logger.info("Inspecting loaded Keras model with ModelInspector.")
+            inspector = ModelInspector()
             inspection_result = inspector.inspect(model)
 
         return model, inspection_result
@@ -222,7 +222,7 @@ class KerasModelPersistence(ModelPersistence[Model]):
         """Return the attached model or raise a persistence error."""
         if self._model is None:
             raise ModelPersistenceError(
-                "No Keras model attached to KerasModelPersistence. "
+                "No Keras model attached to ModelPersistence. "
                 "Pass a model to the constructor or set `.model` first."
             )
         return self._model

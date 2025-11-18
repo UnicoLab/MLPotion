@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 
 from mlpotion.core.exceptions import ModelPersistenceError
-from mlpotion.frameworks.pytorch.deployment.persistence import PyTorchModelPersistence
+from mlpotion.frameworks.pytorch.deployment.persistence import ModelPersistence
 from tests.core import TestBase  # provides temp_dir, setUp/tearDown
 
 
@@ -19,7 +19,7 @@ class SmallNet(nn.Module):
         return self.linear(x)
 
 
-class TestPyTorchModelPersistence(TestBase):
+class TestModelPersistence(TestBase):
     def setUp(self) -> None:
         super().setUp()
         torch.manual_seed(123)
@@ -33,13 +33,13 @@ class TestPyTorchModelPersistence(TestBase):
         path = self.temp_dir / "model_state.pth"
 
         # Save state_dict
-        persistence_save = PyTorchModelPersistence(path=path, model=self.model)
+        persistence_save = ModelPersistence(path=path, model=self.model)
         persistence_save.save(save_full_model=False)
 
         self.assertTrue(path.exists(), f"Expected state_dict file at {path}")
 
         # Load into a fresh model instance
-        persistence_load = PyTorchModelPersistence(path=path)
+        persistence_load = ModelPersistence(path=path)
         loaded_model = persistence_load.load(model_class=SmallNet)
 
         self.assertIsInstance(loaded_model, SmallNet)
@@ -58,12 +58,12 @@ class TestPyTorchModelPersistence(TestBase):
         """Saving a full model and loading it back should return nn.Module."""
         path = self.temp_dir / "model_full.pt"
 
-        persistence_save = PyTorchModelPersistence(path=path, model=self.model)
+        persistence_save = ModelPersistence(path=path, model=self.model)
         persistence_save.save(save_full_model=True)
 
         self.assertTrue(path.exists(), f"Expected full model file at {path}")
 
-        persistence_load = PyTorchModelPersistence(path=path)
+        persistence_load = ModelPersistence(path=path)
         loaded_model = persistence_load.load()
 
         self.assertIsInstance(loaded_model, nn.Module)
@@ -75,7 +75,7 @@ class TestPyTorchModelPersistence(TestBase):
     def test_save_without_model_attached_raises(self) -> None:
         """Calling save without an attached model should raise ModelPersistenceError."""
         path = self.temp_dir / "no_model.pth"
-        persistence = PyTorchModelPersistence(path=path)
+        persistence = ModelPersistence(path=path)
 
         with self.assertRaises(ModelPersistenceError):
             persistence.save()
@@ -86,7 +86,7 @@ class TestPyTorchModelPersistence(TestBase):
     def test_load_missing_file_raises(self) -> None:
         """Loading from a non-existing path should raise ModelPersistenceError."""
         path = self.temp_dir / "missing.pth"
-        persistence = PyTorchModelPersistence(path=path)
+        persistence = ModelPersistence(path=path)
 
         with self.assertRaises(ModelPersistenceError):
             _ = persistence.load(model_class=SmallNet)
@@ -99,7 +99,7 @@ class TestPyTorchModelPersistence(TestBase):
         path = self.temp_dir / "requires_model_class.pth"
         torch.save(self.model.state_dict(), path)
 
-        persistence = PyTorchModelPersistence(path=path)
+        persistence = ModelPersistence(path=path)
 
         with self.assertRaises(ModelPersistenceError):
             _ = persistence.load()
@@ -119,7 +119,7 @@ class TestPyTorchModelPersistence(TestBase):
         torch.manual_seed(999)
         attached_model = SmallNet(in_features=4, out_features=2)
 
-        persistence = PyTorchModelPersistence(path=path, model=attached_model)
+        persistence = ModelPersistence(path=path, model=attached_model)
         loaded_model = persistence.load()  # no model_class → uses attached
 
         self.assertIs(loaded_model, attached_model)
@@ -145,7 +145,7 @@ class TestPyTorchModelPersistence(TestBase):
         checkpoint = {"model_state_dict": state_dict, "epoch": 3}
         torch.save(checkpoint, path)
 
-        persistence = PyTorchModelPersistence(path=path)
+        persistence = ModelPersistence(path=path)
         loaded_model = persistence.load(model_class=SmallNet)
 
         self.assertIsInstance(loaded_model, SmallNet)
@@ -169,7 +169,7 @@ class TestPyTorchModelPersistence(TestBase):
         # Save a simple string as checkpoint
         torch.save("not a model or dict", path)
 
-        persistence = PyTorchModelPersistence(path=path)
+        persistence = ModelPersistence(path=path)
 
         with self.assertRaises(ModelPersistenceError):
             _ = persistence.load()
@@ -183,7 +183,7 @@ class TestPyTorchModelPersistence(TestBase):
 
         torch.save(self.model.state_dict(), path)
 
-        persistence = PyTorchModelPersistence(path=path)
+        persistence = ModelPersistence(path=path)
 
         with self.assertRaises(ModelPersistenceError):
             _ = persistence.load(model_class=SmallNet, model_kwargs={"unknown_arg": 123})

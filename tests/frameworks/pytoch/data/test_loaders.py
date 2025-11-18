@@ -9,9 +9,9 @@ import torch
 from torch.utils.data import Dataset, IterableDataset, RandomSampler, SequentialSampler
 
 from mlpotion.frameworks.pytorch.data.loaders import (
-    PyTorchCSVDataset,
-    StreamingPyTorchCSVDataset,
-    PyTorchDataLoaderFactory,
+    CSVDataset,
+    StreamingCSVDataset,
+    CSVDataLoader,
 )
 
 
@@ -44,16 +44,16 @@ class _SimpleIterableDataset(IterableDataset[int]):
 
 
 # --------------------------------------------------------------------------- #
-# Tests for PyTorchDataLoaderFactory
+# Tests for CSVDataLoader
 # --------------------------------------------------------------------------- #
-class TestPyTorchDataLoaderFactory(unittest.TestCase):
+class TestCSVDataLoader(unittest.TestCase):
     # ------------------------------------------------------------------ #
     # Map-style Dataset behaviour
     # ------------------------------------------------------------------ #
     def test_load_with_map_dataset_shuffle_true_uses_random_sampler(self) -> None:
         """With shuffle=True and a map-style Dataset, RandomSampler should be used."""
         dataset = _SimpleDataset(n=10)
-        factory = PyTorchDataLoaderFactory[int](
+        factory = CSVDataLoader[int](
             batch_size=4,
             shuffle=True,
             num_workers=0,
@@ -71,7 +71,7 @@ class TestPyTorchDataLoaderFactory(unittest.TestCase):
     def test_load_with_map_dataset_shuffle_false_uses_sequential_sampler(self) -> None:
         """With shuffle=False and a map-style Dataset, SequentialSampler should be used."""
         dataset = _SimpleDataset(n=10)
-        factory = PyTorchDataLoaderFactory[int](
+        factory = CSVDataLoader[int](
             batch_size=4,
             shuffle=False,
             num_workers=0,
@@ -87,7 +87,7 @@ class TestPyTorchDataLoaderFactory(unittest.TestCase):
     # ------------------------------------------------------------------ #
     def test_resolve_shuffle_for_iterable_forces_false(self) -> None:
         """_resolve_shuffle should force shuffle=False for IterableDataset."""
-        factory = PyTorchDataLoaderFactory[int](shuffle=True)
+        factory = CSVDataLoader[int](shuffle=True)
         # Directly test helper to avoid depending on internal DataLoader details
         effective = factory._resolve_shuffle(is_iterable=True)
         self.assertFalse(effective)
@@ -95,7 +95,7 @@ class TestPyTorchDataLoaderFactory(unittest.TestCase):
     def test_load_with_iterable_dataset_iterates_all_items(self) -> None:
         """load() with IterableDataset should still produce a working DataLoader."""
         dataset = _SimpleIterableDataset(n=10)
-        factory = PyTorchDataLoaderFactory[int](batch_size=4, shuffle=True)
+        factory = CSVDataLoader[int](batch_size=4, shuffle=True)
 
         loader = factory.load(dataset)
         # Items will be batched; each batch is a tensor of shape (batch_size,)
@@ -113,7 +113,7 @@ class TestPyTorchDataLoaderFactory(unittest.TestCase):
     def test_build_loader_kwargs_omits_worker_options_when_num_workers_zero(self) -> None:
         """persistent_workers & prefetch_factor should not be set when num_workers == 0."""
         dataset = _SimpleDataset()
-        factory = PyTorchDataLoaderFactory[int](
+        factory = CSVDataLoader[int](
             batch_size=8,
             shuffle=True,
             num_workers=0,
@@ -136,7 +136,7 @@ class TestPyTorchDataLoaderFactory(unittest.TestCase):
     def test_build_loader_kwargs_sets_worker_options_when_num_workers_positive(self) -> None:
         """persistent_workers & prefetch_factor should be passed when num_workers > 0."""
         dataset = _SimpleDataset()
-        factory = PyTorchDataLoaderFactory[int](
+        factory = CSVDataLoader[int](
             batch_size=8,
             shuffle=False,
             num_workers=2,
@@ -164,7 +164,7 @@ class TestPyTorchDataLoaderFactory(unittest.TestCase):
     def test_load_with_map_dataset_produces_correct_batch_shapes(self) -> None:
         """DataLoader produced by factory should yield batched tensors of expected shape."""
         dataset = _SimpleDataset(n=9)
-        factory = PyTorchDataLoaderFactory[int](batch_size=4, shuffle=False)
+        factory = CSVDataLoader[int](batch_size=4, shuffle=False)
 
         loader = factory.load(dataset)
         batches = list(loader)
@@ -181,9 +181,9 @@ class TestPyTorchDataLoaderFactory(unittest.TestCase):
 
 
 # --------------------------------------------------------------------------- #
-# Tests for PyTorchCSVDataset
+# Tests for CSVDataset
 # --------------------------------------------------------------------------- #
-class TestPyTorchCSVDataset(unittest.TestCase):
+class TestCSVDataset(unittest.TestCase):
     def _create_temp_csvs(self, tmpdir: str) -> list[str]:
         """Create a couple of small CSV files in tmpdir and return their paths."""
         data1 = pd.DataFrame(
@@ -209,12 +209,12 @@ class TestPyTorchCSVDataset(unittest.TestCase):
         return paths
 
     def test_pytorch_csv_dataset_loads_files_and_splits_features_and_labels(self) -> None:
-        """PyTorchCSVDataset should load CSVs, expose correct length and tensors."""
+        """CSVDataset should load CSVs, expose correct length and tensors."""
         with tempfile.TemporaryDirectory() as tmpdir:
             self._create_temp_csvs(tmpdir)
             pattern = os.path.join(tmpdir, "part*.csv")
 
-            dataset = PyTorchCSVDataset(
+            dataset = CSVDataset(
                 file_pattern=pattern,
                 label_name="label",
             )
@@ -241,7 +241,7 @@ class TestPyTorchCSVDataset(unittest.TestCase):
             self._create_temp_csvs(tmpdir)
             pattern = os.path.join(tmpdir, "part*.csv")
 
-            dataset = PyTorchCSVDataset(
+            dataset = CSVDataset(
                 file_pattern=pattern,
                 label_name=None,
             )
@@ -259,7 +259,7 @@ class TestPyTorchCSVDataset(unittest.TestCase):
             pattern = os.path.join(tmpdir, "part*.csv")
 
             # Column selection
-            dataset = PyTorchCSVDataset(
+            dataset = CSVDataset(
                 file_pattern=pattern,
                 column_names=["f1"],
                 label_name="label",
@@ -270,7 +270,7 @@ class TestPyTorchCSVDataset(unittest.TestCase):
 
             # Missing requested column
             with self.assertRaises(Exception):
-                _ = PyTorchCSVDataset(
+                _ = CSVDataset(
                     file_pattern=pattern,
                     column_names=["does_not_exist"],
                     label_name="label",
@@ -281,16 +281,16 @@ class TestPyTorchCSVDataset(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             pattern = os.path.join(tmpdir, "nonexistent_*.csv")
             with self.assertRaises(Exception):
-                _ = PyTorchCSVDataset(
+                _ = CSVDataset(
                     file_pattern=pattern,
                     label_name="label",
                 )
 
 
 # --------------------------------------------------------------------------- #
-# Tests for StreamingPyTorchCSVDataset
+# Tests for StreamingCSVDataset
 # --------------------------------------------------------------------------- #
-class TestStreamingPyTorchCSVDataset(unittest.TestCase):
+class TestStreamingCSVDataset(unittest.TestCase):
     def _create_temp_csvs(self, tmpdir: str) -> list[str]:
         data1 = pd.DataFrame(
             {
@@ -313,12 +313,12 @@ class TestStreamingPyTorchCSVDataset(unittest.TestCase):
         return [p1, p2]
 
     def test_streaming_dataset_yields_all_samples_with_labels(self) -> None:
-        """StreamingPyTorchCSVDataset should stream all rows across all files."""
+        """StreamingCSVDataset should stream all rows across all files."""
         with tempfile.TemporaryDirectory() as tmpdir:
             self._create_temp_csvs(tmpdir)
             pattern = os.path.join(tmpdir, "s*.csv")
 
-            dataset = StreamingPyTorchCSVDataset(
+            dataset = StreamingCSVDataset(
                 file_pattern=pattern,
                 label_name="label",
                 chunksize=2,  # test chunked reading
@@ -343,7 +343,7 @@ class TestStreamingPyTorchCSVDataset(unittest.TestCase):
             self._create_temp_csvs(tmpdir)
             pattern = os.path.join(tmpdir, "s*.csv")
 
-            dataset = StreamingPyTorchCSVDataset(
+            dataset = StreamingCSVDataset(
                 file_pattern=pattern,
                 label_name=None,
                 chunksize=3,
@@ -365,7 +365,7 @@ class TestStreamingPyTorchCSVDataset(unittest.TestCase):
             df.to_csv(path, index=False)
             pattern = os.path.join(tmpdir, "no_label.csv")
 
-            dataset = StreamingPyTorchCSVDataset(
+            dataset = StreamingCSVDataset(
                 file_pattern=pattern,
                 label_name="label",
                 chunksize=2,
@@ -379,7 +379,7 @@ class TestStreamingPyTorchCSVDataset(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             pattern = os.path.join(tmpdir, "nothing_here_*.csv")
             with self.assertRaises(Exception):
-                _ = StreamingPyTorchCSVDataset(
+                _ = StreamingCSVDataset(
                     file_pattern=pattern,
                     label_name="label",
                 )

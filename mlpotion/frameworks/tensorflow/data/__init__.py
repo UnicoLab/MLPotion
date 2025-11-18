@@ -1,9 +1,10 @@
 """TensorFlow data loading components."""
 
-from mlpotion.frameworks.tensorflow.data.loaders import TFCSVDataLoader
-from mlpotion.frameworks.tensorflow.data.optimizers import TFDatasetOptimizer
+from mlpotion.frameworks.tensorflow.data.loaders import CSVDataLoader, RecordDataLoader
+from mlpotion.frameworks.tensorflow.data.optimizers import DatasetOptimizer
 
 __all__ = [
-    "TFCSVDataLoader",
-    "TFDatasetOptimizer",
+    "CSVDataLoader",
+    "RecordDataLoader",
+    "DatasetOptimizer",
 ]

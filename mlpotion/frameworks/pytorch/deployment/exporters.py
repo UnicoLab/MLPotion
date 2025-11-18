@@ -9,13 +9,13 @@ from loguru import logger
 from mlpotion.core.exceptions import ExportError
 from mlpotion.core.results import ExportResult
 from mlpotion.frameworks.pytorch.config import ModelExportConfig
-from mlpotion.core.protocols import ModelExporter
+from mlpotion.core.protocols import ModelExporter as ModelExporterProtocol
 from mlpotion.utils import trycatch
 from mlpotion.core.exceptions import ModelExporterError
 
 
 @dataclass(slots=True)
-class PyTorchModelExporter(ModelExporter[nn.Module]):
+class ModelExporter(ModelExporterProtocol[nn.Module]):
     """Export PyTorch models to TorchScript, ONNX, or state_dict formats.
 
     Supported formats (`config.format`):
@@ -26,7 +26,9 @@ class PyTorchModelExporter(ModelExporter[nn.Module]):
 
     Example:
         ```python
-        exporter = PyTorchModelExporter()
+        from mlpotion.frameworks.pytorch import ModelExporter
+
+        exporter = ModelExporter()
 
         config = ModelExportConfig(
             export_path="models/model",

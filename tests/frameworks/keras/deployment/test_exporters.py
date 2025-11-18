@@ -6,11 +6,11 @@ import keras
 import numpy as np
 from loguru import logger
 
-from mlpotion.frameworks.keras.deployment.exporters import KerasModelExporter
+from mlpotion.frameworks.keras.deployment.exporters import ModelExporter
 from tests.core import TestBase  # provides temp_dir, setUp/tearDown
 
 
-class TestKerasModelExporter(TestBase):
+class TestModelExporter(TestBase):
     def setUp(self) -> None:
         super().setUp()
         logger.info(f"Creating temp directory for {self.__class__.__name__}")
@@ -32,7 +32,7 @@ class TestKerasModelExporter(TestBase):
         )
         logger.info("Test Keras model created")
 
-        self.exporter = KerasModelExporter()
+        self.exporter = ModelExporter()
 
     # ------------------------------------------------------------------ #
     # Native Keras serialization tests
@@ -179,7 +179,7 @@ class TestKerasModelExporter(TestBase):
         ]
 
         # Avoid actually saving anything: patch _save_native_keras
-        with patch.object(KerasModelExporter, "_save_native_keras") as mock_save:
+        with patch.object(ModelExporter, "_save_native_keras") as mock_save:
             logger.info("Calling exporter.export with warm-up dataset")
             self.exporter.export(
                 warmup_model,
@@ -236,10 +236,10 @@ class TestKerasModelExporter(TestBase):
         """_is_native_keras_format should recognize 'keras' and 'h5'."""
         logger.info("Testing _is_native_keras_format")
 
-        self.assertTrue(KerasModelExporter._is_native_keras_format("keras"))
-        self.assertTrue(KerasModelExporter._is_native_keras_format("h5"))
-        self.assertFalse(KerasModelExporter._is_native_keras_format("tf_saved_model"))
-        self.assertFalse(KerasModelExporter._is_native_keras_format("onnx"))
+        self.assertTrue(ModelExporter._is_native_keras_format("keras"))
+        self.assertTrue(ModelExporter._is_native_keras_format("h5"))
+        self.assertFalse(ModelExporter._is_native_keras_format("tf_saved_model"))
+        self.assertFalse(ModelExporter._is_native_keras_format("onnx"))
 
 
 if __name__ == "__main__":

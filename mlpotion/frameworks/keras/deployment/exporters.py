@@ -5,12 +5,12 @@ import keras
 from keras import Model, InputSpec
 from loguru import logger
 
-from mlpotion.core.protocols import ModelExporterProtocol
+from mlpotion.core.protocols import ModelExporter as ModelExporterProtocol
 from mlpotion.utils import trycatch
 from mlpotion.core.exceptions import ModelExporterError
 
 
-class KerasModelExporter(ModelExporterProtocol[Model]):
+class ModelExporter(ModelExporterProtocol[Model]):
     """Generic exporter for Keras 3 models (no tensorflow imports).
 
     This class implements `ModelExporterProtocol[keras.Model]` and supports
@@ -50,6 +50,7 @@ class KerasModelExporter(ModelExporterProtocol[Model]):
     Example:
         ```python
         import keras
+        from mlpotion.frameworks.keras import ModelExporter
 
         model = keras.Sequential(
             [
@@ -59,7 +60,7 @@ class KerasModelExporter(ModelExporterProtocol[Model]):
             ]
         )
 
-        exporter = KerasModelExporter()
+        exporter = ModelExporter()
 
         # 1) Native Keras v3 format
         exporter.export(model, "my_model.keras")
@@ -102,9 +103,9 @@ class KerasModelExporter(ModelExporterProtocol[Model]):
 
         Example:
             ```python
-            from mlpotion.frameworks.keras import KerasModelExporter
+            from mlpotion.frameworks.keras import ModelExporter
 
-            exporter = KerasModelExporter()
+            exporter = ModelExporter()
             exporter.export(
                 model=model,
                 path="my_model.keras",
@@ -121,7 +122,7 @@ class KerasModelExporter(ModelExporterProtocol[Model]):
 
         if kwargs:
             logger.warning(
-                "Unused export kwargs passed to KerasModelExporter: "
+                "Unused export kwargs passed to ModelExporter: "
                 f"{list(kwargs.keys())}"
             )
 
@@ -174,7 +175,7 @@ class KerasModelExporter(ModelExporterProtocol[Model]):
     def _validate_model(self, model: Model) -> None:
         if not isinstance(model, keras.Model):
             raise TypeError(
-                f"KerasModelExporter expects a keras.Model, got {type(model)!r}"
+                f"ModelExporter expects a keras.Model, got {type(model)!r}"
             )
 
     def _validate_config(self, config: Mapping[str, Any] | None) -> None:

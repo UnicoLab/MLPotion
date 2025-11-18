@@ -9,12 +9,12 @@ import torch.nn as nn
 from loguru import logger
 
 from mlpotion.core.exceptions import ModelPersistenceError
-from mlpotion.core.protocols import ModelPersistence  # if you use it generically
+from mlpotion.core.protocols import ModelPersistence as ModelPersistenceProtocol
 from mlpotion.utils import trycatch
 
 
 @dataclass(slots=True)
-class PyTorchModelPersistence(ModelPersistence[nn.Module]):
+class ModelPersistence(ModelPersistenceProtocol[nn.Module]):
     """Simple persistence helper for PyTorch models.
 
     This class focuses on saving and loading **PyTorch nn.Module** models
@@ -36,6 +36,7 @@ class PyTorchModelPersistence(ModelPersistence[nn.Module]):
         Save / load state_dict (recommended):
 
         ```python
+        from mlpotion.frameworks.pytorch import ModelPersistence
         import torch.nn as nn
 
         class MyModel(nn.Module):
@@ -43,7 +44,7 @@ class PyTorchModelPersistence(ModelPersistence[nn.Module]):
 
         model = MyModel()
 
-        persistence = PyTorchModelPersistence(
+        persistence = ModelPersistence(
             path="artifacts/my_model.pth",
             model=model,
         )
@@ -52,7 +53,7 @@ class PyTorchModelPersistence(ModelPersistence[nn.Module]):
         persistence.save(save_full_model=False)
 
         # Later, load into a fresh instance
-        loader = PyTorchModelPersistence(path="artifacts/my_model.pth")
+        loader = ModelPersistence(path="artifacts/my_model.pth")
         loaded_model = loader.load(model_class=MyModel)
         ```
 
@@ -60,7 +61,9 @@ class PyTorchModelPersistence(ModelPersistence[nn.Module]):
         Save / load full model object (less portable):
 
         ```python
-        persistence = PyTorchModelPersistence(
+        from mlpotion.frameworks.pytorch import ModelPersistence
+
+        persistence = ModelPersistence(
             path="artifacts/my_model_full.pt",
             model=model,
         )
@@ -69,7 +72,7 @@ class PyTorchModelPersistence(ModelPersistence[nn.Module]):
         persistence.save(save_full_model=True)
 
         # Load it back
-        loader = PyTorchModelPersistence(path="artifacts/my_model_full.pt")
+        loader = ModelPersistence(path="artifacts/my_model_full.pt")
         loaded_model = loader.load()
         ```
     """
@@ -241,7 +244,7 @@ class PyTorchModelPersistence(ModelPersistence[nn.Module]):
         """Return attached model or raise a persistence error."""
         if self.model is None:
             raise ModelPersistenceError(
-                "No PyTorch model attached to PyTorchModelPersistence. "
+                "No PyTorch model attached to ModelPersistence. "
                 "Pass a model to the constructor or set `.model` first."
             )
         return self.model

@@ -9,7 +9,7 @@ import torch.nn as nn
 from mlpotion.core.exceptions import ExportError
 from mlpotion.core.results import ExportResult
 from mlpotion.frameworks.pytorch.config import ModelExportConfig
-from mlpotion.frameworks.pytorch.deployment.exporters import PyTorchModelExporter
+from mlpotion.frameworks.pytorch.deployment.exporters import ModelExporter
 from tests.core import TestBase  # provides temp_dir, setUp/tearDown
 import importlib.util
 
@@ -27,10 +27,10 @@ class SimpleLinearModel(nn.Module):
         return self.fc(x)
 
 
-class TestPyTorchModelExporter(TestBase):
+class TestModelExporter(TestBase):
     def setUp(self) -> None:
         super().setUp()
-        self.exporter = PyTorchModelExporter()
+        self.exporter = ModelExporter()
         self.model = SimpleLinearModel(in_features=4, out_features=2)
         self.example_input = torch.randn(1, 4)  # batch_size=1, in_features=4
 

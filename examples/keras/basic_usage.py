@@ -11,11 +11,11 @@ This example demonstrates the core MLPotion Keras workflow:
 import tensorflow as tf
 
 from mlpotion.frameworks.keras import (
-    CSVDataLoader as KerasCSVDataLoader,
-    ModelEvaluator as KerasModelEvaluator,
-    ModelPersistence as KerasModelPersistence,
-    ModelTrainer as KerasModelTrainer,
-    ModelTrainingConfig as KerasTrainingConfig,
+    CSVDataLoader,
+    ModelEvaluator,
+    ModelPersistence,
+    ModelTrainer,
+    ModelTrainingConfig,
 )
 
 
@@ -53,7 +53,7 @@ def main() -> None:
 
     # 1. Load data
     print("\n1. Loading data from CSV...")
-    loader = KerasCSVDataLoader(
+    loader = CSVDataLoader(
         file_pattern="examples/data/sample.csv",
         label_name="target",
         batch_size=8,
@@ -69,8 +69,8 @@ def main() -> None:
 
     # 3. Train model
     print("\n3. Training model...")
-    trainer = KerasModelTrainer()
-    config = KerasTrainingConfig(
+    trainer = ModelTrainer()
+    config = ModelTrainingConfig(
         epochs=10,
         batch_size=8,
         learning_rate=0.001,
@@ -89,7 +89,7 @@ def main() -> None:
 
     # 4. Evaluate model
     print("\n4. Evaluating model...")
-    evaluator = KerasModelEvaluator()
+    evaluator = ModelEvaluator()
     eval_result = evaluator.evaluate(
         model=model,
         data=dataset,
@@ -103,7 +103,7 @@ def main() -> None:
     print("\n5. Saving model...")
     model_path = "/tmp/keras_model.keras"
 
-    persistence = KerasModelPersistence(
+    persistence = ModelPersistence(
         path=model_path,
         model=model,
     )

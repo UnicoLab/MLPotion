@@ -3,15 +3,16 @@ from typing import Any, Mapping
 
 import keras
 from keras import Model
+from keras.utils import Sequence
 from loguru import logger
 
-from mlpotion.core.protocols import ModelTrainerProtocol  # adjust import
+from mlpotion.core.protocols import ModelTrainer as ModelTrainerProtocol
 from mlpotion.utils import trycatch
 from mlpotion.core.exceptions import ModelTrainerError
 
 
 @dataclass(slots=True)
-class KerasModelTrainer(ModelTrainerProtocol[Model]):
+class ModelTrainer(ModelTrainerProtocol[Model, Sequence]):
     """Generic trainer for Keras 3 models (pure `keras`, no `tensorflow` import).
 
     This class implements `ModelTrainerProtocol[keras.Model]` and wraps
@@ -46,6 +47,7 @@ class KerasModelTrainer(ModelTrainerProtocol[Model]):
         ```python
         import numpy as np
         import keras
+        from mlpotion.frameworks.keras import ModelTrainer
 
         x_train = np.random.rand(1000, 32).astype("float32")
         y_train = np.random.randint(0, 2, size=(1000,))
@@ -61,7 +63,7 @@ class KerasModelTrainer(ModelTrainerProtocol[Model]):
             ]
         )
 
-        trainer = KerasModelTrainer()
+        trainer = ModelTrainer()
 
         history = trainer.train(
             model=model,
@@ -115,7 +117,7 @@ class KerasModelTrainer(ModelTrainerProtocol[Model]):
 
         if kwargs:
             logger.warning(
-                "Unused training kwargs in KerasModelTrainer: "
+                "Unused training kwargs in ModelTrainer: "
                 f"{list(kwargs.keys())}"
             )
 
@@ -143,7 +145,7 @@ class KerasModelTrainer(ModelTrainerProtocol[Model]):
     def _validate_model(self, model: Model) -> None:
         if not isinstance(model, keras.Model):
             raise TypeError(
-                f"KerasModelTrainer expects a keras.Model, got {type(model)!r}"
+                f"ModelTrainer expects a keras.Model, got {type(model)!r}"
             )
 
     def _is_compiled(self, model: Model) -> bool:
@@ -169,7 +171,7 @@ class KerasModelTrainer(ModelTrainerProtocol[Model]):
             raise RuntimeError(
                 "Model does not appear to be compiled and no `compile_params` "
                 "were provided. Please compile the model manually or pass "
-                "`compile_params` to KerasModelTrainer.train."
+                "`compile_params` to ModelTrainer.train."
             )
 
         logger.info("Compiling model with provided compile_params.")

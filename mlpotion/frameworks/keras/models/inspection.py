@@ -13,7 +13,7 @@ ModelLike = Any  # usually keras.Model, but duck-typed on attributes
 
 
 @dataclass(slots=True)
-class KerasModelInspector(ModelInspectorProtocol[ModelLike]):
+class ModelInspector(ModelInspectorProtocol[ModelLike]):
     """Unified inspector for Keras 3 models (pure keras, no tf import).
 
     Handles any object that looks like a Keras model (i.e. `keras.Model`),
@@ -34,6 +34,7 @@ class KerasModelInspector(ModelInspectorProtocol[ModelLike]):
     Example:
         ```python
         import keras
+        from mlpotion.frameworks.keras import ModelInspector
 
         model = keras.Sequential(
             [
@@ -43,7 +44,7 @@ class KerasModelInspector(ModelInspectorProtocol[ModelLike]):
             ]
         )
 
-        inspector = KerasUnifiedInspector(include_layers=True, include_signatures=True)
+        inspector = ModelInspector(include_layers=True, include_signatures=True)
         info = inspector.inspect(model)
 
         print("Inputs:", info["inputs"])
@@ -65,7 +66,7 @@ class KerasModelInspector(ModelInspectorProtocol[ModelLike]):
         """Inspect a Keras model-like object and return structured metadata."""
         if not isinstance(model, keras.Model):
             raise TypeError(
-                f"KerasUnifiedInspector expects a keras.Model, got {type(model)!r}"
+                f"ModelInspector expects a keras.Model, got {type(model)!r}"
             )
 
         logger.info("Inspecting Keras model...")

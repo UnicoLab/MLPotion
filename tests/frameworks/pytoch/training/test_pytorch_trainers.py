@@ -8,11 +8,11 @@ from torch.utils.data import DataLoader, TensorDataset
 from mlpotion.core.exceptions import TrainingError
 from mlpotion.core.results import TrainingResult
 from mlpotion.frameworks.pytorch.config import ModelTrainingConfig
-from mlpotion.frameworks.pytorch.training import PyTorchModelTrainer
+from mlpotion.frameworks.pytorch.training import ModelTrainer
 from tests.core import TestBase  # provides common setup (e.g. temp dirs, seeds)
 
 
-class TestPyTorchModelTrainer(TestBase):
+class TestModelTrainer(TestBase):
     def setUp(self) -> None:
         super().setUp()
         torch.manual_seed(123)
@@ -41,7 +41,7 @@ class TestPyTorchModelTrainer(TestBase):
     # ------------------------------------------------------------------ #
     def test_train_supervised_returns_training_result(self) -> None:
         """Supervised training should produce a valid TrainingResult."""
-        trainer = PyTorchModelTrainer()
+        trainer = ModelTrainer()
         config = ModelTrainingConfig(
             epochs=3,
             learning_rate=1e-2,
@@ -71,7 +71,7 @@ class TestPyTorchModelTrainer(TestBase):
     # ------------------------------------------------------------------ #
     def test_train_unsupervised_inputs_only(self) -> None:
         """Training should work when batches contain only inputs (autoencoder-style)."""
-        trainer = PyTorchModelTrainer()
+        trainer = ModelTrainer()
         config = ModelTrainingConfig(
             epochs=2,
             learning_rate=1e-2,
@@ -117,7 +117,7 @@ class TestPyTorchModelTrainer(TestBase):
                 return self.linear(x)
 
         model = CountingModel()
-        trainer = PyTorchModelTrainer()
+        trainer = ModelTrainer()
 
         max_batches = 3
         config = ModelTrainingConfig(
@@ -159,7 +159,7 @@ class TestPyTorchModelTrainer(TestBase):
                 return self.linear(x)
 
         model = CountingModel()
-        trainer = PyTorchModelTrainer()
+        trainer = ModelTrainer()
 
         max_batches = 4
         # Only max_batches provided (legacy / fallback name)
@@ -191,7 +191,7 @@ class TestPyTorchModelTrainer(TestBase):
     # ------------------------------------------------------------------ #
     def test_train_with_validation_tracks_val_loss_and_best_epoch(self) -> None:
         """Training with validation should record val_loss and best_epoch."""
-        trainer = PyTorchModelTrainer()
+        trainer = ModelTrainer()
         # Use the same loader as validation for simplicity
         config = ModelTrainingConfig(
             epochs=2,
@@ -225,7 +225,7 @@ class TestPyTorchModelTrainer(TestBase):
         empty_dataset = TensorDataset(torch.empty(0, 1), torch.empty(0, 1))
         empty_loader = DataLoader(empty_dataset, batch_size=4)
 
-        trainer = PyTorchModelTrainer()
+        trainer = ModelTrainer()
         config = ModelTrainingConfig(
             epochs=1,
             learning_rate=1e-2,
@@ -245,7 +245,7 @@ class TestPyTorchModelTrainer(TestBase):
 
     def test_train_with_unknown_optimizer_raises_training_error(self) -> None:
         """Unknown optimizer name should result in TrainingError."""
-        trainer = PyTorchModelTrainer()
+        trainer = ModelTrainer()
         config = ModelTrainingConfig(
             epochs=1,
             learning_rate=1e-3,
@@ -265,7 +265,7 @@ class TestPyTorchModelTrainer(TestBase):
 
     def test_prepare_batch_raises_on_non_tensor_inputs(self) -> None:
         """_prepare_batch should raise TrainingError when inputs are non-tensor after move."""
-        trainer = PyTorchModelTrainer()
+        trainer = ModelTrainer()
         device = torch.device("cpu")
 
         # Batch is a plain dict of non-tensors → should fail
@@ -276,7 +276,7 @@ class TestPyTorchModelTrainer(TestBase):
 
     def test_prepare_batch_stacks_list_of_tensors(self) -> None:
         """_prepare_batch should stack list/tuple of tensors into (batch_size, ...) tensor."""
-        trainer = PyTorchModelTrainer()
+        trainer = ModelTrainer()
         device = torch.device("cpu")
 
         t1 = torch.tensor([1.0])

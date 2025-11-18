@@ -9,19 +9,19 @@ from loguru import logger
 
 from mlpotion.core.exceptions import DataLoadingError
 from mlpotion.frameworks.tensorflow.data.loaders import (
-    TFCSVDataLoader,
-    TFRecordDataLoader,
+    CSVDataLoader,
+    RecordDataLoader,
 )
 from tests.core import TestBase  # provides temp_dir, setUpClass/tearDownClass, setUp/tearDown
 
 
-class TestTFCSVDataLoader(TestBase):
+class TestCSVDataLoader(TestBase):
     def setUp(self) -> None:
         super().setUp()
         # Work with *relative* patterns to avoid "Non-relative patterns are unsupported"
         self._old_cwd = os.getcwd()
         os.chdir(self.temp_dir)
-        logger.info(f"Changed CWD to {self.temp_dir} for TFCSVDataLoader tests")
+        logger.info(f"Changed CWD to {self.temp_dir} for CSVDataLoader tests")
 
         # Create a small CSV file in the temp directory
         self.file_path = self.temp_dir / "test_data.csv"
@@ -45,7 +45,7 @@ class TestTFCSVDataLoader(TestBase):
         """Valid num_epochs should be extracted and removed from config."""
         logger.info("Testing _extract_and_validate_num_epochs with valid config")
 
-        loader = TFCSVDataLoader(
+        loader = CSVDataLoader(
             file_pattern="*.csv",
             batch_size=2,
             label_name="target",
@@ -61,7 +61,7 @@ class TestTFCSVDataLoader(TestBase):
         logger.info("Testing _extract_and_validate_num_epochs with non-integer")
 
         with self.assertRaises(DataLoadingError):
-            _ = TFCSVDataLoader(
+            _ = CSVDataLoader(
                 file_pattern="*.csv",
                 config={"num_epochs": "not-an-int"},
             )
@@ -71,7 +71,7 @@ class TestTFCSVDataLoader(TestBase):
         logger.info("Testing _extract_and_validate_num_epochs with num_epochs <= 0")
 
         with self.assertRaises(DataLoadingError):
-            _ = TFCSVDataLoader(
+            _ = CSVDataLoader(
                 file_pattern="*.csv",
                 config={"num_epochs": 0},
             )
@@ -84,7 +84,7 @@ class TestTFCSVDataLoader(TestBase):
         logger.info("Testing _validate_files_exist with missing files")
 
         with self.assertRaises(DataLoadingError):
-            _ = TFCSVDataLoader(
+            _ = CSVDataLoader(
                 file_pattern="missing_*.csv",
                 config={"num_epochs": 1},
             )
@@ -93,7 +93,7 @@ class TestTFCSVDataLoader(TestBase):
         """_validate_finite_dataset should guard against num_epochs <= 0."""
         logger.info("Testing _validate_finite_dataset explicit guard")
 
-        loader = TFCSVDataLoader(
+        loader = CSVDataLoader(
             file_pattern="*.csv",
             config={"num_epochs": 1},
         )
@@ -107,9 +107,9 @@ class TestTFCSVDataLoader(TestBase):
     # ------------------------------------------------------------------ #
     def test_load_returns_dataset_with_features_and_labels(self) -> None:
         """load() should return a tf.data.Dataset with (features, labels)."""
-        logger.info("Testing TFCSVDataLoader.load() basic behaviour")
+        logger.info("Testing CSVDataLoader.load() basic behaviour")
 
-        loader = TFCSVDataLoader(
+        loader = CSVDataLoader(
             file_pattern="*.csv",
             batch_size=2,
             column_names=["feature_0", "feature_1", "target"],
@@ -132,7 +132,7 @@ class TestTFCSVDataLoader(TestBase):
 
     def test_load_applies_map_fn_when_label_name_none(self) -> None:
         """map_fn should be applied when label_name is None (features-only dataset)."""
-        logger.info("Testing TFCSVDataLoader.load() with map_fn")
+        logger.info("Testing CSVDataLoader.load() with map_fn")
 
         # Use all CSV columns and treat them as features-only (no label),
         # and let map_fn just modify feature_0.
@@ -140,7 +140,7 @@ class TestTFCSVDataLoader(TestBase):
             batch["feature_0"] = batch["feature_0"] + 42.0
             return batch
 
-        loader = TFCSVDataLoader(
+        loader = CSVDataLoader(
             file_pattern="*.csv",
             batch_size=4,
             # IMPORTANT: must match the actual CSV file (3 columns)
@@ -164,12 +164,12 @@ class TestTFCSVDataLoader(TestBase):
 
 
 
-class TestTFRecordDataLoader(TestBase):
+class TestRecordDataLoader(TestBase):
     def setUp(self) -> None:
         super().setUp()
         self._old_cwd = os.getcwd()
         os.chdir(self.temp_dir)
-        logger.info(f"Changed CWD to {self.temp_dir} for TFRecordDataLoader tests")
+        logger.info(f"Changed CWD to {self.temp_dir} for RecordDataLoader tests")
 
         # Create a small TFRecord file with simple features
         self.tfrecord_path = self.temp_dir / "data.tfrecord"
@@ -200,20 +200,20 @@ class TestTFRecordDataLoader(TestBase):
     # _validate_files_exist
     # ------------------------------------------------------------------ #
     def test_validate_files_exist_raises_if_no_tfrecord_files(self) -> None:
-        """TFRecordDataLoader should fail if no TFRecord files match the pattern."""
-        logger.info("Testing TFRecordDataLoader._validate_files_exist with missing files")
+        """RecordDataLoader should fail if no TFRecord files match the pattern."""
+        logger.info("Testing RecordDataLoader._validate_files_exist with missing files")
 
         with self.assertRaises(DataLoadingError):
-            _ = TFRecordDataLoader(
+            _ = RecordDataLoader(
                 file_pattern="missing_*.tfrecord",
                 batch_size=2,
             )
 
     def test_get_files_matching_pattern_returns_dataset_of_filenames(self) -> None:
         """_get_files_matching_pattern should return a tf.data.Dataset of filenames."""
-        logger.info("Testing TFRecordDataLoader._get_files_matching_pattern")
+        logger.info("Testing RecordDataLoader._get_files_matching_pattern")
 
-        loader = TFRecordDataLoader(
+        loader = RecordDataLoader(
             file_pattern="*.tfrecord",
             batch_size=2,
         )
@@ -234,7 +234,7 @@ class TestTFRecordDataLoader(TestBase):
         """If column_names and label_name are None, example should be returned unchanged."""
         logger.info("Testing _apply_column_label_selection with no label/columns")
 
-        loader = TFRecordDataLoader(
+        loader = RecordDataLoader(
             file_pattern="*.tfrecord",
             batch_size=2,
             column_names=None,
@@ -253,7 +253,7 @@ class TestTFRecordDataLoader(TestBase):
         """_apply_column_label_selection should split features and label."""
         logger.info("Testing _apply_column_label_selection with label and columns")
 
-        loader = TFRecordDataLoader(
+        loader = RecordDataLoader(
             file_pattern="*.tfrecord",
             batch_size=2,
             column_names=["feature_0"],
@@ -276,7 +276,7 @@ class TestTFRecordDataLoader(TestBase):
         """Missing label_name in example should raise DataLoadingError."""
         logger.info("Testing _apply_column_label_selection with missing label")
 
-        loader = TFRecordDataLoader(
+        loader = RecordDataLoader(
             file_pattern="*.tfrecord",
             batch_size=2,
             column_names=["feature_0"],

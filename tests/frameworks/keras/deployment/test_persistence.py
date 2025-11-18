@@ -3,11 +3,11 @@ import keras
 from loguru import logger
 
 from mlpotion.core.exceptions import ModelPersistenceError
-from mlpotion.frameworks.keras.deployment.persistence import KerasModelPersistence
+from mlpotion.frameworks.keras.deployment.persistence import ModelPersistence
 from tests.core import TestBase  # provides temp_dir, setup/teardown
 
 
-class TestKerasModelPersistence(TestBase):
+class TestModelPersistence(TestBase):
     def setUp(self) -> None:
         super().setUp()
         logger.info(f"Creating temp directory for {self.__class__.__name__}")
@@ -29,7 +29,7 @@ class TestKerasModelPersistence(TestBase):
         """Save a model and then load it back with inspection enabled."""
         logger.info("Testing save and load with inspection=True")
 
-        persistence = KerasModelPersistence(
+        persistence = ModelPersistence(
             path=self.model_path,
             model=self.model,
         )
@@ -42,7 +42,7 @@ class TestKerasModelPersistence(TestBase):
         self.assertTrue(self.model_path.is_file())
 
         logger.info("Loading model using a new persistence instance")
-        loader = KerasModelPersistence(path=self.model_path)
+        loader = ModelPersistence(path=self.model_path)
         loaded_model, inspection = loader.load()
 
         logger.info("Asserting loaded model and inspection output")
@@ -56,7 +56,7 @@ class TestKerasModelPersistence(TestBase):
         """Saving without an attached model should raise ModelPersistenceError."""
         logger.info("Testing save() when no model is attached")
 
-        persistence = KerasModelPersistence(path=self.model_path)
+        persistence = ModelPersistence(path=self.model_path)
 
         with self.assertRaises(ModelPersistenceError):
             persistence.save()
@@ -66,7 +66,7 @@ class TestKerasModelPersistence(TestBase):
         missing_path = self.temp_dir / "non_existent_model.keras"
         logger.info(f"Testing load() from missing path: {missing_path}")
 
-        persistence = KerasModelPersistence(path=missing_path)
+        persistence = ModelPersistence(path=missing_path)
 
         with self.assertRaises(ModelPersistenceError):
             persistence.load()
@@ -76,7 +76,7 @@ class TestKerasModelPersistence(TestBase):
         logger.info("Testing save() with overwrite=False when file already exists")
 
         # First save to create the file
-        first_persistence = KerasModelPersistence(
+        first_persistence = ModelPersistence(
             path=self.model_path,
             model=self.model,
         )
@@ -85,7 +85,7 @@ class TestKerasModelPersistence(TestBase):
         self.assertTrue(self.model_path.exists())
 
         # Second save with overwrite disabled should raise
-        second_persistence = KerasModelPersistence(
+        second_persistence = ModelPersistence(
             path=self.model_path,
             model=self.model,
         )
@@ -98,14 +98,14 @@ class TestKerasModelPersistence(TestBase):
         """Load a model with inspect=False should return None for inspection."""
         logger.info("Testing load() with inspect=False")
 
-        persistence = KerasModelPersistence(
+        persistence = ModelPersistence(
             path=self.model_path,
             model=self.model,
         )
         logger.info("Saving model before load")
         persistence.save()
 
-        loader = KerasModelPersistence(path=self.model_path)
+        loader = ModelPersistence(path=self.model_path)
         loaded_model, inspection = loader.load(inspect=False)
 
         logger.info("Asserting loaded model and absence of inspection info")

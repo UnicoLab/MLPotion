@@ -2,15 +2,15 @@
 
 import tensorflow as tf
 from mlpotion.frameworks.tensorflow.config import DataOptimizationConfig
-from mlpotion.core.protocols import DatasetOptimizer
+from mlpotion.core.protocols import DatasetOptimizer as DatasetOptimizerProtocol
 from loguru import logger
 
 
-class TFDatasetOptimizer(DatasetOptimizer[tf.data.Dataset]):
+class DatasetOptimizer(DatasetOptimizerProtocol[tf.data.Dataset]):
     """Optimize TensorFlow datasets for training performance.
 
     Example:
-        optimizer = TFDatasetOptimizer(batch_size=32, cache=True)
+        optimizer = DatasetOptimizer(batch_size=32, cache=True)
         optimized_dataset = optimizer.optimize(raw_dataset)
     """
 
@@ -98,7 +98,7 @@ class TFDatasetOptimizer(DatasetOptimizer[tf.data.Dataset]):
         return dataset
 
     @classmethod
-    def from_config(cls, config: DataOptimizationConfig) -> "TFDatasetOptimizer":
+    def from_config(cls, config: DataOptimizationConfig) -> "DatasetOptimizer":
         """Create optimizer from configuration.
 
         Args:

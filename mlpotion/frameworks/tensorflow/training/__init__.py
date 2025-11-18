@@ -1,5 +1,5 @@
 """TensorFlow training components."""
 
-from mlpotion.frameworks.tensorflow.training.trainers import TFModelTrainer
+from mlpotion.frameworks.tensorflow.training.trainers import ModelTrainer
 
-__all__ = ["TFModelTrainer"]
+__all__ = ["ModelTrainer"]

@@ -1,7 +1,7 @@
-"""TensorFlow model evaluation components."""
+"""TensorFlow model components."""
 
-from mlpotion.frameworks.tensorflow.evaluation.evaluators import TFModelEvaluator
+from mlpotion.frameworks.tensorflow.models.inspection import ModelInspector
 
 __all__ = [
-    "TFModelEvaluator",
+    "ModelInspector",
 ]

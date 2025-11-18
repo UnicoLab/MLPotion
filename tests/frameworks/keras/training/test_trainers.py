@@ -5,11 +5,11 @@ import keras
 import numpy as np
 from loguru import logger
 
-from mlpotion.frameworks.keras.training.trainers import KerasModelTrainer
+from mlpotion.frameworks.keras.training.trainers import ModelTrainer
 from tests.core import TestBase  # provides temp_dir, setUp/tearDown
 
 
-class TestKerasModelTrainer(TestBase):
+class TestModelTrainer(TestBase):
     def setUp(self) -> None:
         super().setUp()
         logger.info(f"Setting up test data for {self.__class__.__name__}")
@@ -32,7 +32,7 @@ class TestKerasModelTrainer(TestBase):
             ]
         )
 
-        self.trainer = KerasModelTrainer()
+        self.trainer = ModelTrainer()
 
     # ------------------------------------------------------------------ #
     # Happy path: compile + train in one shot with (x, y)

@@ -5,16 +5,16 @@ import pandas as pd
 from loguru import logger
 
 from mlpotion.frameworks.keras.utils.formatter import (
-    KerasPredictionFormatter,
+    PredictionFormatter,
 )
 from tests.core import TestBase
 
 
-class TestKerasPredictionFormatter(TestBase):
+class TestPredictionFormatter(TestBase):
     def setUp(self) -> None:
         super().setUp()
-        logger.info(f"Setting up KerasPredictionFormatter tests in {self.temp_dir}")
-        self.formatter = KerasPredictionFormatter()
+        logger.info(f"Setting up PredictionFormatter tests in {self.temp_dir}")
+        self.formatter = PredictionFormatter()
 
     # ------------------------------------------------------------------ #
     # Basic behaviour
