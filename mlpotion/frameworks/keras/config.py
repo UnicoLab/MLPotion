@@ -24,8 +24,8 @@ class DataLoadingConfig(BaseSettings):
 class DataTransformationConfig(BaseSettings):
     """Configuration for CSV→CSV transformations using a Keras model.
 
-    This is intentionally simpler and Keras/pandas-only compared to the
-    TensorFlow-oriented DataTransformationConfig.
+    This configuration matches the CSVDataTransformer class parameters,
+    providing a clean interface for configuring data transformation operations.
 
     Fields:
         file_pattern: Optional glob pattern for CSV files. Can be used if you
@@ -41,6 +41,10 @@ class DataTransformationConfig(BaseSettings):
         batch_size: Optional override for batching when the input dataset is a
             DataFrame or NumPy array. If None, the transformer's own batch_size
             attribute is used.
+        feature_names: Optional feature names for ndarray batches. If not set,
+            uses `feature_0`, `feature_1`, etc.
+        input_columns: Optional explicit list of columns to feed into the model.
+            If None, they will be derived from model inspection (input names).
         config: Optional dict for future/extra settings. Currently unused by
             CSVDataTransformer but kept for parity and extensibility.
     """
@@ -65,6 +69,14 @@ class DataTransformationConfig(BaseSettings):
         default=None,
         ge=1,
         description="Optional batch size override for DataFrame/NumPy input.",
+    )
+    feature_names: list[str] | None = Field(
+        default=None,
+        description="Optional feature names for ndarray batches.",
+    )
+    input_columns: list[str] | None = Field(
+        default=None,
+        description="Optional explicit list of columns to feed into the model.",
     )
     config: dict[str, Any] | None = Field(
         default=None,

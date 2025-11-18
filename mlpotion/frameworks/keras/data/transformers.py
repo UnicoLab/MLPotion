@@ -157,6 +157,9 @@ class CSVDataTransformer(DataTransformer[CSVSequence, keras.Model]):
         resolved_model = self._load_model_and_inspection(fallback_model=model)
         output_path = self._resolve_output_path(config=config)
 
+        # Apply config values if not already set on instance
+        self._apply_config_overrides(config=config)
+
         # If user did not explicitly set input_columns, derive them from inspection
         if self.input_columns is None:
             self.input_columns = self._derive_input_columns_from_inspection()
@@ -274,6 +277,33 @@ class CSVDataTransformer(DataTransformer[CSVSequence, keras.Model]):
 
         self.data_output_path = str(path)
         return self.data_output_path
+
+    def _apply_config_overrides(self, config: DataTransformationConfig) -> None:
+        """Apply config values to instance attributes if not already set.
+
+        This allows the config to override default values for optional parameters
+        like batch_size, feature_names, input_columns, and data_output_per_batch.
+        """
+        # Apply batch_size from config if not set on instance
+        if self.batch_size is None and config.batch_size is not None:
+            self.batch_size = config.batch_size
+            logger.debug(f"Applied batch_size from config: {self.batch_size}")
+
+        # Apply feature_names from config if not set on instance
+        if self.feature_names is None and config.feature_names is not None:
+            self.feature_names = config.feature_names
+            logger.debug(f"Applied feature_names from config: {self.feature_names}")
+
+        # Apply input_columns from config if not set on instance
+        if self.input_columns is None and config.input_columns is not None:
+            self.input_columns = config.input_columns
+            logger.debug(f"Applied input_columns from config: {self.input_columns}")
+
+        # Apply data_output_per_batch from config if not explicitly set to True on instance
+        # (default is False, so we check the config value)
+        if not self.data_output_per_batch and config.data_output_per_batch:
+            self.data_output_per_batch = config.data_output_per_batch
+            logger.debug(f"Applied data_output_per_batch from config: {self.data_output_per_batch}")
 
     # ------------------------------------------------------------------ #
     # Model inspection → input columns
