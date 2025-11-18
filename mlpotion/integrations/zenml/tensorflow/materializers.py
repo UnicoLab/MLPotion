@@ -195,10 +195,33 @@ class TFRecordDatasetMaterializer(BaseMaterializer):
         flat_spec_leaves = self._flatten_element_spec(element_spec)
         num_leaves = len(flat_spec_leaves)
 
+        # Get concrete shapes from the first batch element (if available)
+        # We store shapes WITHOUT the batch dimension to handle variable batch sizes
+        concrete_shapes = None
+        try:
+            first_batch = next(iter(data.take(1)))
+            flat_tensors_sample: list[tf.Tensor] = []
+            self._flatten_data_with_spec(first_batch, element_spec, flat_tensors_sample)
+            # Store the shape WITHOUT the first (batch) dimension
+            # This allows the materializer to work with variable batch sizes
+            concrete_shapes = []
+            for t in flat_tensors_sample:
+                shape_list = list(t.shape.as_list())
+                # Remove the first (batch) dimension, keep the rest
+                if len(shape_list) > 1:
+                    shape_without_batch = [None] + shape_list[1:]  # None for batch dim
+                else:
+                    shape_without_batch = [None]  # Just batch dimension
+                concrete_shapes.append(shape_without_batch)
+        except Exception:
+            # If we can't get a sample, proceed without concrete shapes
+            pass
+
         metadata = {
-            "format_version": "3.0",
+            "format_version": "3.1",  # Increment version for new feature
             "element_spec": serialized_spec,
             "num_leaves": num_leaves,
+            "concrete_shapes": concrete_shapes,  # Store actual shapes if available
         }
 
         with open(metadata_path, "w", encoding="utf-8") as f:
@@ -241,9 +264,12 @@ class TFRecordDatasetMaterializer(BaseMaterializer):
 
         element_spec = self._deserialize_element_spec(metadata["element_spec"])
         num_leaves = metadata["num_leaves"]
+        concrete_shapes = metadata.get("concrete_shapes", None)  # May be None for older versions
 
         logger.info("Loaded element_spec: %s", element_spec)
         logger.info("Expected number of leaves: %s", num_leaves)
+        if concrete_shapes:
+            logger.info("Concrete shapes available: %s", concrete_shapes)
 
         flat_spec_leaves = self._flatten_element_spec(element_spec)
         if len(flat_spec_leaves) != num_leaves:
@@ -263,16 +289,44 @@ class TFRecordDatasetMaterializer(BaseMaterializer):
                 key = f"f{i}"
 
                 if leaf_spec.dtype in (tf.float32, tf.float64, tf.int32, tf.int64):
-                    # Numeric: stored as VarLenFeature
+                    # Numeric: stored as VarLenFeature, results in 1D tensor
                     dense = tf.sparse.to_dense(parsed[key])
                     tensor = tf.cast(dense, leaf_spec.dtype)
+
+                    # Use concrete shape if available, otherwise fall back to spec-based logic
+                    if concrete_shapes and i < len(concrete_shapes):
+                        # We have the actual shape from when the data was saved
+                        concrete_shape = concrete_shapes[i]
+                        # Replace None with -1 for reshape
+                        target_shape = [d if d is not None else -1 for d in concrete_shape]
+                        tensor = tf.reshape(tensor, target_shape)
+                        # Set the shape with proper None values
+                        tensor.set_shape(concrete_shape)
+                    else:
+                        # Fallback to spec-based reshaping (legacy behavior)
+                        if leaf_spec.shape.rank is not None:
+                            if leaf_spec.shape.rank == 1:
+                                # Original was 1D, VarLen already gives us 1D - just set shape
+                                tensor.set_shape(leaf_spec.shape)
+                            elif leaf_spec.shape.rank > 1:
+                                # Original was multi-dimensional - need to reshape from 1D
+                                shape_list = leaf_spec.shape.as_list()
+                                none_indices = [i for i, d in enumerate(shape_list) if d is None]
+
+                                if len(none_indices) <= 1:
+                                    # Safe to reshape with at most one -1
+                                    target_shape = [d if d is not None else -1 for d in shape_list]
+                                    tensor = tf.reshape(tensor, target_shape)
+                                    tensor.set_shape(leaf_spec.shape)
+                        else:
+                            # Unknown rank - just set shape
+                            tensor.set_shape(leaf_spec.shape)
                 else:
                     # Other dtypes: stored as serialized bytes
                     serialized = parsed[key]
                     tensor = tf.io.parse_tensor(serialized, out_type=leaf_spec.dtype)
+                    tensor.set_shape(leaf_spec.shape)
 
-                # Give TF a known rank; batch dim stays None.
-                tensor.set_shape(leaf_spec.shape)
                 flat_tensors.append(tensor)
 
             # Rebuild nested structure
@@ -434,9 +488,12 @@ class TFRecordDatasetMaterializer(BaseMaterializer):
     def _serialize_element_spec(self, spec: Any) -> dict:
         """Serialize element_spec to a JSON-friendly dict."""
         if isinstance(spec, tf.TensorSpec):
+            # Store both the full shape and the rank
+            shape_list = [int(d) if d is not None else -1 for d in spec.shape]
             return {
                 "type": "TensorSpec",
-                "shape": [int(d) if d is not None else -1 for d in spec.shape],
+                "shape": shape_list,
+                "rank": spec.shape.rank,  # Store rank explicitly
                 "dtype": spec.dtype.name,
             }
         if isinstance(spec, dict):
@@ -484,11 +541,207 @@ class TFRecordDatasetMaterializer(BaseMaterializer):
 
 
 # Register the TensorflowDatasetMaterializer with the actual Dataset class (only if real class)
+# if _is_dataset_real_class:
+#     try:
+#         materializer_registry.register_and_overwrite_type(
+#             key=tf.data.Dataset,
+#             type_=TFRecordDatasetMaterializer,
+#             artifact_type=ArtifactType.DATA,
+#         )
+#     except Exception:
+#         pass  # Registration may fail in test environments
+
+
+class TFConfigDatasetMaterializer(BaseMaterializer):
+    """Materializer for tf.data.Dataset created from CSV files.
+
+    Instead of serializing the entire dataset to TFRecords, this materializer
+    stores only the configuration needed to recreate the dataset using
+    `tf.data.experimental.make_csv_dataset`. This is much more efficient and
+    avoids shape-related issues during serialization/deserialization.
+
+    This materializer works specifically with datasets created via:
+    - `tf.data.experimental.make_csv_dataset`
+    - MLPotion's `TFCSVDataLoader`
+
+    Advantages:
+    - Lightweight: Only stores config, not data
+    - Fast: No TFRecord serialization overhead
+    - Reliable: Recreates dataset with exact same parameters
+    - Flexible: Works with any subsequent transformations (batching, shuffling, etc.)
+    """
+
+    ASSOCIATED_TYPES = (tf.data.Dataset,)
+    ASSOCIATED_ARTIFACT_TYPE = ArtifactType.DATA
+
+    def load(self, data_type: Type[Any]) -> tf.data.Dataset:
+        """Load dataset by recreating it from stored configuration.
+
+        Args:
+            data_type: The type of the data to load.
+
+        Returns:
+            Recreated tf.data.Dataset with the same configuration.
+        """
+        config_path = Path(self.uri) / "config.json"
+
+        logger.info("Loading CSV dataset config from: %s", config_path)
+
+        with open(config_path, "r", encoding="utf-8") as f:
+            config = json.load(f)
+
+        logger.info("Recreating dataset with config: %s", config)
+
+        # Extract the make_csv_dataset parameters
+        dataset = tf.data.experimental.make_csv_dataset(
+            file_pattern=config["file_pattern"],
+            batch_size=config["batch_size"],
+            label_name=config.get("label_name"),
+            column_names=config.get("column_names"),
+            num_epochs=config.get("num_epochs", 1),
+            **config.get("extra_params", {}),
+        )
+
+        # Apply any transformations that were recorded
+        transformations = config.get("transformations", [])
+        for transform in transformations:
+            transform_type = transform["type"]
+            params = transform["params"]
+
+            if transform_type == "batch":
+                dataset = dataset.batch(params["batch_size"])
+            elif transform_type == "shuffle":
+                dataset = dataset.shuffle(params["buffer_size"])
+            elif transform_type == "prefetch":
+                buffer_size = params["buffer_size"]
+                if buffer_size == "AUTOTUNE":
+                    buffer_size = tf.data.AUTOTUNE
+                dataset = dataset.prefetch(buffer_size)
+            elif transform_type == "unbatch":
+                dataset = dataset.unbatch()
+            elif transform_type == "repeat":
+                count = params.get("count")
+                dataset = dataset.repeat(count)
+            # Add more transformation types as needed
+
+        logger.info("✅ Successfully recreated CSV dataset")
+        return dataset
+
+    def save(self, data: tf.data.Dataset) -> None:
+        """Save dataset configuration instead of actual data.
+
+        This method attempts to extract the original CSV loading configuration
+        from the dataset. If the dataset doesn't have this metadata, it falls
+        back to the TFRecord materializer.
+
+        Args:
+            data: The dataset to save configuration for.
+        """
+        config_path = Path(self.uri) / "config.json"
+        config_path.parent.mkdir(parents=True, exist_ok=True)
+
+        logger.info("Saving CSV dataset config to: %s", config_path)
+
+        # Try to extract configuration from the dataset
+        # This requires the dataset to have been created with our loader
+        # or to have metadata attached
+        config = self._extract_config_from_dataset(data)
+
+        if config is None:
+            logger.warning(
+                "Could not extract CSV config from dataset. "
+                "This materializer only works with datasets created from CSV files. "
+                "Falling back to TFRecord materializer."
+            )
+            # Fall back to TFRecord materializer
+            from mlpotion.integrations.zenml.tensorflow.materializers import (
+                TFRecordDatasetMaterializer,
+            )
+
+            tfrecord_materializer = TFRecordDatasetMaterializer(self.uri)
+            tfrecord_materializer.save(data)
+            return
+
+        with open(config_path, "w", encoding="utf-8") as f:
+            json.dump(config, f, indent=2)
+
+        logger.info("✅ Successfully saved CSV dataset config")
+
+    def _extract_config_from_dataset(self, dataset: tf.data.Dataset) -> dict | None:
+        """Extract CSV loading configuration from dataset.
+
+        This attempts to find the original make_csv_dataset parameters by:
+        1. Checking for attached metadata (if dataset was created by our loader)
+        2. Inspecting the dataset's internal structure
+        3. Using reasonable defaults if parameters can't be extracted
+
+        Args:
+            dataset: The dataset to extract config from.
+
+        Returns:
+            Configuration dict or None if this isn't a CSV dataset.
+        """
+        # Try to get metadata that was attached by TFCSVDataLoader
+        if hasattr(dataset, "_csv_config"):
+            return dataset._csv_config
+
+        # Try to infer from dataset structure
+        # This is a heuristic approach for datasets without explicit metadata
+        try:
+            # Check if this looks like a CSV dataset
+            element_spec = dataset.element_spec
+
+            # CSV datasets typically have (OrderedDict, label) or just OrderedDict structure
+            if isinstance(element_spec, tuple) and len(element_spec) == 2:
+                features_spec, label_spec = element_spec
+                if isinstance(features_spec, dict):
+                    # This looks like a CSV dataset with labels
+                    logger.info("Detected CSV-like dataset structure with labels")
+                    return self._create_default_config(element_spec)
+            elif isinstance(element_spec, dict):
+                # CSV dataset without labels
+                logger.info("Detected CSV-like dataset structure without labels")
+                return self._create_default_config(element_spec)
+
+        except Exception as e:
+            logger.debug("Failed to infer CSV config: %s", e)
+
+        return None
+
+    def _create_default_config(self, element_spec: Any) -> dict:
+        """Create a default configuration when exact params aren't available.
+
+        This creates a best-effort configuration that may not perfectly
+        recreate the original dataset but will produce a compatible one.
+
+        Args:
+            element_spec: The element spec of the dataset.
+
+        Returns:
+            Default configuration dict.
+        """
+        logger.warning(
+            "Creating default CSV config - original parameters not available. "
+            "The recreated dataset may not exactly match the original."
+        )
+
+        return {
+            "file_pattern": "**/*.csv",  # Placeholder - user must update
+            "batch_size": 32,
+            "label_name": None,
+            "column_names": None,
+            "num_epochs": 1,
+            "extra_params": {"ignore_errors": True},
+            "transformations": [],
+            "_is_default": True,
+            "_note": "This config was auto-generated. Update file_pattern and other params as needed.",
+        }
+
 if _is_dataset_real_class:
     try:
         materializer_registry.register_and_overwrite_type(
             key=tf.data.Dataset,
-            type_=TFRecordDatasetMaterializer,
+            type_=TFConfigDatasetMaterializer,
             artifact_type=ArtifactType.DATA,
         )
     except Exception:

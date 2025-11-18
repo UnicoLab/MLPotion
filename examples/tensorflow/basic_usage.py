@@ -12,12 +12,12 @@ This example demonstrates the core MLPotion TensorFlow workflow:
 import tensorflow as tf
 
 from mlpotion.frameworks.tensorflow import (
-    TFCSVDataLoader,
-    TFDatasetOptimizer,
-    TFModelEvaluator,
-    TFModelPersistence,
-    TFModelTrainer,
-    TensorFlowTrainingConfig,
+    CSVDataLoader,
+    DatasetOptimizer,
+    ModelEvaluator,
+    ModelPersistence,
+    ModelTrainer,
+    ModelTrainingConfig,
 )
 
 
@@ -29,16 +29,29 @@ def main() -> None:
 
     # 1. Load data
     print("\n1. Loading data...")
-    loader = TFCSVDataLoader(
+    loader = CSVDataLoader(
         file_pattern="examples/data/sample.csv",
         label_name="target",
+        batch_size=1,  # Load unbatched, let DatasetOptimizer handle batching
     )
     dataset = loader.load()
     print(f"Dataset: {dataset}")
 
+    # Unbatch the dataset first (since CSVDataLoader batches by default)
+    dataset = dataset.unbatch()
+
+    # Transform OrderedDict to single tensor
+    def prepare_features(features, label):
+        """Convert OrderedDict of features to single tensor."""
+        feature_list = [features[key] for key in sorted(features.keys())]
+        stacked_features = tf.stack(feature_list, axis=-1)
+        return stacked_features, label
+
+    dataset = dataset.map(prepare_features)
+
     # 2. Optimize dataset
     print("\n2. Optimizing dataset...")
-    optimizer = TFDatasetOptimizer(batch_size=8, shuffle_buffer_size=100)
+    optimizer = DatasetOptimizer(batch_size=8, shuffle_buffer_size=100)
     dataset = optimizer.optimize(dataset)
 
     # 3. Create model
@@ -59,39 +72,47 @@ def main() -> None:
 
     # 4. Train model
     print("\n4. Training model...")
-    trainer = TFModelTrainer()
-    config = TensorFlowTrainingConfig(
+    trainer = ModelTrainer()
+    config = ModelTrainingConfig(
         epochs=10,
         batch_size=8,
         learning_rate=0.001,
         verbose=1,
+    ).model_dump()
+
+    result = trainer.train(
+        model=model,
+        data=dataset,
+        **config,
     )
-    result = trainer.train(model, dataset, config)
 
     print(f"\nTraining completed!")
-    print(f"Training time: {result.training_time:.2f}s")
-    print(f"Final loss: {result.metrics.get('loss', 'N/A'):.4f}")
+    print(f"{result=}")
 
     # 5. Evaluate model
     print("\n5. Evaluating model...")
-    evaluator = TFModelEvaluator()
-    eval_result = evaluator.evaluate(model, dataset, config)
-
-    print(f"Evaluation completed in {eval_result.evaluation_time:.2f}s")
-    print(f"Evaluation metrics:")
-    for metric_name, metric_value in eval_result.metrics.items():
-        print(f"  - {metric_name}: {metric_value:.4f}")
+    evaluator = ModelEvaluator()
+    eval_result = evaluator.evaluate(
+        model=model,
+        data=dataset,
+    )
+    print(f"{eval_result=}")
 
     # 6. Save model
     print("\n6. Saving model...")
-    persistence = TFModelPersistence()
-    model_path = "/tmp/tensorflow_model"
-    persistence.save(model, model_path, save_format="tf")
+    model_path = "/tmp/tensorflow_model.keras"
+    persistence = ModelPersistence(
+        path=model_path,
+        model=model,
+    )
+    persistence.save(
+        save_format=".keras",
+    )
     print(f"Model saved to: {model_path}")
 
     # 7. Load model
     print("\n7. Loading model...")
-    loaded_model = persistence.load(model_path)
+    loaded_model = persistence.load()
     print(f"Model loaded successfully: {type(loaded_model)}")
 
     print("\n" + "=" * 60)

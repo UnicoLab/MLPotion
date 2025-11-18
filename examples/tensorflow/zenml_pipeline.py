@@ -14,7 +14,7 @@ Setup:
 import tensorflow as tf
 from zenml import pipeline, step
 
-from mlpotion.frameworks.tensorflow import TensorFlowTrainingConfig
+from mlpotion.frameworks.tensorflow import ModelTrainingConfig
 from mlpotion.integrations.zenml.tensorflow.steps import (
     evaluate_model,
     export_model,
@@ -25,20 +25,40 @@ from mlpotion.integrations.zenml.tensorflow.steps import (
 )
 
 
-@step
+@step(enable_cache=False)  # Disable caching to ensure fresh model
 def create_model() -> tf.keras.Model:
-    """Create and compile a TensorFlow model.
+    """Create and compile a TensorFlow model that accepts dict inputs.
 
     Returns:
         Compiled TensorFlow/Keras model ready for training.
     """
-    model = tf.keras.Sequential([
-        tf.keras.layers.Dense(64, activation="relu", input_shape=(10,)),
-        tf.keras.layers.Dropout(0.2),
-        tf.keras.layers.Dense(32, activation="relu"),
-        tf.keras.layers.Dropout(0.2),
-        tf.keras.layers.Dense(1),
-    ])
+    # Create inputs for each feature (10 features: feature_0 to feature_9)
+    # After batching, make_csv_dataset produces tensors with shape (batch_size,) for each scalar feature
+    # The materializer now correctly preserves this shape as (None,) where None is the batch dimension
+    inputs = {}
+    feature_list = []
+
+    for i in range(10):
+        # Each input has shape (1,) per sample after batching and materializer roundtrip
+        # The materializer preserves the concrete shape (batch_size, 1)
+        inp = tf.keras.Input(shape=(1,), name=f"feature_{i}", dtype=tf.float32)
+        inputs[f"feature_{i}"] = inp
+        # Already shape (batch_size, 1), no need to reshape
+        feature_list.append(inp)
+
+    # Concatenate all features along the last axis
+    # This will create shape (batch_size, 10)
+    concatenated = tf.keras.layers.Concatenate(axis=-1)(feature_list)
+
+    # Build the model architecture
+    x = tf.keras.layers.Dense(64, activation="relu")(concatenated)
+    x = tf.keras.layers.Dropout(0.2)(x)
+    x = tf.keras.layers.Dense(32, activation="relu")(x)
+    x = tf.keras.layers.Dropout(0.2)(x)
+    outputs = tf.keras.layers.Dense(1)(x)
+
+    # Create the functional model
+    model = tf.keras.Model(inputs=inputs, outputs=outputs)
 
     model.compile(
         optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
@@ -50,13 +70,13 @@ def create_model() -> tf.keras.Model:
 
 
 @step
-def create_training_config() -> TensorFlowTrainingConfig:
+def create_training_config() -> ModelTrainingConfig:
     """Create training configuration.
 
     Returns:
         Training configuration with hyperparameters.
     """
-    return TensorFlowTrainingConfig(
+    return ModelTrainingConfig(
         epochs=10,
         batch_size=8,
         learning_rate=0.001,
@@ -64,11 +84,11 @@ def create_training_config() -> TensorFlowTrainingConfig:
     )
 
 
-@pipeline
+@pipeline(enable_cache=False)
 def tensorflow_training_pipeline(
     file_path: str = "examples/data/sample.csv",
     label_name: str = "target",
-    model_save_path: str = "/tmp/tensorflow_model",
+    model_save_path: str = "/tmp/tensorflow_model.keras",
     export_path: str = "/tmp/tensorflow_model_export",
 ):
     """Complete TensorFlow training pipeline with ZenML.
@@ -91,6 +111,7 @@ def tensorflow_training_pipeline(
     # Step 1: Load data
     dataset = load_data(
         file_path=file_path,
+        batch_size=1,
         label_name=label_name,
     )
 
@@ -103,40 +124,42 @@ def tensorflow_training_pipeline(
 
     # Step 3: Create model and config
     model = create_model()
-    config = create_training_config()
 
     # Step 4: Train model
+    _config_train = {
+        "epochs": 10,
+        "learning_rate": 0.001,
+        "verbose": 1,
+    }
     trained_model, training_metrics = train_model(
         model=model,
         dataset=optimized_dataset,
-        config=config,
+        **_config_train,
     )
 
     # Step 5: Evaluate model
     evaluation_metrics = evaluate_model(
         model=trained_model,
         dataset=optimized_dataset,
-        config=config,
     )
 
     # Step 6: Save model
     save_model(
         model=trained_model,
-        file_path=model_save_path,
-        save_format="tf",
+        save_path=model_save_path,
     )
 
     # Step 7: Export model for serving
     export_model(
         model=trained_model,
         export_path=export_path,
-        export_format="saved_model",
+        export_format="keras",
     )
 
     return trained_model, training_metrics, evaluation_metrics
 
 
-def main() -> None:
+if __name__ == "__main__":
     """Run the TensorFlow ZenML pipeline."""
     print("=" * 60)
     print("MLPotion - TensorFlow ZenML Pipeline")
@@ -148,12 +171,4 @@ def main() -> None:
 
     print("\n" + "=" * 60)
     print("Pipeline completed successfully!")
-    print("=" * 60)
-    print("\nOutputs:")
-    print(f"  - Trained model: {type(result[0])}")
-    print(f"  - Training metrics: {result[1]}")
-    print(f"  - Evaluation metrics: {result[2]}")
 
-
-if __name__ == "__main__":
-    main()

@@ -199,6 +199,19 @@ class TFCSVDataLoader(DataLoader[tf.data.Dataset]):
             logger.info("Applying mapping function to dataset")
             dataset = dataset.map(self.map_fn)
 
+        # Attach metadata for CSV materializer
+        # This allows ZenML to efficiently serialize/deserialize the dataset
+        # by storing just the configuration instead of the actual data
+        dataset._csv_config = {
+            "file_pattern": self.file_pattern,
+            "batch_size": self.batch_size,
+            "label_name": self.label_name,
+            "column_names": self.column_names,
+            "num_epochs": self.num_epochs,
+            "extra_params": self.config,
+            "transformations": [],  # Will be populated by optimizer if used
+        }
+
         return dataset
 
 

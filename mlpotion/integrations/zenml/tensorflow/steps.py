@@ -1,5 +1,5 @@
 import logging
-from typing import Annotated, Any
+from typing import Annotated, Any, Tuple
 import tensorflow as tf
 import keras
 
@@ -133,7 +133,7 @@ def train_model(
     learning_rate: float = 0.001,
     verbose: int = 1,
     metadata: dict[str, Any] | None = None,
-) -> Annotated[keras.Model, "Trained Model"]:
+) -> Tuple[Annotated[keras.Model, "Trained Model"], Annotated[dict[str, list[float]], "Training History"]]:
     """Train a TensorFlow/Keras model."""
     logger.info(f"Training model for {epochs} epochs")
 
@@ -157,11 +157,17 @@ def train_model(
         compile_params=compile_params,
         fit_params=fit_params,
     )
+    # Convert History → simple metrics dict (last epoch values)
+    training_metrics: dict[str, float] = {}
+    if hasattr(history, "history") and isinstance(history.history, dict):
+        for key, values in history.history.items():
+            if values:
+                training_metrics[key] = float(values[-1])
 
     if metadata:
-        log_step_metadata(metadata={**metadata, "history": history})
+        log_step_metadata(metadata={**metadata, "history": training_metrics})
 
-    return model
+    return model, training_metrics
 
 
 @step

@@ -20,7 +20,6 @@ from mlpotion.integrations.zenml.keras.steps import (
 from mlpotion.integrations.zenml.keras.materializers import KerasModelMaterializer
 
 from zenml.materializers.materializer_registry import materializer_registry
-
 materializer_registry.register_materializer_type(
     keras.Model,
     KerasModelMaterializer

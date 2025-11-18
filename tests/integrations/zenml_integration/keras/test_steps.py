@@ -120,8 +120,8 @@ class TestKerasZenMLSteps(TestBase):
         # Compile the model first
         self.model.compile(optimizer="adam", loss="mse", metrics=["mae"])
 
-        # Train model
-        trained_model = train_model(
+        # Train model - returns tuple (model, metrics)
+        trained_model, training_metrics = train_model(
             model=self.model,
             data=sequence,
             epochs=2,
@@ -131,6 +131,7 @@ class TestKerasZenMLSteps(TestBase):
 
         self.assertIsInstance(trained_model, keras.Model)
         self.assertTrue(trained_model.built)
+        self.assertIsInstance(training_metrics, dict)
 
         logger.info("✓ train_model step working correctly")
 

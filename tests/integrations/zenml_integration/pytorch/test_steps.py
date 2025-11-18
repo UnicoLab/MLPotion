@@ -162,8 +162,8 @@ class TestPyTorchZenMLSteps(TestBase):
             label_name="target",
         )
 
-        # Train model
-        trained_model = train_model(
+        # Train model - returns tuple (model, metrics)
+        trained_model, training_metrics = train_model(
             model=self.model,
             dataloader=dataloader,
             epochs=2,
@@ -175,6 +175,7 @@ class TestPyTorchZenMLSteps(TestBase):
         )
 
         self.assertIsInstance(trained_model, nn.Module)
+        self.assertIsInstance(training_metrics, dict)
 
         logger.info("✓ train_model step working correctly")
 
@@ -301,8 +302,8 @@ class TestPyTorchZenMLSteps(TestBase):
             label_name="target",
         )
 
-        # Train model with validation
-        trained_model = train_model(
+        # Train model with validation - returns tuple (model, metrics)
+        trained_model, training_metrics = train_model(
             model=self.model,
             dataloader=train_dataloader,
             epochs=2,
@@ -315,6 +316,7 @@ class TestPyTorchZenMLSteps(TestBase):
         )
 
         self.assertIsInstance(trained_model, nn.Module)
+        self.assertIsInstance(training_metrics, dict)
 
         logger.info("✓ train_model with validation working correctly")
 
