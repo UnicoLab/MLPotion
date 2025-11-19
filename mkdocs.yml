@@ -103,6 +103,8 @@ plugins:
       version_selector: true
       css_dir: css
       javascript_dir: js
+      # Copy files instead of creating symlinks (GitHub Pages doesn't follow symlinks)
+      alias_type: copy
 
   - include-markdown:
       encoding: ascii
