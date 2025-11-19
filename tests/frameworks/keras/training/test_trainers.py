@@ -6,6 +6,7 @@ import numpy as np
 from loguru import logger
 
 from mlpotion.frameworks.keras.training.trainers import ModelTrainer
+from mlpotion.frameworks.keras.config import ModelTrainingConfig
 from tests.core import TestBase  # provides temp_dir, setUp/tearDown
 
 
@@ -38,15 +39,17 @@ class TestModelTrainer(TestBase):
     # Happy path: compile + train in one shot with (x, y)
     # ------------------------------------------------------------------ #
     def test_train_compiles_and_trains_tuple_data(self) -> None:
-        """Uncompiled model + compile_params should compile and train."""
-        logger.info("Testing train() with compile_params and (x, y) data")
+        """Uncompiled model + config should compile and train."""
+        logger.info("Testing train() with config and (x, y) data")
 
-        compile_params = {
-            "optimizer": "adam",
-            "loss": "binary_crossentropy",
-            "metrics": ["accuracy"],
-        }
-        fit_params = {"epochs": 2, "batch_size": 8, "verbose": 0}
+        config = ModelTrainingConfig(
+            epochs=2,
+            batch_size=8,
+            verbose=0,
+            optimizer_type="adam",
+            loss="binary_crossentropy",
+            metrics=["accuracy"],
+        )
 
         # Force the trainer to consider the model "uncompiled"
         with patch.object(
@@ -58,43 +61,42 @@ class TestModelTrainer(TestBase):
             "compile",
             wraps=self.model.compile,
         ) as mock_compile:
-            history = self.trainer.train(
+            result = self.trainer.train(
                 model=self.model,
-                data=(self.x, self.y),
-                compile_params=compile_params,
-                fit_params=fit_params,
+                dataset=(self.x, self.y),
+                config=config,
             )
 
-        logger.info(f"Training history: {history}")
+        logger.info(f"Training result: {result}")
 
         mock_is_compiled.assert_called_once_with(self.model)
         mock_compile.assert_called_once()
-        _, compile_kwargs = mock_compile.call_args
-        for k, v in compile_params.items():
-            self.assertIn(k, compile_kwargs)
 
-        # History dict should have at least loss curve
-        self.assertIsInstance(history, dict)
-        self.assertIn("loss", history)
-        self.assertIsInstance(history["loss"], list)
-        self.assertEqual(len(history["loss"]), fit_params["epochs"])
+        # Result should be TrainingResult with history
+        self.assertIn("loss", result.history)
+        self.assertIsInstance(result.history["loss"], list)
+        self.assertEqual(len(result.history["loss"]), config.epochs)
 
     # ------------------------------------------------------------------ #
     # Error when uncompiled and no compile_params
     # ------------------------------------------------------------------ #
     def test_train_raises_if_uncompiled_and_no_compile_params(self) -> None:
-        """Uncompiled model without compile_params should raise RuntimeError."""
-        logger.info("Testing train() with uncompiled model and no compile_params")
+        """Uncompiled model should compile with default config values."""
+        logger.info("Testing train() with uncompiled model and default config")
 
+        # Config with default optimizer_type and loss
+        config = ModelTrainingConfig(epochs=1, batch_size=8, verbose=0)
+        
         with patch.object(self.trainer, "_is_compiled", return_value=False):
-            with self.assertRaises(RuntimeError):
-                self.trainer.train(model=self.model, data=(self.x, self.y))
+            # Should compile with defaults and train successfully
+            result = self.trainer.train(model=self.model, dataset=(self.x, self.y), config=config)
+            self.assertIn("loss", result.history)
 
     # ------------------------------------------------------------------ #
     # Precompiled model: compile_params should be ignored (no recompile)
     # ------------------------------------------------------------------ #
     def test_train_uses_precompiled_model_and_ignores_compile_params(self) -> None:
-        """If model is already compiled, compile_params should not recompile."""
+        """If model is already compiled, should not recompile."""
         logger.info("Testing train() with precompiled model")
 
         # Compile once up-front for real
@@ -104,9 +106,15 @@ class TestModelTrainer(TestBase):
             metrics=["accuracy"],
         )
 
-        fit_params = {"epochs": 1, "batch_size": 8, "verbose": 0}
+        config = ModelTrainingConfig(
+            epochs=1,
+            batch_size=8,
+            verbose=0,
+            optimizer_type="sgd",
+            loss="mse",
+        )
 
-        # Force _is_compiled to True so _ensure_compiled won't recompile
+        # Force _is_compiled to True so it won't recompile
         with patch.object(
             self.trainer,
             "_is_compiled",
@@ -116,19 +124,17 @@ class TestModelTrainer(TestBase):
             "compile",
             wraps=self.model.compile,
         ) as mock_compile:
-            history = self.trainer.train(
+            result = self.trainer.train(
                 model=self.model,
-                data=(self.x, self.y),
-                compile_params={"optimizer": "sgd", "loss": "mse"},
-                fit_params=fit_params,
+                dataset=(self.x, self.y),
+                config=config,
             )
 
-        logger.info(f"Training history (precompiled): {history}")
+        logger.info(f"Training result (precompiled): {result}")
         mock_is_compiled.assert_called_once_with(self.model)
         mock_compile.assert_not_called()
 
-        self.assertIsInstance(history, dict)
-        self.assertIn("loss", history)
+        self.assertIn("loss", result.history)
 
     # ------------------------------------------------------------------ #
     # _call_fit dispatch behavior

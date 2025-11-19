@@ -248,7 +248,7 @@ persistence = ModelPersistence(
     path="models/house_price_model",
     model=None,  # Will be loaded
 )
-model = persistence.load()
+model, metadata = persistence.load()
 
 # Make predictions
 new_house = [[2500, 3, 2, 10]]  # sq_ft, beds, baths, age

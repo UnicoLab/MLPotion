@@ -263,14 +263,14 @@ persistence = ModelPersistence(
     path="models/my_model",
     model=None,  # Will be loaded
 )
-loaded_model = persistence.load()
+loaded_model, metadata = persistence.load()
 
 # Load with custom objects
 persistence_custom = ModelPersistence(
     path="models/my_model",
     model=None,
 )
-loaded_model = persistence_custom.load(
+loaded_model, metadata = persistence_custom.load(
     custom_objects={"CustomLayer": CustomLayer}
 )
 ```

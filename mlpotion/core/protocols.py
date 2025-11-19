@@ -196,102 +196,44 @@ class ModelPersistence(Protocol[ModelT]):
         ModelT: The type of the model to be persisted.
     """
 
-    def save(self, model: ModelT, path: str, **kwargs: Any) -> None:
-        """Save a model to the specified path.
+    def save(self, **kwargs: Any) -> None:
+        """Save a model to the configured path.
 
         Args:
-            model: The model to save.
-            path: The destination path.
             **kwargs: Additional framework-specific saving options.
         """
         ...
 
-    def load(self, path: str, **kwargs: Any) -> tuple[ModelT, dict[str, Any]]:
-        """Load a model from the specified path.
+    def load(self, **kwargs: Any) -> tuple[ModelT, dict[str, Any] | None]:
+        """Load a model from the configured path.
 
         Args:
-            path: The source path to load from.
             **kwargs: Additional framework-specific loading options.
 
         Returns:
-            tuple[ModelT, dict[str, Any]]: A tuple containing the loaded model and a dictionary of metadata (e.g., inspection results).
+            tuple[ModelT, dict[str, Any] | None]: A tuple containing the loaded model and optional metadata.
         """
         ...
 
-@runtime_checkable
-class ModelExporterProtocol(Protocol[ModelT]):
-    """Protocol for model export."""
-
-    def export(self, model: ModelT, path: str, **kwargs: Any) -> None:
-        """Export model to disk.
-
-        Args:
-            model: Model to export
-            path: Path to export to
-            **kwargs: Framework-specific options
-        """
-        ...
 
 @runtime_checkable
-class ModelInspectorProtocol(Protocol[ModelT]):
-    """Protocol for model inspection."""
+class ModelInspector(Protocol[ModelT]):
+    """Protocol for model inspection components.
+
+    This protocol defines the interface for inspecting models to extract metadata
+    such as layer configuration, input/output shapes, and parameter counts.
+
+    Type Parameters:
+        ModelT: The type of the model to be inspected.
+    """
 
     def inspect(self, model: ModelT) -> dict[str, Any]:
-        """Inspect model and return input and output signatures."""
-        ...
-
-@runtime_checkable
-class ModelEvaluatorProtocol(Protocol[ModelT]):
-    """Protocol for model evaluation."""
-
-    def evaluate(self, model: ModelT, data: Any, **kwargs: Any) -> dict[str, float]:
-        """Evaluate model on data.
+        """Inspect a model and return structured metadata.
 
         Args:
-            model: Model to evaluate.
-            data: Evaluation data (arrays, dataset-like, etc.).
-            **kwargs: Framework-specific options.
+            model: The model to inspect.
 
         Returns:
-            Mapping of metric names to values.
-        """
-        ...
-
-@runtime_checkable
-class ModelTrainerProtocol(Protocol[ModelT]):
-    """Protocol for model training."""
-
-    def train(self, model: ModelT, data: Any, **kwargs: Any) -> dict[str, list[float]]:
-        """Train model on data.
-
-        Args:
-            model: Model to train.
-            data: Training data (arrays, datasets, etc.).
-            **kwargs: Framework-specific options (epochs, batch_size, etc.).
-
-        Returns:
-            History of metrics as a mapping: metric name -> list of values per epoch.
-        """
-        ...
-
-@runtime_checkable
-class DataTransformer(Protocol[DatasetT, ModelT]):
-    """Protocol for data transformation using models."""
-
-    def transform(
-        self,
-        dataset: DatasetT,
-        model: ModelT,
-        batch_size: int = 32,
-    ) -> DatasetT:
-        """Transform dataset using a model.
-
-        Args:
-            dataset: Input dataset
-            model: Model to use for transformation
-            batch_size: Batch size for transformation
-
-        Returns:
-            Transformed dataset
+            dict[str, Any]: A dictionary containing model metadata (inputs, outputs, parameters, layers, etc.).
         """
         ...

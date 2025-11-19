@@ -7,6 +7,8 @@ from keras.utils import Sequence
 from loguru import logger
 
 from mlpotion.core.protocols import ModelTrainer as ModelTrainerProtocol
+from mlpotion.core.results import TrainingResult
+from mlpotion.frameworks.keras.config import ModelTrainingConfig
 from mlpotion.utils import trycatch
 from mlpotion.core.exceptions import ModelTrainerError
 
@@ -69,47 +71,118 @@ class ModelTrainer(ModelTrainerProtocol[Model, Sequence]):
         error=ModelTrainerError,
         success_msg="✅ Successfully trained Keras model",
     )
-    def train(self, model: Model, data: Any, **kwargs: Any) -> dict[str, list[float]]:
-        """Train a Keras model on the provided data.
+    def train(
+        self,
+        model: Model,
+        dataset: Any,
+        config: ModelTrainingConfig,
+        validation_dataset: Any | None = None,
+    ) -> TrainingResult[Model]:
+        """Train a Keras model using the provided dataset and configuration.
 
         Args:
             model: The Keras model to train.
-            data: The training data. Can be a tuple `(x, y)`, a dictionary, a `Sequence`, or a generator.
-            **kwargs: Additional arguments:
-                - `compile_params` (dict): Arguments for `model.compile()` (optimizer, loss, metrics).
-                - `fit_params` (dict): Arguments for `model.fit()` (epochs, batch_size, callbacks, etc.).
+            dataset: The training data. Can be a tuple `(x, y)`, a dictionary, a `Sequence`, or a generator.
+            config: Configuration object containing training parameters.
+            validation_dataset: Optional validation data.
 
         Returns:
-            dict[str, list[float]]: A dictionary containing the training history (metrics per epoch).
+            TrainingResult[Model]: An object containing the trained model, training history, and metrics.
         """
         self._validate_model(model)
 
-        compile_params: Mapping[str, Any] | None = kwargs.pop("compile_params", None)
-        fit_params: Mapping[str, Any] | None = kwargs.pop("fit_params", None)
+        # Prepare compile parameters from config
+        compile_params = {
+            "optimizer": self._get_optimizer(config),
+            "loss": config.loss,
+            "metrics": config.metrics,
+        }
 
-        if kwargs:
-            logger.warning(
-                "Unused training kwargs in ModelTrainer: "
-                f"{list(kwargs.keys())}"
-            )
+        # Compile if needed or if forced by config (though we usually respect existing compilation)
+        # Here we'll ensure it's compiled. If the user wants to use their own compilation,
+        # they should probably compile it before passing it, but our config implies we control it.
+        # However, to be safe and flexible:
+        if not self._is_compiled(model):
+            if not config.optimizer_type or not config.loss:
+                raise RuntimeError(
+                    "Model is not compiled and config does not provide optimizer_type and loss. "
+                    "Either compile the model beforehand or provide optimizer_type and loss in config."
+                )
+            logger.info("Compiling model with config parameters.")
+            model.compile(**compile_params)
+        else:
+            logger.info("Model already compiled. Using existing compilation settings.")
 
-        # Compile if needed
-        self._ensure_compiled(model=model, compile_params=compile_params)
+        # Prepare fit parameters
+        fit_kwargs = {
+            "epochs": config.epochs,
+            "batch_size": config.batch_size,
+            "verbose": config.verbose,
+            "shuffle": config.shuffle,
+            "validation_split": config.validation_split,
+        }
+        
+        if validation_dataset is not None:
+            fit_kwargs["validation_data"] = validation_dataset
 
-        fit_kwargs = dict(fit_params or {})
+        # Add any framework-specific options
+        fit_kwargs.update(config.framework_options)
 
         logger.info("Starting Keras model training...")
-        logger.debug(f"Training data type: {type(data)!r}")
+        logger.debug(f"Training data type: {type(dataset)!r}")
         logger.debug(f"Fit parameters: {fit_kwargs}")
 
-        history_obj = self._call_fit(model=model, data=data, fit_kwargs=fit_kwargs)
+        import time
+        start_time = time.time()
+
+        history_obj = self._call_fit(model=model, data=dataset, fit_kwargs=fit_kwargs)
+        
+        training_time = time.time() - start_time
 
         # Convert History object to dict[str, list[float]]
         history_dict = self._history_to_dict(history_obj)
+        
+        # Extract final metrics
+        final_metrics = {}
+        for k, v in history_dict.items():
+            if v:
+                final_metrics[k] = v[-1]
 
         logger.info("Training completed.")
         logger.debug(f"Training history: {history_dict}")
-        return history_dict
+        
+        return TrainingResult(
+            model=model,
+            history=history_dict,
+            metrics=final_metrics,
+            config=config,
+            training_time=training_time,
+            best_epoch=None, # Keras history doesn't explicitly track "best" unless using callbacks
+        )
+
+    def _get_optimizer(self, config: ModelTrainingConfig) -> Any:
+        """Get optimizer from config."""
+        # If learning_rate is specified, we might need to instantiate the optimizer
+        # instead of just passing the string name, to apply the LR.
+        if config.learning_rate:
+            try:
+                # Try to get the optimizer class from the string name
+                opt_cls = getattr(keras.optimizers, config.optimizer_type, None)
+                if opt_cls is None:
+                    # Fallback for common names if case differs or alias
+                    if config.optimizer_type.lower() == "adam":
+                        opt_cls = keras.optimizers.Adam
+                    elif config.optimizer_type.lower() == "sgd":
+                        opt_cls = keras.optimizers.SGD
+                    elif config.optimizer_type.lower() == "rmsprop":
+                        opt_cls = keras.optimizers.RMSprop
+                
+                if opt_cls:
+                    return opt_cls(learning_rate=config.learning_rate)
+            except Exception as e:
+                logger.warning(f"Failed to instantiate optimizer {config.optimizer_type} with LR {config.learning_rate}: {e}")
+        
+        return config.optimizer_type
 
     # ------------------------------------------------------------------ #
     # Internal helpers

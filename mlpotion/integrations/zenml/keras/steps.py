@@ -38,7 +38,7 @@ def load_data(
     shuffle: bool = True,
     dtype: str = "float32",
     metadata: dict[str, Any] | None = None,
-) -> Annotated[CSVSequence, "CSV Sequence"]:
+) -> Annotated[CSVSequence, "CSVSequence"]:
     """Load data from CSV files into a Keras Sequence.
 
     This step uses `CSVDataLoader` to load data matching the specified file pattern.
@@ -86,7 +86,7 @@ def transform_data(
     feature_names: list[str] | None = None,
     input_columns: list[str] | None = None,
     metadata: dict[str, Any] | None = None,
-) -> Annotated[str, "Output Path"]:
+) -> Annotated[str, "OutputPath"]:
     """Transform data using a Keras model and save predictions to CSV.
 
     This step uses `CSVDataTransformer` to run inference on a dataset using a provided model
@@ -142,7 +142,7 @@ def train_model(
     verbose: int = 1,
     callbacks: list[Any] | None = None,
     metadata: dict[str, Any] | None = None,
-) -> Tuple[Annotated[keras.Model, "Trained Model"], Annotated[dict[str, float], "Training Metrics"]]:
+) -> Tuple[Annotated[keras.Model, "TrainedModel"], Annotated[dict[str, float], "TrainingMetrics"]]:
     """Train a Keras model using `ModelTrainer`.
 
     This step configures and runs a training session. It supports validation data,
@@ -165,34 +165,38 @@ def train_model(
 
     trainer = ModelTrainer()
 
-    compile_params = {
-        "optimizer": keras.optimizers.Adam(learning_rate=learning_rate),
-        "loss": "mse",
-        "metrics": ["mae"],
-    }
-
-    fit_params = {
-        "epochs": epochs,
-        "verbose": verbose,
-        "validation_data": validation_data,
-        "callbacks": callbacks,
-    }
-
-    history = trainer.train(
-        model=model,
-        data=data,
-        compile_params=compile_params,
-        fit_params=fit_params,
+    config = ModelTrainingConfig(
+        epochs=epochs,
+        learning_rate=learning_rate,
+        verbose=verbose,
+        optimizer_type="adam", # Defaulting to adam as per previous logic
+        loss="mse",
+        metrics=["mae"],
+        framework_options={"callbacks": callbacks} if callbacks else {},
     )
-    # Convert History → simple metrics dict (last epoch values)
-    training_metrics: dict[str, float] = {}
-    if hasattr(history, "history") and isinstance(history.history, dict):
-        for key, values in history.history.items():
-            if values:
-                training_metrics[key] = float(values[-1])
+    # If user passed custom optimizer/loss/metrics via some other way, we might need to handle it,
+    # but here we are hardcoding them as per previous implementation.
+    # Actually, the previous implementation created an optimizer instance.
+    # ModelTrainingConfig supports passing instances via arbitrary types if allowed,
+    # or we can pass them via framework_options if the trainer supports it.
+    # But Keras ModelTrainer uses config fields.
+    # Let's stick to the config fields.
+
+    # Note: The previous implementation created a new optimizer instance: keras.optimizers.Adam(learning_rate=learning_rate)
+    # The new ModelTrainer handles optimizer creation from config.
+
+    result = trainer.train(
+        model=model,
+        dataset=data,
+        config=config,
+        validation_dataset=validation_data,
+    )
+    
+    # Result is TrainingResult object
+    training_metrics = result.metrics
 
     if metadata:
-        log_step_metadata(metadata={**metadata, "history": history})
+        log_step_metadata(metadata={**metadata, "history": result.history})
 
     return model, training_metrics
 
@@ -203,7 +207,7 @@ def evaluate_model(
     data: CSVSequence,
     verbose: int = 1,
     metadata: dict[str, Any] | None = None,
-) -> Annotated[dict[str, float], "Evaluation Metrics"]:
+) -> Annotated[dict[str, float], "EvaluationMetrics"]:
     """Evaluate a Keras model using `ModelEvaluator`.
 
     This step computes metrics on a given dataset using the provided model.
@@ -221,15 +225,17 @@ def evaluate_model(
 
     evaluator = ModelEvaluator()
 
-    eval_params = {
-        "verbose": verbose,
-    }
-
-    metrics = evaluator.evaluate(
-        model=model,
-        data=data,
-        eval_params=eval_params,
+    config = ModelEvaluationConfig(
+        verbose=verbose,
     )
+
+    result = evaluator.evaluate(
+        model=model,
+        dataset=data,
+        config=config,
+    )
+    
+    metrics = result.metrics
 
     if metadata:
         log_step_metadata(metadata={**metadata, "metrics": metrics})
@@ -243,7 +249,7 @@ def export_model(
     export_path: str,
     export_format: str | None = None,
     metadata: dict[str, Any] | None = None,
-) -> Annotated[str, "Export Path"]:
+) -> Annotated[str, "ExportPath"]:
     """Export a Keras model to disk using `ModelExporter`.
 
     This step exports the model to a specified format (e.g., SavedModel, H5, TFLite).
@@ -282,7 +288,7 @@ def save_model(
     model: keras.Model,
     save_path: str,
     metadata: dict[str, Any] | None = None,
-) -> Annotated[str, "Save Path"]:
+) -> Annotated[str, "SavePath"]:
     """Save a Keras model to disk using `ModelPersistence`.
 
     This step saves the model for later reloading, typically preserving the optimizer state.
@@ -311,7 +317,7 @@ def load_model(
     model_path: str,
     inspect: bool = True,
     metadata: dict[str, Any] | None = None,
-) -> Annotated[keras.Model, "Loaded Model"]:
+) -> Annotated[keras.Model, "LoadedModel"]:
     """Load a Keras model from disk using `ModelPersistence`.
 
     This step loads a previously saved model. It can optionally inspect the loaded model
@@ -345,7 +351,7 @@ def inspect_model(
     include_layers: bool = True,
     include_signatures: bool = True,
     metadata: dict[str, Any] | None = None,
-) -> Annotated[dict[str, Any], "Model Inspection"]:
+) -> Annotated[dict[str, Any], "ModelInspection"]:
     """Inspect a Keras model using `ModelInspector`.
 
     This step extracts metadata about the model, such as layer configuration,

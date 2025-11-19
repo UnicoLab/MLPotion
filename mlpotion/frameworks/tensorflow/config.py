@@ -147,6 +147,11 @@ class ModelTrainingConfig(BaseSettings):
     shuffle: bool = Field(default=True, description="Shuffle training data")
     verbose: int = Field(default=1, ge=0, le=2, description="Verbosity level")
 
+    # Keras/TF specific fields
+    optimizer_type: str = Field(default="adam", description="Optimizer name")
+    loss: str | keras.losses.Loss = Field(default="mse", description="Loss function")
+    metrics: list[str | keras.metrics.Metric] = Field(default_factory=lambda: ["mae"], description="List of metrics")
+
     # Framework-specific options can go here
     framework_options: dict[str, Any] = Field(
         default_factory=dict, description="Framework-specific options"
@@ -156,4 +161,5 @@ class ModelTrainingConfig(BaseSettings):
         extra="forbid",
         frozen=False,
         env_prefix='train_',
+        arbitrary_types_allowed=True,
     )

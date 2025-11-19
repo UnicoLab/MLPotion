@@ -7,6 +7,8 @@ from keras.utils import Sequence
 from loguru import logger
 
 from mlpotion.core.protocols import ModelEvaluator as ModelEvaluatorProtocol
+from mlpotion.core.results import EvaluationResult
+from mlpotion.frameworks.keras.config import ModelEvaluationConfig
 from mlpotion.utils import trycatch
 from mlpotion.core.exceptions import ModelEvaluatorError
 
@@ -62,41 +64,50 @@ class ModelEvaluator(ModelEvaluatorProtocol[Model, Sequence]):
         error=ModelEvaluatorError,
         success_msg="✅ Successfully evaluated Keras model",
     )
-    def evaluate(self, model: Model, data: Any, **kwargs: Any) -> dict[str, float]:
+    def evaluate(
+        self,
+        model: Model,
+        dataset: Any,
+        config: ModelEvaluationConfig,
+    ) -> EvaluationResult:
         """Evaluate a Keras model on the given data.
 
         Args:
             model: The Keras model to evaluate.
-            data: The evaluation data. Can be a tuple `(x, y)`, a dictionary, or a `Sequence`.
-            **kwargs: Additional arguments:
-                - `compile_params` (dict): Arguments for `model.compile()` if not already compiled.
-                - `eval_params` (dict): Arguments for `model.evaluate()` (batch_size, verbose, etc.).
+            dataset: The evaluation data. Can be a tuple `(x, y)`, a dictionary, or a `Sequence`.
+            config: Configuration object containing evaluation parameters.
 
         Returns:
-            dict[str, float]: A dictionary mapping metric names to their values.
+            EvaluationResult: An object containing the evaluation metrics.
         """
         self._validate_model(model)
 
-        compile_params: Mapping[str, Any] | None = kwargs.pop("compile_params", None)
-        eval_params: Mapping[str, Any] | None = kwargs.pop("eval_params", None)
+        # Prepare eval parameters
+        eval_kwargs = {
+            "batch_size": config.batch_size,
+            "verbose": config.verbose,
+            "return_dict": True,
+        }
+        
+        # Add any framework-specific options
+        eval_kwargs.update(config.framework_options)
 
-        if kwargs:
-            logger.warning(
-                "Unused evaluation kwargs in ModelEvaluator: "
-                f"{list(kwargs.keys())}"
-            )
-
-        self._ensure_compiled(model=model, compile_params=compile_params)
-
-        eval_kwargs = dict(eval_params or {})
-        # We always want a dict back to satisfy the protocol contract
-        eval_kwargs["return_dict"] = True
+        # We assume the model is already compiled. If not, Keras will raise an error
+        # unless we provide compile params, but EvaluationConfig doesn't typically carry them.
+        # The user should ensure the model is compiled (e.g. after loading or training).
+        if not self._is_compiled(model):
+             logger.warning("Model is not compiled. Evaluation might fail if loss/metrics are not defined.")
 
         logger.info("Evaluating Keras model...")
-        logger.debug(f"Evaluation data type: {type(data)!r}")
+        logger.debug(f"Evaluation data type: {type(dataset)!r}")
         logger.debug(f"Evaluation parameters: {eval_kwargs}")
 
-        result = self._call_evaluate(model=model, data=data, eval_kwargs=eval_kwargs)
+        import time
+        start_time = time.time()
+
+        result = self._call_evaluate(model=model, data=dataset, eval_kwargs=eval_kwargs)
+        
+        evaluation_time = time.time() - start_time
 
         # At this point, result should be a dict[str, float]
         if not isinstance(result, dict):
@@ -107,8 +118,14 @@ class ModelEvaluator(ModelEvaluatorProtocol[Model, Sequence]):
             )
             result = {"metric_0": float(result)}
 
-        logger.info(f"Evaluation result: {result}")
-        return {str(k): float(v) for k, v in result.items()}
+        metrics = {str(k): float(v) for k, v in result.items()}
+        logger.info(f"Evaluation result: {metrics}")
+        
+        return EvaluationResult(
+            metrics=metrics,
+            config=config,
+            evaluation_time=evaluation_time,
+        )
 
     # ------------------------------------------------------------------ #
     # Internal helpers

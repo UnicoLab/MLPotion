@@ -93,6 +93,11 @@ plugins:
           options:
             show_root_heading: true
             show_source: true
+            show_signature_annotations: true
+            separate_signature: true
+            docstring_style: google
+            merge_init_into_class: true
+            show_category_heading: true
   - mike:
       canonical_version: null
       version_selector: true
@@ -120,9 +125,9 @@ extra:
     provider: mike
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/UnicoLab/keras-data-processor
+      link: https://github.com/UnicoLab/MLPotion
     - icon: fontawesome/brands/python
-      link: https://pypi.org/project/keras-data-processor/
+      link: https://pypi.org/project/mlpotion/
 
 extra_javascript:
   - assets/js/fix-image-paths.js

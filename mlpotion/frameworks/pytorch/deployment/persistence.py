@@ -133,7 +133,7 @@ class ModelPersistence(ModelPersistenceProtocol[nn.Module]):
         strict: bool = True,
         model_kwargs: dict[str, Any] | None = None,
         **torch_load_kwargs: Any,
-    ) -> nn.Module:
+    ) -> tuple[nn.Module, dict[str, Any] | None]:
         """Load a PyTorch model from disk.
 
         This method automatically detects if the file is a full model checkpoint or a
@@ -165,7 +165,7 @@ class ModelPersistence(ModelPersistenceProtocol[nn.Module]):
             logger.info("Detected full-model checkpoint (nn.Module).")
             self.model = checkpoint
             logger.info("PyTorch model loaded successfully from full-model checkpoint.")
-            return checkpoint
+            return checkpoint, None
 
         # Case 2: dict-like checkpoint (state_dict or wrapped)
         if isinstance(checkpoint, dict):
@@ -199,7 +199,7 @@ class ModelPersistence(ModelPersistenceProtocol[nn.Module]):
                     logger.warning(f"Unexpected keys in state_dict: {unexpected}")
 
             logger.info("PyTorch model loaded successfully from state_dict checkpoint.")
-            return model
+            return model, None
 
         # Case 3: unsupported checkpoint structure
         raise ModelPersistenceError(

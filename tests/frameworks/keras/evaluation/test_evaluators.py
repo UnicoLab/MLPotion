@@ -6,6 +6,7 @@ import numpy as np
 from loguru import logger
 
 from mlpotion.frameworks.keras.evaluation.evaluators import ModelEvaluator
+from mlpotion.frameworks.keras.config import ModelEvaluationConfig
 from tests.core import TestBase  # provides temp_dir, setUp/tearDown
 
 
@@ -39,49 +40,33 @@ class TestModelEvaluator(TestBase):
     # Happy path: compile + evaluate in one shot with (x, y) tuple
     # ------------------------------------------------------------------ #
     def test_evaluate_compiles_and_evaluates_tuple_data(self) -> None:
-        """Uncompiled model + compile_params should compile and evaluate."""
-        logger.info("Testing evaluate() with compile_params and (x, y) data")
+        """Model should evaluate with config."""
+        logger.info("Testing evaluate() with config and (x, y) data")
 
-        compile_params = {
-            "optimizer": "adam",
-            "loss": "binary_crossentropy",
-            "metrics": ["accuracy"],
-        }
+        # Compile the model first
+        self.model.compile(
+            optimizer="adam",
+            loss="binary_crossentropy",
+            metrics=["accuracy"],
+        )
 
-        eval_params = {"batch_size": 8, "verbose": 0}
+        config = ModelEvaluationConfig(
+            batch_size=8,
+            verbose=0,
+        )
 
-        # Force the evaluator to consider the model "uncompiled" so that
-        # _ensure_compiled will call model.compile(**compile_params)
-        with patch.object(
-            self.evaluator,
-            "_is_compiled",
-            return_value=False,
-        ) as mock_is_compiled, patch.object(
-            self.model,
-            "compile",
-            wraps=self.model.compile,
-        ) as mock_compile:
-            metrics = self.evaluator.evaluate(
-                model=self.model,
-                data=(self.x, self.y),
-                compile_params=compile_params,
-                eval_params=eval_params,
-            )
+        result = self.evaluator.evaluate(
+            model=self.model,
+            dataset=(self.x, self.y),
+            config=config,
+        )
 
-        logger.info(f"Evaluation metrics: {metrics}")
+        logger.info(f"Evaluation result: {result}")
 
-        mock_is_compiled.assert_called_once_with(self.model)
-        mock_compile.assert_called_once()
-        # ensure compile was called with our params
-        called_args, called_kwargs = mock_compile.call_args
-        self.assertEqual(called_args, ())
-        for k, v in compile_params.items():
-            self.assertIn(k, called_kwargs)
-
-        # Result should be a dict[str, float]
-        self.assertIsInstance(metrics, dict)
-        self.assertIn("loss", metrics)
-        for key, value in metrics.items():
+        # Result should be EvaluationResult with metrics
+        self.assertIsInstance(result.metrics, dict)
+        self.assertIn("loss", result.metrics)
+        for key, value in result.metrics.items():
             self.assertIsInstance(key, str)
             self.assertIsInstance(value, float)
 
@@ -89,9 +74,9 @@ class TestModelEvaluator(TestBase):
     # Error when uncompiled and no compile_params
     # ------------------------------------------------------------------ #
     def test_evaluate_raises_if_uncompiled_and_no_compile_params(self) -> None:
-        """Uncompiled model without compile_params should raise RuntimeError."""
+        """Uncompiled model should raise error."""
         logger.info(
-            "Testing evaluate() with uncompiled model and no compile_params"
+            "Testing evaluate() with uncompiled model"
         )
 
         # Fresh uncompiled model
@@ -102,10 +87,10 @@ class TestModelEvaluator(TestBase):
             ]
         )
 
-        # Force the evaluator to consider the model "uncompiled"
-        with patch.object(self.evaluator, "_is_compiled", return_value=False):
-            with self.assertRaises(RuntimeError):
-                self.evaluator.evaluate(model=model, data=(self.x, self.y))
+        config = ModelEvaluationConfig(batch_size=8, verbose=0)
+        
+        with self.assertRaises((RuntimeError, ValueError)):
+            self.evaluator.evaluate(model=model, dataset=(self.x, self.y), config=config)
 
     # ------------------------------------------------------------------ #
     # Precompiled model: compile_params should be ignored (no recompile)
@@ -113,7 +98,7 @@ class TestModelEvaluator(TestBase):
     def test_evaluate_uses_precompiled_model_and_ignores_compile_params(
         self,
     ) -> None:
-        """If model is already compiled, compile_params should not recompile."""
+        """If model is already compiled, should evaluate successfully."""
         logger.info("Testing evaluate() with precompiled model")
 
         # Compile once up-front for real
@@ -123,29 +108,17 @@ class TestModelEvaluator(TestBase):
             metrics=["accuracy"],
         )
 
-        # Force _is_compiled to say True so _ensure_compiled won't touch compile()
-        with patch.object(
-            self.evaluator,
-            "_is_compiled",
-            return_value=True,
-        ) as mock_is_compiled, patch.object(
-            self.model,
-            "compile",
-            wraps=self.model.compile,
-        ) as mock_compile:
-            metrics = self.evaluator.evaluate(
-                model=self.model,
-                data=(self.x, self.y),
-                compile_params={
-                    "optimizer": "sgd",
-                    "loss": "mse",
-                },
-                eval_params={"verbose": 0},
-            )
+        config = ModelEvaluationConfig(verbose=0)
+        
+        result = self.evaluator.evaluate(
+            model=self.model,
+            dataset=(self.x, self.y),
+            config=config,
+        )
 
-        logger.info(f"Evaluation metrics: {metrics}")
-        mock_is_compiled.assert_called_once_with(self.model)
-        mock_compile.assert_not_called()
+        logger.info(f"Evaluation result: {result}")
+        self.assertIsInstance(result.metrics, dict)
+        self.assertIn("loss", result.metrics)
 
     # ------------------------------------------------------------------ #
     # _call_evaluate dispatch behavior
@@ -251,20 +224,20 @@ class TestModelEvaluator(TestBase):
                 self.evaluate = MagicMock(return_value=0.5)
 
         dummy = DummyModel()
+        config = ModelEvaluationConfig(verbose=0)
 
-        # Force _is_compiled to True so we don't call compile
-        with patch.object(self.evaluator, "_is_compiled", return_value=True):
-            metrics = self.evaluator.evaluate(
-                model=dummy,
-                data=(self.x, self.y),
-            )
+        result = self.evaluator.evaluate(
+            model=dummy,
+            dataset=(self.x, self.y),
+            config=config,
+        )
 
-        logger.info(f"Wrapped evaluation metrics: {metrics}")
+        logger.info(f"Wrapped evaluation result: {result}")
 
-        self.assertIsInstance(metrics, dict)
-        self.assertIn("metric_0", metrics)
-        self.assertIsInstance(metrics["metric_0"], float)
-        self.assertAlmostEqual(metrics["metric_0"], 0.5, places=6)
+        self.assertIsInstance(result.metrics, dict)
+        self.assertIn("metric_0", result.metrics)
+        self.assertIsInstance(result.metrics["metric_0"], float)
+        self.assertAlmostEqual(result.metrics["metric_0"], 0.5, places=6)
 
     # ------------------------------------------------------------------ #
     # Validation / compiled state helpers

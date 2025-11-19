@@ -16,6 +16,8 @@ from mlpotion.frameworks.tensorflow.config import (
     DataLoadingConfig,
     DataOptimizationConfig,
     DataTransformationConfig,
+    ModelTrainingConfig,
+    ModelEvaluationConfig,
 )
 from mlpotion.frameworks.tensorflow.data.loaders import CSVDataLoader
 from mlpotion.frameworks.tensorflow.data.optimizers import DatasetOptimizer
@@ -36,7 +38,7 @@ def load_data(
     label_name: str = "target",
     column_names: list[str] | None = None,
     metadata: dict[str, Any] | None = None,
-) -> Annotated[tf.data.Dataset, "TF DataSet"]:
+) -> Annotated[tf.data.Dataset, "TFDataset"]:
     """Load data from local CSV files using TensorFlow's efficient loading.
 
     This step uses `CSVDataLoader` to create a `tf.data.Dataset` from CSV files matching
@@ -82,7 +84,7 @@ def optimize_data(
     prefetch: bool = True,
     cache: bool = False,
     metadata: dict[str, Any] | None = None,
-) -> Annotated[tf.data.Dataset, "TF DataSet"]:
+) -> Annotated[tf.data.Dataset, "TFDataset"]:
     """Optimize a TensorFlow dataset for training performance.
 
     This step applies optimizations like caching, shuffling, and prefetching to the dataset
@@ -125,7 +127,7 @@ def transform_data(
     data_output_path: str,
     data_output_per_batch: bool = False,
     metadata: dict[str, Any] | None = None,
-) -> Annotated[str, "Output Path"]:
+) -> Annotated[str, "OutputPath"]:
     """Transform data using a TensorFlow model and save predictions to CSV.
 
     This step uses `DataToCSVTransformer` to run inference on a dataset using a provided model
@@ -176,7 +178,7 @@ def train_model(
     learning_rate: float = 0.001,
     verbose: int = 1,
     metadata: dict[str, Any] | None = None,
-) -> Tuple[Annotated[keras.Model, "Trained Model"], Annotated[dict[str, list[float]], "Training History"]]:
+) -> Tuple[Annotated[keras.Model, "TrainedModel"], Annotated[dict[str, list[float]], "TrainingHistory"]]:
     """Train a TensorFlow/Keras model using `ModelTrainer`.
 
     This step configures and runs a training session. It supports validation data
@@ -198,33 +200,27 @@ def train_model(
 
     trainer = ModelTrainer()
 
-    compile_params = {
-        "optimizer": keras.optimizers.Adam(learning_rate=learning_rate),
-        "loss": "mse",
-        "metrics": ["mae"],
-    }
-
-    fit_params = {
-        "epochs": epochs,
-        "verbose": verbose,
-        "validation_data": validation_dataset,
-    }
-
-    history = trainer.train(
-        model=model,
-        data=dataset,
-        compile_params=compile_params,
-        fit_params=fit_params,
+    config = ModelTrainingConfig(
+        epochs=epochs,
+        learning_rate=learning_rate,
+        verbose=verbose,
+        optimizer_type="adam",
+        loss="mse",
+        metrics=["mae"],
     )
-    # Convert History → simple metrics dict (last epoch values)
-    training_metrics: dict[str, float] = {}
-    if hasattr(history, "history") and isinstance(history.history, dict):
-        for key, values in history.history.items():
-            if values:
-                training_metrics[key] = float(values[-1])
+
+    result = trainer.train(
+        model=model,
+        dataset=dataset,
+        config=config,
+        validation_dataset=validation_dataset,
+    )
+    
+    # Result is TrainingResult object
+    training_metrics = result.metrics
 
     if metadata:
-        log_step_metadata(metadata={**metadata, "history": training_metrics})
+        log_step_metadata(metadata={**metadata, "history": result.history})
 
     return model, training_metrics
 
@@ -235,7 +231,7 @@ def evaluate_model(
     dataset: tf.data.Dataset,
     verbose: int = 1,
     metadata: dict[str, Any] | None = None,
-) -> Annotated[dict[str, float], "Evaluation Metrics"]:
+) -> Annotated[dict[str, float], "EvaluationMetrics"]:
     """Evaluate a TensorFlow/Keras model using `ModelEvaluator`.
 
     This step computes metrics on a given dataset using the provided model.
@@ -253,15 +249,17 @@ def evaluate_model(
 
     evaluator = ModelEvaluator()
 
-    eval_params = {
-        "verbose": verbose,
-    }
-
-    metrics = evaluator.evaluate(
-        model=model,
-        data=dataset,
-        eval_params=eval_params,
+    config = ModelEvaluationConfig(
+        verbose=verbose,
     )
+
+    result = evaluator.evaluate(
+        model=model,
+        dataset=dataset,
+        config=config,
+    )
+    
+    metrics = result.metrics
 
     if metadata:
         log_step_metadata(metadata={**metadata, "metrics": metrics})
@@ -275,7 +273,7 @@ def export_model(
     export_path: str,
     export_format: str = "keras",
     metadata: dict[str, Any] | None = None,
-) -> Annotated[str, "Export Path"]:
+) -> Annotated[str, "ExportPath"]:
     """Export a TensorFlow/Keras model to disk using `ModelExporter`.
 
     This step exports the model to a specified format (e.g., Keras format, SavedModel).
@@ -310,7 +308,7 @@ def save_model(
     model: keras.Model,
     save_path: str,
     metadata: dict[str, Any] | None = None,
-) -> Annotated[str, "Save Path"]:
+) -> Annotated[str, "SavePath"]:
     """Save a TensorFlow/Keras model to disk using `ModelPersistence`.
 
     This step saves the model for later reloading.
@@ -339,7 +337,7 @@ def load_model(
     model_path: str,
     inspect: bool = True,
     metadata: dict[str, Any] | None = None,
-) -> Annotated[keras.Model, "Loaded Model"]:
+) -> Annotated[keras.Model, "LoadedModel"]:
     """Load a TensorFlow/Keras model from disk using `ModelPersistence`.
 
     This step loads a previously saved model. It can optionally inspect the loaded model
@@ -373,7 +371,7 @@ def inspect_model(
     include_layers: bool = True,
     include_signatures: bool = True,
     metadata: dict[str, Any] | None = None,
-) -> Annotated[dict[str, Any], "Model Inspection"]:
+) -> Annotated[dict[str, Any], "ModelInspection"]:
     """Inspect a TensorFlow/Keras model using `ModelInspector`.
 
     This step extracts metadata about the model, such as layer configuration,

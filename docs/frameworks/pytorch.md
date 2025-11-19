@@ -116,7 +116,7 @@ config = ModelTrainingConfig(
     epochs=10,
     learning_rate=0.001,
     device="cuda",
-    optimizer_type="adam",
+    optimizer="adam",
     loss_fn="mse",
     verbose=True,
 )
@@ -141,7 +141,7 @@ config = ModelTrainingConfig(
     device="cuda" if torch.cuda.is_available() else "cpu",
 
     # Optimizer
-    optimizer_type="adamw",  # or "adam", "sgd", "rmsprop"
+    optimizer="adamw",  # or "adam", "sgd", "rmsprop"
     optimizer_kwargs={
         "weight_decay": 0.01,
         "betas": (0.9, 0.999),
@@ -245,22 +245,23 @@ print(f"Test MAE: {result.metrics['mae']:.4f}")
 ```python
 from mlpotion.frameworks.pytorch import ModelPersistence
 
-persistence = ModelPersistence()
+persistence = ModelPersistence(path="models/my_model.pth", model=model)
 
 # Save model (state_dict - recommended)
-persistence.save(model, "models/my_model.pth")
+persistence.save()
 
 # Save full model
-persistence.save(model, "models/my_model_full.pth", save_full_model=True)
+persistence.save(save_full_model=True)
 
 # Load model
-loaded_model = persistence.load(
-    "models/my_model.pth",
+loader = ModelPersistence(path="models/my_model.pth")
+loaded_model, metadata = loader.load(
     model_class=SimpleModel,  # Need model class for state_dict
 )
 
-# Load full model
-loaded_model = persistence.load_full("models/my_model_full.pth")
+# Load full model (auto-detected)
+loader_full = ModelPersistence(path="models/my_model_full.pth")
+loaded_model_full, _ = loader_full.load()
 ```
 
 ## Model Export 📤

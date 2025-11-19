@@ -78,12 +78,12 @@ def main() -> None:
         batch_size=8,
         learning_rate=0.001,
         verbose=1,
-    ).model_dump()
+    )
 
     result = trainer.train(
         model=model,
         data=dataset,
-        **config,
+        config=config,
     )
 
     print(f"\nTraining completed!")
@@ -92,9 +92,12 @@ def main() -> None:
     # 5. Evaluate model
     print("\n5. Evaluating model...")
     evaluator = ModelEvaluator()
+    from mlpotion.frameworks.tensorflow import ModelEvaluationConfig
+    eval_config = ModelEvaluationConfig(batch_size=8, verbose=1)
     eval_result = evaluator.evaluate(
         model=model,
         data=dataset,
+        config=eval_config,
     )
     print(f"{eval_result=}")
 
@@ -112,7 +115,7 @@ def main() -> None:
 
     # 7. Load model
     print("\n7. Loading model...")
-    loaded_model = persistence.load()
+    loaded_model, metadata = persistence.load()
     print(f"Model loaded successfully: {type(loaded_model)}")
 
     print("\n" + "=" * 60)

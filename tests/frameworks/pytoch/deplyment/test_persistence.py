@@ -40,7 +40,7 @@ class TestModelPersistence(TestBase):
 
         # Load into a fresh model instance
         persistence_load = ModelPersistence(path=path)
-        loaded_model = persistence_load.load(model_class=SmallNet)
+        loaded_model, metadata = persistence_load.load(model_class=SmallNet)
 
         self.assertIsInstance(loaded_model, SmallNet)
 
@@ -64,7 +64,7 @@ class TestModelPersistence(TestBase):
         self.assertTrue(path.exists(), f"Expected full model file at {path}")
 
         persistence_load = ModelPersistence(path=path)
-        loaded_model = persistence_load.load()
+        loaded_model, metadata = persistence_load.load()
 
         self.assertIsInstance(loaded_model, nn.Module)
         self.assertIsInstance(loaded_model, SmallNet)
@@ -120,7 +120,7 @@ class TestModelPersistence(TestBase):
         attached_model = SmallNet(in_features=4, out_features=2)
 
         persistence = ModelPersistence(path=path, model=attached_model)
-        loaded_model = persistence.load()  # no model_class → uses attached
+        loaded_model, metadata = persistence.load()  # no model_class → uses attached
 
         self.assertIs(loaded_model, attached_model)
 
@@ -146,7 +146,7 @@ class TestModelPersistence(TestBase):
         torch.save(checkpoint, path)
 
         persistence = ModelPersistence(path=path)
-        loaded_model = persistence.load(model_class=SmallNet)
+        loaded_model, metadata = persistence.load(model_class=SmallNet)
 
         self.assertIsInstance(loaded_model, SmallNet)
 

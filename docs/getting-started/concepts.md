@@ -394,13 +394,13 @@ class ModelPersistence(Protocol[ModelT]):
 ```python
 from mlpotion.frameworks.tensorflow import TFModelPersistence
 
-persistence = TFModelPersistence()
-
+persistence = TFModelPersistence(path="models/my_model", model=model)
 # Save
-persistence.save(model, "models/my_model")
+persistence.save()
 
 # Load - returns tuple of (model, metadata)
-loaded_model, metadata = persistence.load("models/my_model")
+loader = TFModelPersistence(path="models/my_model")
+loaded_model, metadata = loader.load()
 print(f"Model inputs: {metadata['inputs']}")
 print(f"Model outputs: {metadata['outputs']}")
 ```

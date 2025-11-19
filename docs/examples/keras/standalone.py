@@ -72,12 +72,12 @@ config = ModelTrainingConfig(
     learning_rate=0.001,
     validation_split=0.2,
     verbose=1,
-).dict()
+)
 
 result = trainer.train(
     model=model,
     data=dataset,
-    **config,
+    config=config,
 )
 
 logger.info("\nTraining completed!")
@@ -89,7 +89,7 @@ evaluator = ModelEvaluator()
 eval_result = evaluator.evaluate(
     model=model,
     data=dataset,
-    **config,
+    config=config,
 )
 
 logger.info("Evaluation completed!")
@@ -110,7 +110,7 @@ logger.info(f"Model saved to: {model_path}")
 
 # 6. Load model (♻️ REUSABLE)
 logger.info("\n6. Loading model...")
-loaded_model = persistence.load()
+loaded_model, metadata = persistence.load()
 logger.info(f"Model loaded successfully: {type(loaded_model)}")
 
 logger.info("\n" + "=" * 60)

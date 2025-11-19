@@ -5,7 +5,7 @@ import numpy as np
 from loguru import logger
 import keras  # pure Keras 3 import
 
-from mlpotion.core.protocols import ModelInspectorProtocol
+from mlpotion.core.protocols import ModelInspector as ModelInspectorProtocol
 from mlpotion.utils import trycatch
 from mlpotion.core.exceptions import ModelInspectorError
 

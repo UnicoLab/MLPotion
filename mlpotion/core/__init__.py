@@ -23,9 +23,7 @@ from mlpotion.core.protocols import (
     ModelEvaluator,
     ModelExporter,
     ModelPersistence,
-    ModelInspectorProtocol,
-    ModelExporterProtocol,
-    ModelEvaluatorProtocol,
+    ModelInspector,
 )
 from mlpotion.core.results import (
     TrainingResult,
@@ -56,9 +54,7 @@ __all__ = [
     "ModelEvaluator",
     "ModelExporter",
     "ModelPersistence",
-    "ModelInspectorProtocol",
-    "ModelExporterProtocol",
-    "ModelEvaluatorProtocol",
+    "ModelInspector",
     # Results
     "TrainingResult",
     "EvaluationResult",

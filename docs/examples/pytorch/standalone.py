@@ -111,7 +111,7 @@ def main() -> None:
 
     # 7. Load model
     print("\n7. Loading model...")
-    loaded_model = persistence.load()
+    loaded_model, metadata = persistence.load()
     print(f"Model loaded successfully: {type(loaded_model)}")
 
     print("\n" + "=" * 60)

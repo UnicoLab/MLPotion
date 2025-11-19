@@ -45,7 +45,7 @@ def load_csv_data(
     drop_last: bool = False,
     dtype: str = "float32",
     metadata: dict[str, Any] | None = None,
-) -> Annotated[DataLoader, "PyTorch DataLoader"]:
+) -> Annotated[DataLoader, "PyTorchDataLoader"]:
     """Load data from CSV files into a PyTorch DataLoader.
 
     This step uses `CSVDataset` and `CSVDataLoader` to load data matching the specified file pattern.
@@ -110,7 +110,7 @@ def load_streaming_csv_data(
     chunksize: int = 10000,
     dtype: str = "float32",
     metadata: dict[str, Any] | None = None,
-) -> Annotated[DataLoader, "PyTorch DataLoader"]:
+) -> Annotated[DataLoader, "PyTorchDataLoader"]:
     """Load large CSV files as a streaming PyTorch DataLoader.
 
     This step uses `StreamingCSVDataset` to load data in chunks, making it suitable for
@@ -177,7 +177,7 @@ def train_model(
     verbose: int = 1,
     max_batches_per_epoch: int | None = None,
     metadata: dict[str, Any] | None = None,
-) -> Tuple[Annotated[nn.Module, "Trained Model"], Annotated[dict[str, float], "Training Metrics"]]:
+) -> Tuple[Annotated[nn.Module, "TrainedModel"], Annotated[dict[str, float], "TrainingMetrics"]]:
     """Train a PyTorch model using `ModelTrainer`.
 
     This step configures and runs a training session. It supports validation data,
@@ -244,7 +244,7 @@ def evaluate_model(
     verbose: int = 1,
     max_batches: int | None = None,
     metadata: dict[str, Any] | None = None,
-) -> Annotated[dict[str, float], "Evaluation Metrics"]:
+) -> Annotated[dict[str, float], "EvaluationMetrics"]:
     """Evaluate a PyTorch model using `ModelEvaluator`.
 
     This step computes metrics on a given dataset using the provided model.
@@ -299,7 +299,7 @@ def export_model(
     dynamic_axes: dict[str, dict[int, str]] | None = None,
     opset_version: int = 14,
     metadata: dict[str, Any] | None = None,
-) -> Annotated[str, "Export Path"]:
+) -> Annotated[str, "ExportPath"]:
     """Export a PyTorch model to disk using `ModelExporter`.
 
     This step exports the model to a specified format (TorchScript, ONNX, or state_dict).
@@ -356,7 +356,7 @@ def save_model(
     save_path: str,
     save_full_model: bool = False,
     metadata: dict[str, Any] | None = None,
-) -> Annotated[str, "Save Path"]:
+) -> Annotated[str, "SavePath"]:
     """Save a PyTorch model to disk using `ModelPersistence`.
 
     This step saves the model for later reloading. It supports saving just the state dict
@@ -395,7 +395,7 @@ def load_model(
     map_location: str = "cpu",
     strict: bool = True,
     metadata: dict[str, Any] | None = None,
-) -> Annotated[nn.Module, "Loaded Model"]:
+) -> Annotated[nn.Module, "LoadedModel"]:
     """Load a PyTorch model from disk using `ModelPersistence`.
 
     This step loads a previously saved model. If loading a state dict, `model_class`
@@ -414,7 +414,7 @@ def load_model(
     logger.info(f"Loading model from: {model_path}")
 
     persistence = ModelPersistence(path=model_path)
-    model = persistence.load(
+    model, _ = persistence.load(
         model_class=model_class,
         map_location=map_location,
         strict=strict,

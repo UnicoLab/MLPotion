@@ -133,7 +133,7 @@ Your contributions help everyone. Check out our [Contributing Guide](contributin
 
 - Do not like modularity
 - Do not like reusability
-- Are to lazy to contribute something that you can't already find here
+- Are too lazy to contribute something that you can't already find here
 
 ## Getting Started 🚀
 
