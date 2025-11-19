@@ -251,3 +251,39 @@ profile = "black"
 line_length = 88
 known_first_party = ["mlpotion"]
 skip_gitignore = true
+
+[tool.semantic_release]
+version_toml = ["pyproject.toml:tool.poetry.version"]
+branch = "main"
+upload_to_pypi = false
+upload_to_release = true
+build_command = "pip install poetry && poetry build"
+commit_message = "chore(release): {version} [skip ci]"
+commit_parser = "angular"
+major_on_zero = false
+tag_format = "v{version}"
+
+[tool.semantic_release.branches.main]
+match = "main"
+prerelease = false
+
+[tool.semantic_release.changelog]
+exclude_commit_patterns = [
+    "^chore",
+    "^ci",
+    "^docs",
+    "^style",
+    "^test",
+    "^build",
+]
+
+[tool.semantic_release.commit_parser_options]
+allowed_tags = [
+    "feat",
+    "fix",
+    "perf",
+    "refactor",
+    "break",
+]
+minor_tags = ["feat"]
+patch_tags = ["fix", "perf", "refactor"]
