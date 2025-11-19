@@ -25,13 +25,24 @@ _DatasetForTypes = tf.data.Dataset if _is_dataset_real_class else object
 
 
 class TensorMaterializer(BaseMaterializer):
-    """Materializer for TensorFlow Tensor objects."""
+    """Materializer for TensorFlow Tensor objects.
+
+    This materializer handles the serialization and deserialization of `tf.Tensor` objects.
+    It saves tensors as binary protobuf files (`tensor.pb`) using `tf.io.serialize_tensor`.
+    """
     
     ASSOCIATED_TYPES = (_TensorForTypes,)
     ASSOCIATED_ARTIFACT_TYPE = ArtifactType.DATA
 
     def load(self, data_type: type[Any]) -> tf.Tensor:  # noqa: ARG002
-        """Load a TensorFlow Tensor."""
+        """Load a TensorFlow Tensor from the artifact store.
+
+        Args:
+            data_type: The type of the data to load (should be `tf.Tensor`).
+
+        Returns:
+            tf.Tensor: The loaded tensor.
+        """
         logger.info("Loading TensorFlow tensor...")
         try:
             tensor_path = Path(self.uri) / "tensor.pb"
@@ -41,7 +52,11 @@ class TensorMaterializer(BaseMaterializer):
             raise
 
     def save(self, data: tf.Tensor) -> None:
-        """Save a TensorFlow Tensor."""
+        """Save a TensorFlow Tensor to the artifact store.
+
+        Args:
+            data: The tensor to save.
+        """
         logger.info("Saving TensorFlow tensor...")
         try:
             Path(self.uri).mkdir(parents=True, exist_ok=True)
@@ -66,13 +81,24 @@ if _is_tensor_real_class:
 
 
 class TensorSpecMaterializer(BaseMaterializer):
-    """Materializer for TensorFlow TensorSpec objects."""
+    """Materializer for TensorFlow TensorSpec objects.
+
+    This materializer handles the serialization and deserialization of `tf.TensorSpec` objects.
+    It saves the spec as a JSON file (`spec.json`) containing shape, dtype, and other metadata.
+    """
     
     ASSOCIATED_TYPES = (_TensorSpecForTypes,)
     ASSOCIATED_ARTIFACT_TYPE = ArtifactType.DATA
 
     def load(self, data_type: type[Any]) -> tf.TensorSpec:  # noqa: ARG002
-        """Load a TensorFlow TensorSpec."""
+        """Load a TensorFlow TensorSpec from the artifact store.
+
+        Args:
+            data_type: The type of the data to load (should be `tf.TensorSpec`).
+
+        Returns:
+            tf.TensorSpec: The loaded tensor spec.
+        """
         logger.info("Loading TensorFlow TensorSpec...")
         try:
             spec_path = Path(self.uri) / "spec.json"
@@ -85,7 +111,11 @@ class TensorSpecMaterializer(BaseMaterializer):
             raise
 
     def save(self, data: tf.TensorSpec) -> None:
-        """Save a TensorFlow TensorSpec."""
+        """Save a TensorFlow TensorSpec to the artifact store.
+
+        Args:
+            data: The tensor spec to save.
+        """
         logger.info("Saving TensorFlow TensorSpec...")
         try:
             Path(self.uri).mkdir(parents=True, exist_ok=True)

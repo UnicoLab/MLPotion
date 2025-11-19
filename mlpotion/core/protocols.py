@@ -17,44 +17,66 @@ DataT = TypeVar("DataT")
 class DataLoader(Protocol[DatasetT]):
     """Protocol for data loading components.
 
-    Any class implementing load() satisfies this protocol.
+    This protocol defines the interface for loading data into a framework-specific format.
+    Any class that implements a `load()` method returning a dataset satisfies this protocol.
+
+    Type Parameters:
+        DatasetT: The type of the dataset returned (e.g., `tf.data.Dataset`, `torch.utils.data.DataLoader`).
 
     Example:
-        class CSVLoader:
+        ```python
+        class MyCSVLoader:
             def load(self) -> tf.data.Dataset:
+                # Implementation details...
                 return dataset
 
-        loader: DataLoader = CSVLoader()  # Type checks!
+        loader: DataLoader = MyCSVLoader()
+        ```
     """
 
     def load(self) -> DatasetT:
-        """Load data and return framework-specific dataset.
+        """Load data and return a framework-specific dataset.
 
         Returns:
-            Dataset in framework-specific format (tf.data.Dataset, DataLoader, etc.)
+            DatasetT: The loaded dataset in a framework-specific format.
         """
         ...
 
 
 @runtime_checkable
 class DatasetOptimizer(Protocol[DatasetT]):
-    """Protocol for dataset optimization components."""
+    """Protocol for dataset optimization components.
+
+    This protocol defines the interface for optimizing datasets, such as applying batching,
+    caching, prefetching, or shuffling.
+
+    Type Parameters:
+        DatasetT: The type of the dataset to be optimized.
+    """
 
     def optimize(self, dataset: DatasetT) -> DatasetT:
-        """Optimize dataset for training/inference.
+        """Optimize a dataset for training or inference.
 
         Args:
-            dataset: Input dataset to optimize
+            dataset: The input dataset to optimize.
 
         Returns:
-            Optimized dataset with batching, prefetching, etc.
+            DatasetT: The optimized dataset, ready for consumption by a model.
         """
         ...
 
 
 @runtime_checkable
 class DataTransformer(Protocol[DatasetT, ModelT]):
-    """Protocol for data transformation components."""
+    """Protocol for data transformation components.
+
+    This protocol defines the interface for transforming datasets using a model,
+    commonly used for tasks like generating embeddings or pre-processing data.
+
+    Type Parameters:
+        DatasetT: The type of the dataset.
+        ModelT: The type of the model used for transformation.
+    """
 
     def transform(
         self,
@@ -62,15 +84,15 @@ class DataTransformer(Protocol[DatasetT, ModelT]):
         model: ModelT,
         **kwargs: Any,
     ) -> DatasetT:
-        """Transform dataset using a model.
-        
+        """Transform a dataset using a model.
+
         Args:
-            dataset: Input dataset
-            model: Model to use for transformation
-            **kwargs: Extra arguments
+            dataset: The input dataset to transform.
+            model: The model to use for the transformation.
+            **kwargs: Additional framework-specific arguments (e.g., batch_size, device).
 
         Returns:
-            Transformed dataset
+            DatasetT: The transformed dataset.
         """
         ...
 
@@ -79,7 +101,11 @@ class DataTransformer(Protocol[DatasetT, ModelT]):
 class ModelTrainer(Protocol[ModelT, DatasetT]):
     """Protocol for model training components.
 
-    Type-safe across frameworks using generics.
+    This protocol defines the standard interface for training models across different frameworks.
+
+    Type Parameters:
+        ModelT: The type of the model to be trained.
+        DatasetT: The type of the dataset used for training.
     """
 
     def train(
@@ -89,23 +115,30 @@ class ModelTrainer(Protocol[ModelT, DatasetT]):
         config: TrainingConfig,
         validation_dataset: DatasetT | None = None,
     ) -> TrainingResult[ModelT]:
-        """Train a model.
+        """Train a model using the provided dataset and configuration.
 
         Args:
-            model: Model to train (framework-specific type)
-            dataset: Training dataset
-            config: Training configuration
-            validation_dataset: Optional validation dataset
+            model: The model instance to train.
+            dataset: The training dataset.
+            config: Configuration object containing training parameters (epochs, learning rate, etc.).
+            validation_dataset: Optional dataset for validation during training.
 
         Returns:
-            Training result with trained model and metrics
+            TrainingResult[ModelT]: An object containing the trained model, training history, and metrics.
         """
         ...
 
 
 @runtime_checkable
 class ModelEvaluator(Protocol[ModelT, DatasetT]):
-    """Protocol for model evaluation components."""
+    """Protocol for model evaluation components.
+
+    This protocol defines the interface for evaluating models.
+
+    Type Parameters:
+        ModelT: The type of the model to be evaluated.
+        DatasetT: The type of the dataset used for evaluation.
+    """
 
     def evaluate(
         self,
@@ -113,63 +146,75 @@ class ModelEvaluator(Protocol[ModelT, DatasetT]):
         dataset: DatasetT,
         config: EvaluationConfig,
     ) -> EvaluationResult:
-        """Evaluate a model.
+        """Evaluate a model on a given dataset.
 
         Args:
-            model: Model to evaluate
-            dataset: Evaluation dataset
-            config: Evaluation configuration
+            model: The model to evaluate.
+            dataset: The dataset to evaluate on.
+            config: Configuration object containing evaluation parameters.
 
         Returns:
-            Evaluation result with metrics
+            EvaluationResult: An object containing the evaluation metrics.
         """
         ...
 
 
 @runtime_checkable
 class ModelExporter(Protocol[ModelT]):
-    """Protocol for model export components."""
+    """Protocol for model export components.
+
+    This protocol defines the interface for exporting models to various formats for deployment.
+
+    Type Parameters:
+        ModelT: The type of the model to be exported.
+    """
 
     def export(
         self,
         model: ModelT,
         config: ExportConfig,
     ) -> ExportResult:
-        """Export model for serving/deployment.
+        """Export a model for serving or deployment.
 
         Args:
-            model: Model to export
-            config: Export configuration
+            model: The model to export.
+            config: Configuration object containing export parameters (path, format, etc.).
 
         Returns:
-            Export result with path and metadata
+            ExportResult: An object containing details about the exported model.
         """
         ...
 
 
 @runtime_checkable
 class ModelPersistence(Protocol[ModelT]):
-    """Protocol for model save/load operations."""
+    """Protocol for model persistence operations (save/load).
+
+    This protocol defines the interface for saving and loading models to/from disk.
+
+    Type Parameters:
+        ModelT: The type of the model to be persisted.
+    """
 
     def save(self, model: ModelT, path: str, **kwargs: Any) -> None:
-        """Save model to disk.
+        """Save a model to the specified path.
 
         Args:
-            model: Model to save
-            path: Path to save to
-            **kwargs: Framework-specific options
+            model: The model to save.
+            path: The destination path.
+            **kwargs: Additional framework-specific saving options.
         """
         ...
 
     def load(self, path: str, **kwargs: Any) -> tuple[ModelT, dict[str, Any]]:
-        """Load model from disk.
+        """Load a model from the specified path.
 
         Args:
-            path: Path to load from
-            **kwargs: Framework-specific options
+            path: The source path to load from.
+            **kwargs: Additional framework-specific loading options.
 
         Returns:
-            Loaded model and inspection result
+            tuple[ModelT, dict[str, Any]]: A tuple containing the loaded model and a dictionary of metadata (e.g., inspection results).
         """
         ...
 

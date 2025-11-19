@@ -18,19 +18,46 @@ from loguru import logger
 class ModelTrainer(ModelTrainerProtocol[nn.Module, DataLoader]):
     """Generic trainer for PyTorch models.
 
-    This trainer makes minimal assumptions about the model:
+    This class implements the `ModelTrainerProtocol` for PyTorch models. It handles the
+    training loop, device placement, loss calculation, backpropagation, and validation.
 
-    - If a batch is `(inputs, targets)`, it uses `loss_fn(outputs, targets)`.
-    - If a batch is just `inputs`, it uses `loss_fn(outputs, inputs)`
-      (useful for autoencoders / unsupervised setups).
-    - Any `nn.Module` is supported as long as its outputs/targets are compatible
-      with the configured loss function.
+    It supports:
+    - Supervised learning (batch is `(inputs, targets)`).
+    - Unsupervised/Self-supervised learning (batch is `inputs` only, loss is `fn(outputs, inputs)`).
+    - Custom loss functions (string alias, `nn.Module`, or callable).
+    - Automatic device management (CPU/GPU).
 
-    Optional config fields (if present on ModelTrainingConfig):
-        - max_batches_per_epoch: Optional[int]
-          Limit the number of batches processed in each epoch.
-        - max_batches: Optional[int]
-          Fallback name; if max_batches_per_epoch is not set, this is used.
+    Attributes:
+        model (nn.Module): The PyTorch model to train.
+        dataloader (DataLoader): The training data loader.
+        config (ModelTrainingConfig): Configuration for training (epochs, optimizer, etc.).
+
+    Example:
+        ```python
+        import torch
+        import torch.nn as nn
+        from mlpotion.frameworks.pytorch import ModelTrainer
+        from mlpotion.frameworks.pytorch.config import ModelTrainingConfig
+
+        # Define model
+        model = nn.Linear(10, 1)
+        
+        # Define config
+        config = ModelTrainingConfig(
+            epochs=5,
+            learning_rate=0.01,
+            optimizer="adam",
+            loss_fn="mse",
+            device="cpu"
+        )
+
+        # Initialize trainer
+        trainer = ModelTrainer()
+
+        # Train
+        result = trainer.train(model, train_loader, config, val_loader)
+        print(result.metrics)
+        ```
     """
 
     @trycatch(
@@ -47,16 +74,18 @@ class ModelTrainer(ModelTrainerProtocol[nn.Module, DataLoader]):
         """Train a PyTorch model.
 
         Args:
-            model: PyTorch model (nn.Module).
-            dataloader: Training DataLoader.
-            config: Training configuration.
-            validation_dataloader: Optional validation DataLoader.
+            model: The PyTorch model (`nn.Module`) to train.
+            dataloader: The `DataLoader` providing training data.
+            config: A `ModelTrainingConfig` object containing training parameters.
+            validation_dataloader: Optional `DataLoader` for validation.
 
         Returns:
-            TrainingResult: trained model, history, metrics, config, etc.
+            TrainingResult[nn.Module]: A dataclass containing the trained model,
+            training history (loss/metrics per epoch), and final metrics.
 
         Raises:
-            TrainingError: If training fails.
+            TrainingError: If the training loop encounters an error (e.g., NaN loss,
+            device mismatch, empty dataloader).
         """
         try:
             logger.info("Starting PyTorch model training...")

@@ -14,43 +14,27 @@ ModelLike = Any  # usually keras.Model, but duck-typed on attributes
 
 @dataclass(slots=True)
 class ModelInspector(ModelInspectorProtocol[ModelLike]):
-    """Unified inspector for Keras 3 models (pure keras, no tf import).
+    """Inspector for Keras models.
 
-    Handles any object that looks like a Keras model (i.e. `keras.Model`),
-    and optionally inspects a `.signatures` attribute if present.
-
-    Extracts:
-        - basic model metadata (name, backend, trainable)
-        - input specs (name, shape, dtype)
-        - output specs
-        - parameter counts
-        - optional per-layer summary
-        - optional signatures (if `model.signatures` exists and is non-empty)
+    This class analyzes Keras models to extract metadata such as input/output shapes,
+    parameter counts, layer details, and signatures. It is useful for validating models
+    before training or deployment, and for generating model reports.
 
     Attributes:
-        include_layers: Whether to include per-layer details.
-        include_signatures: Whether to include any signatures found.
+        include_layers (bool): Whether to include detailed information about each layer.
+        include_signatures (bool): Whether to include model signatures (if available).
 
     Example:
         ```python
         import keras
         from mlpotion.frameworks.keras import ModelInspector
 
-        model = keras.Sequential(
-            [
-                keras.layers.Input(shape=(32,)),
-                keras.layers.Dense(64, activation="relu"),
-                keras.layers.Dense(1, activation="linear"),
-            ]
-        )
-
-        inspector = ModelInspector(include_layers=True, include_signatures=True)
+        model = keras.Sequential([keras.layers.Dense(1, input_shape=(10,))])
+        inspector = ModelInspector()
+        
         info = inspector.inspect(model)
-
-        print("Inputs:", info["inputs"])
-        print("Outputs:", info["outputs"])
-        print("Params:", info["parameters"])
-        print("Layers:", info["layers"])
+        print(f"Total params: {info['parameters']['total']}")
+        print(f"Inputs: {info['inputs']}")
         ```
     """
 
@@ -63,7 +47,22 @@ class ModelInspector(ModelInspectorProtocol[ModelLike]):
         success_msg="✅ Successfully inspected Keras model",
     )
     def inspect(self, model: ModelLike) -> dict[str, Any]:
-        """Inspect a Keras model-like object and return structured metadata."""
+        """Inspect a Keras model and return structured metadata.
+
+        Args:
+            model: The Keras model to inspect.
+
+        Returns:
+            dict[str, Any]: A dictionary containing model metadata:
+                - `name`: Model name.
+                - `backend`: Keras backend used.
+                - `trainable`: Whether the model is trainable.
+                - `inputs`: List of input specifications.
+                - `outputs`: List of output specifications.
+                - `parameters`: Dictionary of parameter counts.
+                - `layers`: List of layer details (if `include_layers=True`).
+                - `signatures`: Model signatures (if `include_signatures=True`).
+        """
         if not isinstance(model, keras.Model):
             raise TypeError(
                 f"ModelInspector expects a keras.Model, got {type(model)!r}"

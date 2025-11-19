@@ -43,26 +43,6 @@ def train_model(
     return result
 ```
 
-## When to Use Which Framework? 🤔
-
-### TensorFlow
-
-- ✅ Production deployment
-- ✅ Mobile/edge devices (TFLite)
-- ✅ Distributed training at scale
-
-### PyTorch
-
-- ✅ Research and prototyping
-- ✅ Custom architectures
-- ✅ Dynamic computation graphs
-
-### Keras
-
-- ✅ Quick prototyping
-- ✅ Teaching and learning
-- ✅ Backend flexibility
-
 ## Switching Frameworks Mid-Project 🔄
 
 ```python
@@ -72,11 +52,11 @@ from mlpotion.frameworks.tensorflow import *
 # Later: Switch to PyTorch for custom research
 from mlpotion.frameworks.pytorch import *
 
-# Finally: Deploy with TensorFlow for production
-from mlpotion.frameworks.tensorflow import *
+# Finally: Deploy with Keras for production
+from mlpotion.frameworks.keras import *
 ```
 
-The same MLPotion patterns work everywhere!
+The same MLPotion patterns (to some possible extents) work everywhere!
 
 ---
 

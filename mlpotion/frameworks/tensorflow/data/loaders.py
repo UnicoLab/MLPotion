@@ -14,35 +14,36 @@ from mlpotion.utils import trycatch
 class CSVDataLoader(DataLoader[tf.data.Dataset]):
     """Load CSV files into TensorFlow datasets.
 
-    Args:
-        file_pattern: Glob pattern pointing to CSV files.
-        batch_size: Batch size for the dataset.
-        column_names: Columns to load from CSV (None = infer all).
-        label_name: Name of the label column (None = no labels).
-        map_fn: Mapping function to apply to the dataset.
-        config: Extra keyword arguments forwarded to
-            `tf.data.experimental.make_csv_dataset`. `num_epochs` can also be
-            provided here, but will be extracted and validated.
+    This class provides a convenient wrapper around `tf.data.experimental.make_csv_dataset`,
+    adding validation, logging, and configuration management. It handles file pattern matching,
+    column selection, and label separation.
+
+    Attributes:
+        file_pattern (str): Glob pattern matching the CSV files to load.
+        batch_size (int): Number of samples per batch.
+        column_names (list[str] | None): Specific columns to load. If None, all columns are loaded.
+        label_name (str | None): Name of the column to use as the label. If None, no labels are returned.
+        map_fn (Callable | None): Optional function to map over the dataset (e.g., for preprocessing).
+        config (dict | None): Additional configuration passed to `make_csv_dataset`.
 
     Example:
         ```python
         from mlpotion.frameworks.tensorflow import CSVDataLoader
-        from mlpotion.core.config import DataLoadingConfig
 
-        # setup config with validation
-        config = DataLoadingConfig(
-            file_pattern="data/*.csv",
-            label_name="target",
-            num_epochs=1,
-            shuffle=True,
+        # Simple usage
+        loader = CSVDataLoader(
+            file_pattern="data/train_*.csv",
+            label_name="target_class",
+            batch_size=64,
+            config={"num_epochs": 5, "shuffle": True}
         )
-        # create loader with config
-        loader = CSVDataLoader(config=config)
-        # load dataset
+        
         dataset = loader.load()
-        # use dataset
+        
+        # Iterate
         for features, labels in dataset:
-            ...
+            print(features['some_column'].shape)
+            break
         ```
     """
 
@@ -169,22 +170,11 @@ class CSVDataLoader(DataLoader[tf.data.Dataset]):
         """Load CSV files into a TensorFlow dataset.
 
         Returns:
-            tf.data.Dataset: Features and, if configured, labels.
+            tf.data.Dataset: A `tf.data.Dataset` yielding tuples of `(features, labels)` if `label_name`
+            is provided, or just `features` (dict) if not.
 
         Raises:
-            DataLoadingError: If loading fails or configuration is invalid.
-
-        Example:
-            ```python
-            loader = CSVDataLoader(
-                file_pattern="data/*.csv",
-                label_name="target",
-                config={"num_epochs": 1, "shuffle": True},
-            )
-            dataset = loader.load()
-            for features, labels in dataset:
-                ...
-            ```
+            DataLoadingError: If no files match the pattern, or if `num_epochs` is invalid.
         """
         dataset = tf.data.experimental.make_csv_dataset(
             file_pattern=self.file_pattern,
@@ -218,19 +208,35 @@ class CSVDataLoader(DataLoader[tf.data.Dataset]):
 class RecordDataLoader(DataLoader[tf.data.Dataset]):
     """Loader for TFRecord files into tf.data.Dataset.
 
-    Args:
-        file_pattern: Glob pattern pointing to one or more .tfrecord files.
-        batch_size: Batch size for the dataset.
-        parse_fn: Optional callable to parse one serialized example into the
-            desired output (features, labels or whatever).
-        element_spec_json: Optional path or dict describing the element_spec (for nested structure).
-        config: Extra config dict. Recognised keys:
-            - num_parallel_reads: int or tf.data.AUTOTUNE
-            - shuffle_buffer_size: int
-            - prefetch_buffer_size: int
-            - drop_remainder: bool
-            - repeat_count: Optional[int] (number of epochs, None = infinite)
-            - compression_type: Optional[str] (“”, “GZIP”, “ZLIB”)
+    This class facilitates loading data from TFRecord files, which is the recommended format
+    for high-performance TensorFlow pipelines. It supports parsing examples, handling
+    nested structures via `element_spec`, and applying common dataset optimizations.
+
+    Attributes:
+        file_pattern (str): Glob pattern matching the TFRecord files.
+        batch_size (int): Number of samples per batch.
+        column_names (list[str] | None): Specific feature keys to extract.
+        label_name (str | None): Key of the label feature.
+        map_fn (Callable | None): Optional function to map over the dataset.
+        element_spec_json (str | dict | None): JSON or dict describing the data structure (optional).
+        config (dict | None): Configuration for reading (e.g., `num_parallel_reads`, `compression_type`).
+
+    Example:
+        ```python
+        from mlpotion.frameworks.tensorflow import RecordDataLoader
+
+        loader = RecordDataLoader(
+            file_pattern="data/records/*.tfrecord",
+            batch_size=128,
+            label_name="label",
+            config={
+                "compression_type": "GZIP",
+                "num_parallel_reads": tf.data.AUTOTUNE
+            }
+        )
+
+        dataset = loader.load()
+        ```
     """
 
     def __init__(

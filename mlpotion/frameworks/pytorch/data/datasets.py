@@ -15,33 +15,34 @@ from mlpotion.core.exceptions import DataLoadingError
 class CSVDataset(Dataset[tuple[torch.Tensor, torch.Tensor] | torch.Tensor]):
     """PyTorch Dataset for CSV files with on-demand tensor conversion.
 
-    This is the in-memory analogue of your TF/Keras CSV loaders:
+    This class loads CSV data into memory (using Pandas) and provides a map-style PyTorch Dataset.
+    It supports filtering columns, separating labels, and efficient on-demand tensor conversion
+    to minimize memory usage.
 
-    - Validates that CSV files matching `file_pattern` exist.
-    - Loads all CSVs into a single `pandas.DataFrame`.
-    - Optionally restricts to a subset of `column_names`.
-    - Optionally splits out a label column (`label_name`).
-    - Converts rows to tensors lazily in ``__getitem__`` to reduce peak
-      tensor memory usage.
-
-    Args:
-        file_pattern: Glob pattern for CSV files (e.g. `"data/train_*.csv"`).
-        column_names: Optional subset of columns to load (None = all).
-        label_name: Optional label column name (None = no labels).
-        dtype: Torch dtype for features (and labels if numeric).
+    Attributes:
+        file_pattern (str): Glob pattern matching the CSV files to load.
+        column_names (list[str] | None): Specific columns to load. If None, all columns are loaded.
+        label_name (str | None): Name of the column to use as the label. If None, no labels are returned.
+        dtype (torch.dtype): The data type for the features (default: `torch.float32`).
 
     Example:
         ```python
         from mlpotion.frameworks.pytorch import CSVDataset
         from torch.utils.data import DataLoader
 
+        # Create dataset
         dataset = CSVDataset(
             file_pattern="data/train_*.csv",
-            label_name="target",
+            label_name="target_class",
+            column_names=["feature1", "feature2", "target_class"]
         )
+
+        # Create DataLoader
         dataloader = DataLoader(dataset, batch_size=32, shuffle=True)
-        for batch in dataloader:
-            ...
+
+        # Iterate
+        for features, labels in dataloader:
+            print(features.shape, labels.shape)
         ```
     """
 
@@ -199,32 +200,35 @@ class StreamingCSVDataset(
 ):
     """Streaming PyTorch IterableDataset for large CSV files.
 
-    This dataset reads CSV files in chunks and yields samples one by one,
-    avoiding loading the entire dataset into memory.
+    This dataset is designed for datasets that are too large to fit in memory. It reads CSV files
+    in chunks (using Pandas) and streams samples one by one. It is compatible with PyTorch's
+    `IterableDataset` interface.
 
-    It is the streaming analogue to `CSVDataset`, similar in spirit
-    to your TF `TFCSVDataLoader` but tailored to PyTorch's IterableDataset.
-
-    Args:
-        file_pattern: Glob pattern for CSV files.
-        column_names: Feature columns to load (None = all).
-        label_name: Optional label column (None = no labels).
-        chunksize: Number of rows to read per pandas chunk.
-        dtype: Torch dtype for features (and labels if numeric).
+    Attributes:
+        file_pattern (str): Glob pattern matching the CSV files to load.
+        column_names (list[str] | None): Specific columns to load.
+        label_name (str | None): Name of the label column.
+        chunksize (int): Number of rows to read into memory at a time per file.
+        dtype (torch.dtype): The data type for the features.
 
     Example:
         ```python
         from mlpotion.frameworks.pytorch import StreamingCSVDataset
         from torch.utils.data import DataLoader
 
+        # Create streaming dataset
         dataset = StreamingCSVDataset(
-            file_pattern="data/train_*.csv",
+            file_pattern="data/large_dataset_*.csv",
             label_name="target",
-            chunksize=4096,
+            chunksize=10000
         )
-        dataloader = DataLoader(dataset, batch_size=32)  # no shuffle
-        for batch in dataloader:
-            ...
+
+        # Create DataLoader (shuffle must be False for IterableDataset)
+        dataloader = DataLoader(dataset, batch_size=64)
+
+        for features, labels in dataloader:
+            # Train model...
+            pass
         ```
     """
 

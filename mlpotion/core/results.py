@@ -8,9 +8,17 @@ ModelT = TypeVar("ModelT")
 
 @dataclass
 class TrainingResult(Generic[ModelT]):
-    """Result from model training.
+    """Result container for model training operations.
 
-    Generic over model type for type safety.
+    This dataclass encapsulates all relevant information produced during a model training session.
+
+    Attributes:
+        model (ModelT): The trained model instance.
+        history (dict[str, list[float]]): A dictionary mapping metric names to lists of values per epoch.
+        metrics (dict[str, float]): A dictionary of the final metric values after training.
+        config (Any): The configuration object used for this training session.
+        training_time (float | None): The total time taken for training in seconds.
+        best_epoch (int | None): The epoch number where the best performance was achieved (if applicable).
     """
 
     model: ModelT
@@ -21,30 +29,64 @@ class TrainingResult(Generic[ModelT]):
     best_epoch: int | None = None
 
     def get_metric(self, name: str) -> float | None:
-        """Get a specific metric value."""
+        """Retrieve a specific final metric value.
+
+        Args:
+            name: The name of the metric to retrieve.
+
+        Returns:
+            float | None: The value of the metric, or None if not found.
+        """
         return self.metrics.get(name)
 
     def get_history(self, metric: str) -> list[float] | None:
-        """Get history for a specific metric."""
+        """Retrieve the history of a specific metric over epochs.
+
+        Args:
+            metric: The name of the metric to retrieve history for.
+
+        Returns:
+            list[float] | None: The list of metric values per epoch, or None if not found.
+        """
         return self.history.get(metric)
 
 
 @dataclass
 class EvaluationResult:
-    """Result from model evaluation."""
+    """Result container for model evaluation operations.
+
+    Attributes:
+        metrics (dict[str, float]): A dictionary of evaluation metric values.
+        config (Any): The configuration object used for this evaluation.
+        evaluation_time (float | None): The total time taken for evaluation in seconds.
+    """
 
     metrics: dict[str, float]
     config: Any
     evaluation_time: float | None = None
 
     def get_metric(self, name: str) -> float | None:
-        """Get a specific metric value."""
+        """Retrieve a specific metric value.
+
+        Args:
+            name: The name of the metric to retrieve.
+
+        Returns:
+            float | None: The value of the metric, or None if not found.
+        """
         return self.metrics.get(name)
 
 
 @dataclass
 class ExportResult:
-    """Result from model export."""
+    """Result container for model export operations.
+
+    Attributes:
+        export_path (str): The absolute path where the model was exported.
+        format (str): The format of the exported model (e.g., 'saved_model', 'onnx').
+        config (Any): The configuration object used for this export.
+        metadata (dict[str, Any]): Additional metadata generated during export.
+    """
 
     export_path: str
     format: str
@@ -57,7 +99,20 @@ class ExportResult:
 
 @dataclass
 class InspectionResult:
-    """Result from model inspection."""
+    """Result container for model inspection operations.
+
+    Attributes:
+        name (str): The name of the model.
+        backend (str): The framework backend used (e.g., 'tensorflow', 'pytorch').
+        trainable (bool): Whether the model is trainable.
+        inputs (list[dict[str, Any]]): List of input specifications (shape, dtype, etc.).
+        input_names (list[str]): List of input names.
+        outputs (list[dict[str, Any]]): List of output specifications.
+        output_names (list[str]): List of output names.
+        parameters (dict[str, int]): Dictionary of parameter counts (total, trainable, non_trainable).
+        signatures (dict[str, Any]): Model signatures (specific to TensorFlow SavedModel).
+        layers (list[dict[str, Any]]): List of layer details (name, class, args).
+    """
 
     name: str
     backend: str

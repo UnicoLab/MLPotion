@@ -13,60 +13,45 @@ from mlpotion.core.exceptions import ModelEvaluatorError
 
 @dataclass(slots=True)
 class ModelEvaluator(ModelEvaluatorProtocol[Model, Sequence]):
-    """Generic evaluator for Keras 3 models (pure `keras`, no `tensorflow` import).
+    """Generic evaluator for Keras 3 models.
 
-    This class implements `ModelEvaluatorProtocol[keras.Model]` and wraps
-    `model.evaluate(...)` in a consistent way:
+    This class implements the `ModelEvaluatorProtocol` for Keras models. It wraps the
+    `model.evaluate()` method to provide a consistent evaluation interface.
 
-    - Accepts various `data` forms:
-        * `(x, y)` tuple (NumPy, tensors, etc.)
-        * dict like `{"x": x, "y": y}`
-        * dataset-like or generator that `model.evaluate` understands
-    - Ensures `return_dict=True` so the result is always `dict[str, float]`.
-    - Optionally compiles the model if it's not compiled yet.
-
-    Recognized kwargs:
-        - compile_params: Optional[Mapping[str, Any]]
-            * Passed to `model.compile(**compile_params)` if the model appears
-              uncompiled.
-
-        - eval_params: Optional[Mapping[str, Any]]
-            * Extra params forwarded to `model.evaluate(...)` (e.g.
-              `batch_size`, `verbose`, `steps`).
-              `return_dict` is always forced to True.
+    It ensures that the evaluation result is always returned as a dictionary of metric names
+    to values, regardless of how the model was compiled or what arguments were passed.
 
     Example:
         ```python
-        import numpy as np
         import keras
+        import numpy as np
         from mlpotion.frameworks.keras import ModelEvaluator
 
-        x_test = np.random.rand(100, 32).astype("float32")
-        y_test = np.random.randint(0, 2, size=(100,))
+        # Prepare data
+        X_test = np.random.rand(20, 10)
+        y_test = np.random.randint(0, 2, 20)
 
-        model = keras.Sequential(
-            [
-                keras.layers.Input(shape=(32,)),
-                keras.layers.Dense(64, activation="relu"),
-                keras.layers.Dense(1, activation="sigmoid"),
-            ]
-        )
+        # Define model
+        model = keras.Sequential([
+            keras.layers.Dense(1, activation='sigmoid')
+        ])
 
+        # Initialize evaluator
         evaluator = ModelEvaluator()
 
-        # Compile + evaluate in one shot
+        # Evaluate
         metrics = evaluator.evaluate(
-            model,
-            data=(x_test, y_test),
+            model=model,
+            data=(X_test, y_test),
             compile_params={
                 "optimizer": "adam",
                 "loss": "binary_crossentropy",
-                "metrics": ["accuracy"],
+                "metrics": ["accuracy"]
             },
-            eval_params={"batch_size": 32, "verbose": 0},
+            eval_params={"batch_size": 32}
         )
 
-        print(metrics)  # {'loss': ..., 'accuracy': ...}
+        print(metrics)  # {'loss': 0.693..., 'accuracy': 0.5...}
         ```
     """
 
@@ -81,17 +66,14 @@ class ModelEvaluator(ModelEvaluatorProtocol[Model, Sequence]):
         """Evaluate a Keras model on the given data.
 
         Args:
-            model: Compiled or uncompiled Keras model.
-            data: Evaluation data; can be:
-                - (x, y)
-                - {"x": x, "y": y, ...}
-                - dataset-like object understood by `model.evaluate`.
-            **kwargs:
-                compile_params: Optional[Mapping[str, Any]]
-                eval_params: Optional[Mapping[str, Any]]
+            model: The Keras model to evaluate.
+            data: The evaluation data. Can be a tuple `(x, y)`, a dictionary, or a `Sequence`.
+            **kwargs: Additional arguments:
+                - `compile_params` (dict): Arguments for `model.compile()` if not already compiled.
+                - `eval_params` (dict): Arguments for `model.evaluate()` (batch_size, verbose, etc.).
 
         Returns:
-            Dictionary mapping metric names to values.
+            dict[str, float]: A dictionary mapping metric names to their values.
         """
         self._validate_model(model)
 

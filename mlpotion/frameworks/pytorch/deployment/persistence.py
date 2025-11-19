@@ -15,64 +15,47 @@ from mlpotion.utils import trycatch
 
 @dataclass(slots=True)
 class ModelPersistence(ModelPersistenceProtocol[nn.Module]):
-    """Simple persistence helper for PyTorch models.
+    """Persistence helper for PyTorch models.
 
-    This class focuses on saving and loading **PyTorch nn.Module** models
-    in two main ways:
+    This class manages saving and loading of PyTorch models. It supports two modes:
+    1. **State Dict (Recommended)**: Saves only the model parameters (`model.state_dict()`).
+       Requires the model class to be available when loading.
+    2. **Full Model**: Saves the entire model object using pickle. Less portable but easier to load.
 
-    - **state_dict** (recommended):
-        * `torch.save(model.state_dict(), path)`
-        * Loaded by instantiating a model class and calling `load_state_dict`.
-
-    - **full model** (less portable):
-        * `torch.save(model, path)`
-        * Loaded by deserializing the whole object (pickled).
-
-    Args:
-        path: Filesystem path to save/load the model.
-        model: Optional PyTorch model instance attached to this helper.
+    Attributes:
+        path (str | Path): The file path for the model artifact.
+        model (nn.Module | None): The PyTorch model instance.
 
     Example:
-        Save / load state_dict (recommended):
-
+        **Saving and Loading State Dict (Recommended):**
         ```python
         from mlpotion.frameworks.pytorch import ModelPersistence
         import torch.nn as nn
 
+        # Define model
         class MyModel(nn.Module):
-            ...
-
+            def __init__(self): super().__init__(); self.l = nn.Linear(1, 1)
+        
         model = MyModel()
 
-        persistence = ModelPersistence(
-            path="artifacts/my_model.pth",
-            model=model,
-        )
+        # Save
+        saver = ModelPersistence(path="model.pth", model=model)
+        saver.save(save_full_model=False)
 
-        # Save state_dict
-        persistence.save(save_full_model=False)
-
-        # Later, load into a fresh instance
-        loader = ModelPersistence(path="artifacts/my_model.pth")
+        # Load
+        loader = ModelPersistence(path="model.pth")
+        # We must provide the model class or an instance for state_dict loading
         loaded_model = loader.load(model_class=MyModel)
         ```
 
     Example:
-        Save / load full model object (less portable):
-
+        **Saving and Loading Full Model:**
         ```python
-        from mlpotion.frameworks.pytorch import ModelPersistence
+        # Save
+        saver.save(save_full_model=True)
 
-        persistence = ModelPersistence(
-            path="artifacts/my_model_full.pt",
-            model=model,
-        )
-
-        # Save full model
-        persistence.save(save_full_model=True)
-
-        # Load it back
-        loader = ModelPersistence(path="artifacts/my_model_full.pt")
+        # Load (no model class needed)
+        loader = ModelPersistence(path="model.pth")
         loaded_model = loader.load()
         ```
     """
@@ -108,11 +91,9 @@ class ModelPersistence(ModelPersistenceProtocol[nn.Module]):
         """Save the attached PyTorch model to disk.
 
         Args:
-            save_full_model:
-                - If False (default & recommended), save `model.state_dict()`.
-                - If True, save the entire model object (pickled).
-            **torch_save_kwargs:
-                Extra keyword arguments forwarded to `torch.save()`.
+            save_full_model: If True, saves the entire model object (pickle).
+                If False (default), saves only the `state_dict`.
+            **torch_save_kwargs: Additional arguments passed to `torch.save()`.
 
         Raises:
             ModelPersistenceError: If no model is attached or saving fails.
@@ -155,34 +136,23 @@ class ModelPersistence(ModelPersistenceProtocol[nn.Module]):
     ) -> nn.Module:
         """Load a PyTorch model from disk.
 
-        Behavior depends on what was saved:
-
-        - If the checkpoint is an `nn.Module`, it's returned directly.
-        - If the checkpoint is a dict-like, it's treated as a state_dict, and
-          a model instance is created (or reused) to load it.
+        This method automatically detects if the file is a full model checkpoint or a
+        state dict.
 
         Args:
-            model_class:
-                Model class used when loading from a state_dict checkpoint.
-                Required if:
-                    * the checkpoint is dict-like AND
-                    * no `self.model` is attached.
-            map_location:
-                Device mapping passed to `torch.load` (default: "cpu").
-            strict:
-                Whether to enforce that the keys in the state_dict exactly match
-                the model's own `state_dict()` keys. Same semantics as PyTorch.
-            model_kwargs:
-                Keyword arguments passed to `model_class` when instantiating
-                a new model for state_dict loading.
-            **torch_load_kwargs:
-                Extra kwargs forwarded to `torch.load()`.
+            model_class: The model class to instantiate if loading a state dict and no
+                model instance is currently attached.
+            map_location: Device to load the model onto (default: "cpu").
+            strict: Whether to strictly enforce state dict keys match the model.
+            model_kwargs: Arguments to pass to `model_class` constructor.
+            **torch_load_kwargs: Additional arguments passed to `torch.load()`.
 
         Returns:
-            Loaded `nn.Module` instance (also stored in `self.model`).
+            nn.Module: The loaded PyTorch model.
 
         Raises:
-            ModelPersistenceError: If loading fails or configuration is invalid.
+            ModelPersistenceError: If loading fails, or if `model_class` is missing
+            when required.
         """
         path = self._ensure_path_exists()
 

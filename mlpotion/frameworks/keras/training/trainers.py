@@ -13,76 +13,52 @@ from mlpotion.core.exceptions import ModelTrainerError
 
 @dataclass(slots=True)
 class ModelTrainer(ModelTrainerProtocol[Model, Sequence]):
-    """Generic trainer for Keras 3 models (pure `keras`, no `tensorflow` import).
+    """Generic trainer for Keras 3 models.
 
-    This class implements `ModelTrainerProtocol[keras.Model]` and wraps
-    `model.fit(...)` in a consistent, protocol-friendly way.
+    This class implements the `ModelTrainerProtocol` for Keras models, providing a standardized
+    interface for training. It wraps the standard `model.fit()` method but adds flexibility
+    and consistency checks.
 
     It supports:
-
-    - Compiling the model if it is not compiled yet (via `compile_params`).
-    - Training on various data formats:
-        * (x, y) or (x, y, sample_weight)
-        * dict-like `{"x": x, "y": y, ...}`
-        * dataset-like or generator understood by `model.fit`.
-    - Passing arbitrary `fit` options via `fit_params`.
-    - Returning a **history dict**: `metric_name -> list[float]`.
-
-    Recognized kwargs:
-        - compile_params: Optional[Mapping[str, Any]]
-            Parameters passed to `model.compile(**compile_params)` if the model
-            does not appear to be compiled.
-
-        - fit_params: Optional[Mapping[str, Any]]
-            Parameters forwarded to `model.fit(...)`, e.g.:
-                * epochs
-                * batch_size
-                * validation_data
-                * callbacks
-                * verbose
-                * steps_per_epoch
-                * validation_steps
+    - Automatic model compilation if `compile_params` are provided.
+    - Handling of various data formats (tuples, dicts, generators).
+    - Standardized return format (dictionary of history metrics).
 
     Example:
         ```python
-        import numpy as np
         import keras
+        import numpy as np
         from mlpotion.frameworks.keras import ModelTrainer
 
-        x_train = np.random.rand(1000, 32).astype("float32")
-        y_train = np.random.randint(0, 2, size=(1000,))
+        # Prepare data
+        X_train = np.random.rand(100, 10)
+        y_train = np.random.randint(0, 2, 100)
+        
+        # Define model
+        model = keras.Sequential([
+            keras.layers.Dense(1, activation='sigmoid')
+        ])
 
-        x_val = np.random.rand(200, 32).astype("float32")
-        y_val = np.random.randint(0, 2, size=(200,))
-
-        model = keras.Sequential(
-            [
-                keras.layers.Input(shape=(32,)),
-                keras.layers.Dense(64, activation="relu"),
-                keras.layers.Dense(1, activation="sigmoid"),
-            ]
-        )
-
+        # Initialize trainer
         trainer = ModelTrainer()
 
+        # Train
         history = trainer.train(
             model=model,
-            data=(x_train, y_train),
+            data=(X_train, y_train),
             compile_params={
                 "optimizer": "adam",
                 "loss": "binary_crossentropy",
-                "metrics": ["accuracy"],
+                "metrics": ["accuracy"]
             },
             fit_params={
-                "epochs": 10,
+                "epochs": 5,
                 "batch_size": 32,
-                "validation_data": (x_val, y_val),
-                "verbose": 1,
-            },
+                "verbose": 1
+            }
         )
-
-        print(history.keys())      # dict_keys(['loss', 'accuracy', 'val_loss', 'val_accuracy'])
-        print(history["loss"])     # list of loss per epoch
+        
+        print(history['loss'])
         ```
     """
 
@@ -97,18 +73,14 @@ class ModelTrainer(ModelTrainerProtocol[Model, Sequence]):
         """Train a Keras model on the provided data.
 
         Args:
-            model: Keras model to train.
-            data: Training data; can be:
-                - (x, y)
-                - (x, y, sample_weight)
-                - dict-like with 'x' and 'y' keys
-                - dataset-like object
-            **kwargs:
-                compile_params: Optional[Mapping[str, Any]]
-                fit_params: Optional[Mapping[str, Any]]
+            model: The Keras model to train.
+            data: The training data. Can be a tuple `(x, y)`, a dictionary, a `Sequence`, or a generator.
+            **kwargs: Additional arguments:
+                - `compile_params` (dict): Arguments for `model.compile()` (optimizer, loss, metrics).
+                - `fit_params` (dict): Arguments for `model.fit()` (epochs, batch_size, callbacks, etc.).
 
         Returns:
-            History dictionary: metric name -> list of values per epoch.
+            dict[str, list[float]]: A dictionary containing the training history (metrics per epoch).
         """
         self._validate_model(model)
 

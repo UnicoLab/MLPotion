@@ -18,22 +18,25 @@ from loguru import logger
 class ModelEvaluator(ModelEvaluatorProtocol[nn.Module, DataLoader]):
     """Generic evaluator for PyTorch models.
 
-    This evaluator makes minimal assumptions about the model and data:
+    This class implements the `ModelEvaluatorProtocol` for PyTorch models. It performs
+    a full pass over the evaluation dataset, computing the average loss.
 
-    - If a batch is `(inputs, targets)`, it uses `loss_fn(outputs, targets)`.
-    - If a batch is just `inputs`, it uses `loss_fn(outputs, inputs)`
-      (useful for autoencoders / unsupervised setups).
-    - Any `nn.Module` is supported as long as its outputs/targets are compatible
-      with the configured loss function.
+    It supports:
+    - Supervised and unsupervised evaluation.
+    - Custom loss functions.
+    - Automatic device management.
 
-    The loss function can be:
-        - a string key (e.g. "mse", "cross_entropy")
-        - an `nn.Module` instance
-        - a callable `(outputs, targets) -> loss_tensor`
+    Example:
+        ```python
+        from mlpotion.frameworks.pytorch import ModelEvaluator
+        from mlpotion.frameworks.pytorch.config import ModelEvaluationConfig
 
-    Optional config attribute:
-        - max_batches: Optional[int]
-          If present and not None, evaluation will stop after this many batches.
+        evaluator = ModelEvaluator()
+        config = ModelEvaluationConfig(loss_fn="cross_entropy", device="cuda")
+
+        result = evaluator.evaluate(model, test_loader, config)
+        print(f"Test Loss: {result.metrics['loss']}")
+        ```
     """
 
     @trycatch(
@@ -49,12 +52,13 @@ class ModelEvaluator(ModelEvaluatorProtocol[nn.Module, DataLoader]):
         """Evaluate a PyTorch model.
 
         Args:
-            model: Model to evaluate.
-            dataloader: Evaluation DataLoader.
-            config: Evaluation configuration.
+            model: The PyTorch model to evaluate.
+            dataloader: The `DataLoader` providing evaluation data.
+            config: A `ModelEvaluationConfig` object containing evaluation parameters.
 
         Returns:
-            EvaluationResult with metrics, config, and evaluation time.
+            EvaluationResult: A dataclass containing the computed metrics (e.g., average loss)
+            and execution time.
 
         Raises:
             EvaluationError: If evaluation fails.

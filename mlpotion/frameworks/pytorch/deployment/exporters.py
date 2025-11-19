@@ -18,23 +18,32 @@ from mlpotion.core.exceptions import ModelExporterError
 class ModelExporter(ModelExporterProtocol[nn.Module]):
     """Export PyTorch models to TorchScript, ONNX, or state_dict formats.
 
-    Supported formats (`config.format`):
+    This class implements the `ModelExporterProtocol` for PyTorch. It supports exporting
+    models for deployment or interoperability.
 
-        • `torchscript`
-        • `onnx`
-        • `state_dict`
+    Supported formats:
+    - **torchscript**: Exports via `torch.jit.script` or `torch.jit.trace`.
+    - **onnx**: Exports to ONNX format (requires `example_input`).
+    - **state_dict**: Saves the model parameters.
 
     Example:
         ```python
         from mlpotion.frameworks.pytorch import ModelExporter
+        from mlpotion.frameworks.pytorch.config import ModelExportConfig
+        import torch
 
+        # Prepare model and input
+        model = ...
+        example_input = torch.randn(1, 3, 224, 224)
+
+        # Export to ONNX
         exporter = ModelExporter()
-
         config = ModelExportConfig(
-            export_path="models/model",
-            format="torchscript",
-            jit_mode="script",
+            export_path="models/model.onnx",
+            format="onnx",
+            example_input=example_input
         )
+        
         result = exporter.export(model, config)
         ```
     """
@@ -51,17 +60,17 @@ class ModelExporter(ModelExporterProtocol[nn.Module]):
         model: nn.Module,
         config: ModelExportConfig,
     ) -> ExportResult:
-        """Main entry point for exporting a model.
+        """Export a PyTorch model to the specified format.
 
         Args:
-            model: PyTorch model to export.
-            config: Export options.
+            model: The PyTorch model to export.
+            config: Configuration object specifying format, path, and other options.
 
         Returns:
-            ExportResult containing final path + metadata.
+            ExportResult: A dataclass containing the path to the exported artifact and metadata.
 
         Raises:
-            ExportError: If any export stage fails.
+            ExportError: If the export process fails (e.g., invalid format, missing example input).
         """
         try:
             export_root = Path(config.export_path)

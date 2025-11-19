@@ -11,76 +11,27 @@ from mlpotion.core.exceptions import ModelExporterError
 
 
 class ModelExporter(ModelExporterProtocol[Model]):
-    """Generic exporter for Keras 3 models (no tensorflow imports).
+    """Generic exporter for Keras 3 models.
 
-    This class implements `ModelExporterProtocol[keras.Model]` and supports
-    two main families of exports:
+    This class implements `ModelExporterProtocol` and supports exporting Keras models
+    to various formats, including native Keras formats (`.keras`, `.h5`) and inference
+    formats like TensorFlow SavedModel or ONNX (via `model.export`).
 
-    1. **Whole-model serialization** (Keras-native):
-        - `.keras` or `.h5` via `model.save(...)`
-
-    2. **Inference exports** (for serving, other runtimes):
-        - `model.export(path, format=...)` (e.g. `"tf_saved_model"`, `"onnx"`)
-        - optional custom serving endpoint + input specs via
-          `keras.export.ExportArchive`
-
-    All configuration is passed via `**kwargs`, so the API stays generic.
-
-    Recognized kwargs:
-        - export_format: Optional[str]
-            * `"keras"` or `"h5"` → use `model.save(...)`
-            * anything else (e.g. `"tf_saved_model"`, `"onnx"`) → use `model.export(...)`
-              unless overridden by a custom endpoint.
-
-        - dataset: Optional[Iterable[Any]]
-            * Optional iterable of batched inputs to "warm up" the model
-              (run one mini-batch forward pass before export).
-
-        - endpoint_name: Optional[str]
-            * If provided, triggers ExportArchive-based export with a custom
-              endpoint name.
-
-        - input_specs: Optional[Sequence[keras.InputSpec]]
-            * Input specs for the endpoint when using ExportArchive.
-
-        - config: Optional[Mapping[str, Any]]
-            * Extra keyword arguments forwarded to `model.export(...)` or
-              `model.save(...)`.
+    It also supports creating export archives with custom endpoints using `keras.export.ExportArchive`.
 
     Example:
         ```python
         import keras
         from mlpotion.frameworks.keras import ModelExporter
 
-        model = keras.Sequential(
-            [
-                keras.layers.Input(shape=(32,)),
-                keras.layers.Dense(64, activation="relu"),
-                keras.layers.Dense(1),
-            ]
-        )
-
+        model = keras.Sequential([keras.layers.Dense(1)])
         exporter = ModelExporter()
 
-        # 1) Native Keras v3 format
-        exporter.export(model, "my_model.keras")
+        # Export as standard Keras file
+        exporter.export(model, "models/model.keras")
 
-        # 2) SavedModel for serving (TF backend) via model.export
-        exporter.export(
-            model,
-            "saved_model_dir",
-            export_format="tf_saved_model",
-        )
-
-        # 3) Custom endpoint + InputSpec via ExportArchive
-        input_spec = keras.InputSpec(shape=(None, 32), dtype="float32")
-        exporter.export(
-            model,
-            "custom_endpoint_model",
-            endpoint_name="serve",
-            input_specs=[input_spec],
-            export_format="tf_saved_model",
-        )
+        # Export for serving (TF SavedModel)
+        exporter.export(model, "models/serving", export_format="tf_saved_model")
         ```
     """
 
@@ -97,20 +48,17 @@ class ModelExporter(ModelExporterProtocol[Model]):
         """Export a Keras model to disk.
 
         Args:
-            model: Keras model to export.
-            path: Path or directory where to export.
-            **kwargs: See class docstring for supported keys.
+            model: The Keras model to export.
+            path: The destination path or directory.
+            **kwargs: Additional export options:
+                - `export_format` (str): "keras", "h5", "tf_saved_model", "onnx", etc.
+                - `dataset` (Iterable): Optional data for model warmup.
+                - `endpoint_name` (str): Name for custom endpoint (uses ExportArchive).
+                - `input_specs` (list[InputSpec]): Input signatures for custom endpoint.
+                - `config` (dict): Extra arguments for the underlying save/export method.
 
-        Example:
-            ```python
-            from mlpotion.frameworks.keras import ModelExporter
-
-            exporter = ModelExporter()
-            exporter.export(
-                model=model,
-                path="my_model.keras",
-            )
-            ```
+        Raises:
+            ModelExporterError: If export fails.
         """
         export_path = Path(path)
 

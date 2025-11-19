@@ -10,8 +10,7 @@ Setup:
     zenml init  # Initialize ZenML repository
     export ZENML_RUN_SINGLE_STEPS_WITHOUT_STACK=true  # For testing without full stack
 """
-
-import tensorflow as tf
+import keras
 from zenml import pipeline, step
 
 from mlpotion.frameworks.keras import ModelTrainingConfig
@@ -25,18 +24,18 @@ from mlpotion.integrations.zenml.keras.steps import (
 
 
 @step
-def create_model() -> tf.keras.Model:
+def create_model() -> keras.Model:
     """Create and compile a Keras model.
 
     Returns:
         Compiled Keras model ready for training.
     """
-    model = tf.keras.Sequential([
-        tf.keras.layers.Dense(64, activation="relu", input_shape=(10,)),
-        tf.keras.layers.Dropout(0.2),
-        tf.keras.layers.Dense(32, activation="relu"),
-        tf.keras.layers.Dropout(0.2),
-        tf.keras.layers.Dense(1),
+    model = keras.Sequential([
+        keras.layers.Dense(64, activation="relu", input_shape=(10,)),
+        keras.layers.Dropout(0.2),
+        keras.layers.Dense(32, activation="relu"),
+        keras.layers.Dropout(0.2),
+        keras.layers.Dense(1),
     ])
 
     model.compile(

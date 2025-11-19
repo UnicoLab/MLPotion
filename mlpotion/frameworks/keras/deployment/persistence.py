@@ -12,75 +12,32 @@ from mlpotion.utils import trycatch
 
 
 class ModelPersistence(ModelPersistenceProtocol[Model]):
-    """Simple persistence helper for Keras models.
+    """Persistence helper for Keras models.
 
-    This class focuses on **whole-model** save/load using the native
-    Keras APIs:
+    This class manages saving and loading of Keras models. It supports standard Keras
+    formats (`.keras`, `.h5`) and SavedModel directories. It also integrates with
+    `ModelInspector` to provide model metadata upon loading.
 
-    - Saving:
-        - `model.save("model.keras")`
-        - `model.save("model.h5")`
-        - `model.save("some/dir")` (SavedModel, depending on backend/version)
-
-    - Loading:
-        - `keras.models.load_model("model.keras")`
-        - `keras.models.load_model("model.h5")`
-        - `keras.models.load_model("some/dir")`
-
-    Additionally, after loading, it can run a `ModelInspector` to
-    collect useful introspection metadata (input/output signatures, etc).
-
-    Args:
-        path: Path to save/load the model artifact.
-        model: Optional Keras model instance to be saved.
+    Attributes:
+        path (Path): The file path for the model artifact.
+        model (Model | None): The Keras model instance (optional).
 
     Example:
-        Basic save/load:
-
         ```python
         import keras
         from mlpotion.frameworks.keras import ModelPersistence
 
-        model = keras.Sequential(
-            [
-                keras.layers.Input(shape=(32,)),
-                keras.layers.Dense(64, activation="relu"),
-                keras.layers.Dense(1),
-            ]
-        )
+        # Define model
+        model = keras.Sequential([keras.layers.Dense(1)])
 
-        # Create persistence helper bound to a path and model
-        persistence = ModelPersistence(
-            path="artifacts/my_model.keras",
-            model=model,
-        )
+        # Save
+        saver = ModelPersistence(path="models/my_model.keras", model=model)
+        saver.save()
 
-        # Save the model
-        persistence.save()
-
-        # Later: load the model from disk
-        loader = ModelPersistence(path="artifacts/my_model.keras")
-        loaded_model, inspection = loader.load()
-        ```
-
-    Example:
-        Overwriting and controlling inspection:
-
-        ```python
-        persistence = ModelPersistence(
-            path="artifacts/my_model.keras",
-            model=model,
-        )
-
-        # Overwrite existing file and pass extra kwargs to model.save()
-        persistence.save(
-            overwrite=True,
-            include_optimizer=False,
-        )
-
-        # Load without inspection metadata
-        loaded_model, inspection = persistence.load(inspect=False)
-        assert inspection is None
+        # Load
+        loader = ModelPersistence(path="models/my_model.keras")
+        loaded_model, metadata = loader.load(inspect=True)
+        print(metadata['parameters'])
         ```
     """
 
@@ -123,30 +80,12 @@ class ModelPersistence(ModelPersistenceProtocol[Model]):
     ) -> None:
         """Save the attached model to disk.
 
-        This uses `model.save(path, **kwargs)`. The format is inferred
-        from the path:
-
-        - `*.keras` → Keras v3 native format
-        - `*.h5` → HDF5
-        - directory or other → backend-dependent SavedModel-like formats
-
         Args:
-            overwrite: If False and the file already exists, raise
-                `ModelPersistenceError` instead of overwriting.
-            **kwargs: Extra keyword arguments forwarded to `model.save()`.
+            overwrite: Whether to overwrite the file if it already exists.
+            **kwargs: Additional arguments passed to `model.save()`.
 
         Raises:
-            ModelPersistenceError: If `model` is not set or if overwrite is
-                disabled and the target already exists.
-
-        Example:
-            ```python
-            persistence = ModelPersistence(
-                path="models/my_model.keras",
-                model=my_model,
-            )
-            persistence.save(include_optimizer=False)
-            ```
+            ModelPersistenceError: If no model is attached or if the file exists and `overwrite` is False.
         """
         model = self._ensure_model()
         target = self._path
@@ -174,31 +113,18 @@ class ModelPersistence(ModelPersistenceProtocol[Model]):
         inspect: bool = True,
         **kwargs: Any,
     ) -> tuple[Model, dict[str, Any] | None]:
-        """Load a Keras model from disk and optionally inspect it.
+        """Load a Keras model from disk.
 
         Args:
-            inspect: If True, run `ModelInspector` on the loaded
-                model and return its metadata as a dict. If False, skip
-                inspection and return `None` for the metadata.
-            **kwargs: Extra keyword arguments forwarded to
-                `keras.models.load_model()`.
+            inspect: Whether to inspect the loaded model and return metadata.
+            **kwargs: Additional arguments passed to `keras.models.load_model()`.
 
         Returns:
-            A tuple of:
-                - Loaded Keras model.
-                - Inspection metadata dict, or None if `inspect=False`.
+            tuple[Model, dict[str, Any] | None]: A tuple containing the loaded model and
+            optional inspection metadata.
 
         Raises:
-            ModelPersistenceError: If `path` does not exist.
-
-        Example:
-            ```python
-            loader = ModelPersistence(path="models/my_model.keras")
-            model, inspection = loader.load()
-
-            # Optionally update the instance's model reference:
-            loader.model = model
-            ```
+            ModelPersistenceError: If the model file cannot be found or loaded.
         """
         path = self._ensure_path_exists()
 

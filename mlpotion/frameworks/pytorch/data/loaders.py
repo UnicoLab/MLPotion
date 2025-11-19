@@ -23,33 +23,34 @@ T_co = TypeVar("T_co", covariant=True)
 class CSVDataset(Dataset[tuple[torch.Tensor, torch.Tensor] | torch.Tensor]):
     """PyTorch Dataset for CSV files with on-demand tensor conversion.
 
-    This is the in-memory analogue of your TF/Keras CSV loaders:
+    This class loads CSV data into memory (using Pandas) and provides a map-style PyTorch Dataset.
+    It supports filtering columns, separating labels, and efficient on-demand tensor conversion
+    to minimize memory usage.
 
-    - Validates that CSV files matching `file_pattern` exist.
-    - Loads all CSVs into a single `pandas.DataFrame`.
-    - Optionally restricts to a subset of `column_names`.
-    - Optionally splits out a label column (`label_name`).
-    - Converts rows to tensors lazily in ``__getitem__`` to reduce peak
-      tensor memory usage.
-
-    Args:
-        file_pattern: Glob pattern for CSV files (e.g. `"data/train_*.csv"`).
-        column_names: Optional subset of columns to load (None = all).
-        label_name: Optional label column name (None = no labels).
-        dtype: Torch dtype for features (and labels if numeric).
+    Attributes:
+        file_pattern (str): Glob pattern matching the CSV files to load.
+        column_names (list[str] | None): Specific columns to load. If None, all columns are loaded.
+        label_name (str | None): Name of the column to use as the label. If None, no labels are returned.
+        dtype (torch.dtype): The data type for the features (default: `torch.float32`).
 
     Example:
         ```python
         from mlpotion.frameworks.pytorch import CSVDataset
         from torch.utils.data import DataLoader
 
+        # Create dataset
         dataset = CSVDataset(
             file_pattern="data/train_*.csv",
-            label_name="target",
+            label_name="target_class",
+            column_names=["feature1", "feature2", "target_class"]
         )
+
+        # Create DataLoader
         dataloader = DataLoader(dataset, batch_size=32, shuffle=True)
-        for batch in dataloader:
-            ...
+
+        # Iterate
+        for features, labels in dataloader:
+            print(features.shape, labels.shape)
         ```
     """
 
@@ -206,31 +207,35 @@ class StreamingCSVDataset(
 ):
     """Streaming PyTorch IterableDataset for large CSV files.
 
-    This dataset reads CSV files in chunks and yields samples one by one,
-    avoiding loading the entire dataset into memory.
+    This dataset is designed for datasets that are too large to fit in memory. It reads CSV files
+    in chunks (using Pandas) and streams samples one by one. It is compatible with PyTorch's
+    `IterableDataset` interface.
 
-    It is the streaming analogue to `CSVDataset`.
-
-    Args:
-        file_pattern: Glob pattern for CSV files.
-        column_names: Feature columns to load (None = all).
-        label_name: Optional label column (None = no labels).
-        chunksize: Number of rows to read per pandas chunk.
-        dtype: Torch dtype for features (and labels if numeric).
+    Attributes:
+        file_pattern (str): Glob pattern matching the CSV files to load.
+        column_names (list[str] | None): Specific columns to load.
+        label_name (str | None): Name of the label column.
+        chunksize (int): Number of rows to read into memory at a time per file.
+        dtype (torch.dtype): The data type for the features.
 
     Example:
         ```python
         from mlpotion.frameworks.pytorch import StreamingCSVDataset
         from torch.utils.data import DataLoader
 
+        # Create streaming dataset
         dataset = StreamingCSVDataset(
-            file_pattern="data/train_*.csv",
+            file_pattern="data/large_dataset_*.csv",
             label_name="target",
-            chunksize=4096,
+            chunksize=10000
         )
-        dataloader = DataLoader(dataset, batch_size=32)  # no shuffle
-        for batch in dataloader:
-            ...
+
+        # Create DataLoader (shuffle must be False for IterableDataset)
+        dataloader = DataLoader(dataset, batch_size=64)
+
+        for features, labels in dataloader:
+            # Train model...
+            pass
         ```
     """
 
@@ -334,27 +339,43 @@ class StreamingCSVDataset(
 # --------------------------------------------------------------------------- #
 @dataclass(slots=True)
 class CSVDataLoader(Generic[T_co]):
-    """Factory for creating PyTorch DataLoaders.
+    """Factory for creating configured PyTorch DataLoaders.
 
-    This is a small convenience wrapper around :class:`torch.utils.data.DataLoader`
-    that:
+    This class simplifies the creation of `torch.utils.data.DataLoader` instances by
+    encapsulating common configuration options and handling differences between
+    map-style and iterable datasets (e.g., automatically disabling shuffling for iterables).
 
-    - Supports both map-style :class:`Dataset` and :class:`IterableDataset`.
-    - Explicitly disables shuffling for iterable datasets (and logs a warning
-      if ``shuffle=True`` was requested).
-    - Only applies worker-related options when they are valid (e.g.
-      ``persistent_workers`` & ``prefetch_factor`` only when ``num_workers > 0``).
+    Attributes:
+        batch_size (int): Number of samples per batch.
+        shuffle (bool): Whether to shuffle the data (ignored for IterableDatasets).
+        num_workers (int): Number of subprocesses to use for data loading.
+        pin_memory (bool): Whether to copy tensors into CUDA pinned memory.
+        drop_last (bool): Whether to drop the last incomplete batch.
+        persistent_workers (bool | None): Whether to keep workers alive between epochs.
+        prefetch_factor (int | None): Number of batches loaded in advance by each worker.
 
-    Args:
-        batch_size: Batch size to use for the DataLoader.
-        shuffle: Whether to shuffle data (ignored for IterableDataset).
-        num_workers: Number of worker processes for data loading.
-        pin_memory: Whether to pin memory (useful for CUDA training).
-        drop_last: Whether to drop the last incomplete batch.
-        persistent_workers: Whether to use persistent worker processes
-            (PyTorch >= 1.7; ignored if ``num_workers == 0``).
-        prefetch_factor: Number of batches loaded in advance by each worker
-            (only relevant when ``num_workers > 0``).
+    Example:
+        ```python
+        from mlpotion.frameworks.pytorch import CSVDataLoader, CSVDataset
+
+        # 1. Create a dataset
+        dataset = CSVDataset("data.csv", label_name="target")
+
+        # 2. Configure the loader factory
+        loader_factory = CSVDataLoader(
+            batch_size=64,
+            shuffle=True,
+            num_workers=4,
+            pin_memory=True
+        )
+
+        # 3. Create the actual DataLoader
+        train_loader = loader_factory.load(dataset)
+
+        # 4. Use it
+        for X, y in train_loader:
+            ...
+        ```
     """
 
     batch_size: int = 32

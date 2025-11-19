@@ -9,9 +9,31 @@ from loguru import logger
 class DatasetOptimizer(DatasetOptimizerProtocol[tf.data.Dataset]):
     """Optimize TensorFlow datasets for training performance.
 
+    This class applies a standard set of performance optimizations to a `tf.data.Dataset`:
+    caching, shuffling, batching, and prefetching. These are critical for preventing
+    data loading bottlenecks during training.
+
+    Attributes:
+        batch_size (int): The number of samples per batch.
+        shuffle_buffer_size (int | None): Size of the shuffle buffer. If None, shuffling is disabled.
+        prefetch (bool): Whether to prefetch data (uses `tf.data.AUTOTUNE`).
+        cache (bool): Whether to cache the dataset in memory.
+
     Example:
-        optimizer = DatasetOptimizer(batch_size=32, cache=True)
+        ```python
+        from mlpotion.frameworks.tensorflow import DatasetOptimizer
+
+        # Create optimizer
+        optimizer = DatasetOptimizer(
+            batch_size=32,
+            shuffle_buffer_size=1000,
+            cache=True,
+            prefetch=True
+        )
+
+        # Apply to a raw dataset
         optimized_dataset = optimizer.optimize(raw_dataset)
+        ```
     """
 
     def __init__(
@@ -37,17 +59,17 @@ class DatasetOptimizer(DatasetOptimizerProtocol[tf.data.Dataset]):
     def optimize(self, dataset: tf.data.Dataset) -> tf.data.Dataset:
         """Optimize dataset for training.
 
-        Applies optimizations in order:
-        1. Cache (if enabled)
-        2. Shuffle (if buffer size provided)
-        3. Batch
-        4. Prefetch (if enabled)
+        Applies optimizations in the following order:
+        1. **Cache**: Caches data in memory (if enabled).
+        2. **Shuffle**: Randomizes data order (if `shuffle_buffer_size` is set).
+        3. **Batch**: Groups data into batches.
+        4. **Prefetch**: Prepares the next batch while the current one is being processed.
 
         Args:
-            dataset: Input dataset
+            dataset: The input `tf.data.Dataset`.
 
         Returns:
-            Optimized dataset
+            tf.data.Dataset: The optimized dataset pipeline.
         """
         logger.info("Applying dataset optimizations...")
 

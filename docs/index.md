@@ -21,32 +21,6 @@ Ever felt trapped by a framework that forces you to do things "their way"? We've
 - **📦 Install What You Need**: Core package works without any ML frameworks (you only install what you need)!
 - **🤝 Community-Driven**: Missing something? Contribute it back - we love community additions!
 
-## Quick Taste 🍷
-
-```python
-# Install only what you need
-pip install mlpotion[tensorflow]  # or pytorch, or keras, or all
-
-# Load your data (UNIFIED API - same names across all frameworks!)
-from mlpotion.frameworks.tensorflow import CSVDataLoader
-
-loader = CSVDataLoader(
-    file_pattern="data.csv",
-    label_name="target",
-    batch_size=32
-)
-dataset = loader.load()
-
-# Train a model (same API everywhere!)
-from mlpotion.frameworks.tensorflow import ModelTrainer, ModelTrainingConfig
-
-trainer = ModelTrainer()
-config = ModelTrainingConfig(epochs=10, learning_rate=0.001)
-result = trainer.train(model, dataset, config)
-
-# That's it! No boilerplate, no fuss 🎉
-```
-
 ## What's in the Potion? 🧪
 
 <div class="grid-container">
@@ -207,99 +181,34 @@ Ready to start brewing? Here's your path:
 
 ### Standalone Usage (Framework-Only)
 
+=== "Keras"
+    ```python linenums="1"
+    --8<-- "docs/examples/keras/standalone.py"
+    ```
 === "TensorFlow"
-    ```python
-    from mlpotion.frameworks.tensorflow import (
-        CSVDataLoader,
-        DatasetOptimizer,
-        ModelTrainer,
-        ModelTrainingConfig,
-    )
-
-    # Load and optimize data
-    loader = CSVDataLoader(file_pattern="data.csv", label_name="y")
-    dataset = loader.load()
-
-    optimizer = DatasetOptimizer(batch_size=32, shuffle_buffer_size=1000)
-    dataset = optimizer.optimize(dataset)
-
-    # Train model
-    trainer = ModelTrainer()
-    config = ModelTrainingConfig(epochs=10, learning_rate=0.001)
-    result = trainer.train(model, dataset, config)
-
-    print(f"Final loss: {result.metrics['loss']:.4f}")
+    ```python linenums="1"
+    --8<-- "docs/examples/tensorflow/standalone.py"
     ```
-
 === "PyTorch"
-    ```python
-    from mlpotion.frameworks.pytorch import (
-        CSVDataset,
-        CSVDataLoader,
-        ModelTrainer,
-        ModelTrainingConfig,
-    )
-
-    # Load data
-    dataset = CSVDataset(file_pattern="data.csv", label_name="y")
-    factory = CSVDataLoader(batch_size=32, shuffle=True)
-    dataloader = factory.load(dataset)
-
-    # Train model
-    trainer = ModelTrainer()
-    config = ModelTrainingConfig(epochs=10, learning_rate=0.001)
-    result = trainer.train(model, dataloader, config)
-
-    print(f"Final loss: {result.metrics['loss']:.4f}")
+    ```python linenums="1"
+    --8<-- "docs/examples/pytorch/standalone.py"
     ```
+
+
+### ZenML Pipeline Examples (MLOps Mode)
 
 === "Keras"
-    ```python
-    from mlpotion.frameworks.keras import (
-        CSVDataLoader,
-        ModelTrainer,
-        ModelTrainingConfig,
-    )
-
-    # Load data
-    loader = CSVDataLoader(
-        file_pattern="data.csv",
-        label_name="y",
-        batch_size=32,
-        shuffle=True,
-    )
-    dataset = loader.load()
-
-    # Train model
-    trainer = ModelTrainer()
-    config = ModelTrainingConfig(epochs=10, learning_rate=0.001)
-    result = trainer.train(model, dataset, config)
-
-    print(f"Final loss: {result.metrics['loss']:.4f}")
+    ```python linenums="1"
+    --8<-- "docs/examples/keras/zenml_pipeline.py"
     ```
-
-### ZenML Pipeline (MLOps Mode)
-
-```python
-from zenml import pipeline, step
-from mlpotion.integrations.zenml.tensorflow import (
-    tf_data_loader_step,
-    tf_train_step,
-    tf_evaluate_step,
-)
-
-@pipeline
-def training_pipeline():
-    """A reproducible ML training pipeline."""
-    dataset = tf_data_loader_step(file_pattern="data.csv")
-    trained_model = tf_train_step(dataset=dataset, epochs=10)
-    metrics = tf_evaluate_step(model=trained_model, dataset=dataset)
-    return metrics
-
-# Run it!
-metrics = training_pipeline()
-print(f"Test accuracy: {metrics['accuracy']:.2%}")
-```
+=== "TensorFlow"
+    ```python linenums="1"
+    --8<-- "docs/examples/tensorflow/zenml_pipeline.py"
+    ```
+=== "PyTorch"
+    ```python linenums="1"
+    --8<-- "docs/examples/pytorch/zenml_pipeline.py"
+    ```
 
 ## Feature Comparison 📊
 
@@ -312,70 +221,6 @@ print(f"Test accuracy: {metrics['accuracy']:.2%}")
 | Learning Curve | 📈 Gentle | 📈 Framework-specific | 📈 Steep |
 | Production Ready | ✅ Yes | ⚠️ DIY | ✅ Yes |
 | Flexibility | 🌟🌟🌟🌟🌟 | 🌟🌟🌟🌟🌟 | 🌟🌟 |
-
-## Real-World Example 🌍
-
-Here's what a production-ready pipeline looks like:
-
-```python
-from zenml import pipeline
-from mlpotion.integrations.zenml.tensorflow import (
-    tf_data_loader_step,
-    tf_dataset_optimizer_step,
-    tf_train_step,
-    tf_evaluate_step,
-    tf_export_step,
-)
-
-@pipeline
-def production_ml_pipeline(
-    train_data: str,
-    test_data: str,
-    export_path: str,
-):
-    """Full production ML pipeline with MLPotion."""
-    # Load data
-    train_dataset = tf_data_loader_step(file_pattern=train_data)
-    test_dataset = tf_data_loader_step(file_pattern=test_data)
-
-    # Optimize for performance
-    train_dataset = tf_dataset_optimizer_step(
-        dataset=train_dataset,
-        batch_size=32,
-        cache=True,
-        prefetch=True,
-    )
-
-    # Train model
-    trained_model = tf_train_step(
-        dataset=train_dataset,
-        epochs=50,
-        learning_rate=0.001,
-        early_stopping=True,
-    )
-
-    # Evaluate
-    metrics = tf_evaluate_step(
-        model=trained_model,
-        dataset=test_dataset,
-    )
-
-    # Export for serving
-    export_result = tf_export_step(
-        model=trained_model,
-        export_path=export_path,
-        format="saved_model",
-    )
-
-    return metrics, export_result
-
-# Run with full tracking and versioning
-result = production_ml_pipeline(
-    train_data="s3://bucket/train.csv",
-    test_data="s3://bucket/test.csv",
-    export_path="gs://models/my-model/v1",
-)
-```
 
 ## Community & Support 🤝
 

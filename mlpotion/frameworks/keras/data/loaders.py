@@ -17,24 +17,36 @@ from mlpotion.utils import trycatch
 class CSVSequence(Sequence):
     """Keras Sequence for CSV data backed by NumPy arrays.
 
-    This is a simple, in-memory Sequence that supports shuffling and
-    can be passed directly to `model.fit(...)`.
+    This class implements the `keras.utils.Sequence` interface, allowing it to be used directly
+    with `model.fit()`, `model.evaluate()`, and `model.predict()`. It handles data batching
+    and shuffling efficiently in memory.
 
-    It is typically created via `KerasCSVDataLoader.load()`.
+    Attributes:
+        features (np.ndarray): The feature data as a 2D NumPy array.
+        labels (np.ndarray | None): The label data as a NumPy array, or None if not available.
+        batch_size (int): The size of each data batch.
+        shuffle (bool): Whether to shuffle the data at the end of each epoch.
+        dtype (np.dtype | str): The data type of the features and labels.
 
     Example:
         ```python
         from mlpotion.frameworks.keras.data.loaders import CSVSequence
+        import numpy as np
 
-        loader = CSVSequence(
-            file_pattern="data/train_*.csv",
-            label_name="target",
+        # Create dummy data
+        X = np.random.rand(100, 10)
+        y = np.random.randint(0, 2, 100)
+
+        # Create sequence
+        sequence = CSVSequence(
+            features=X,
+            labels=y,
             batch_size=32,
-            shuffle=True,
+            shuffle=True
         )
-        train_seq = loader.load()
 
-        model.fit(train_seq, epochs=10)
+        # Use in training
+        model.fit(sequence, epochs=5)
         ```
     """
 
@@ -110,50 +122,43 @@ class CSVSequence(Sequence):
 class CSVDataLoader(DataLoader[CSVSequence]):
     """Loader for CSV files into a Keras-ready Sequence.
 
-    This class is the Keras analogue of your TF/PyTorch CSV loaders:
+    This class provides a high-level interface for loading data from CSV files into a
+    `CSVSequence` compatible with Keras models. It handles file globbing, reading,
+    column selection, and label separation.
 
-    - Validates that files matching `file_pattern` exist.
-    - Loads them into a single `pandas.DataFrame`.
-    - Optionally selects a subset of columns.
-    - Optionally splits out a label column.
-    - Builds a `CSVSequence` you can pass to `model.fit`.
-
-    Args:
-        file_pattern: Glob pattern for CSV files (e.g. `"data/train_*.csv"`).
-        batch_size: Batch size for the returned Sequence.
-        column_names: Optional list of feature columns to load (None = all).
-        label_name: Optional name of label column (None = no labels).
-        shuffle: Whether to shuffle samples each epoch.
-        dtype: NumPy dtype for features and labels (if numeric).
+    Attributes:
+        file_pattern (str): Glob pattern matching the CSV files to load (e.g., "data/*.csv").
+        batch_size (int): Number of samples per batch in the resulting sequence.
+        column_names (list[str] | None): List of column names to use as features. If None, all columns except the label are used.
+        label_name (str | None): Name of the column to use as labels. If None, no labels are returned (inference mode).
+        shuffle (bool): Whether to shuffle the data between epochs.
+        dtype (np.dtype | str): Data type to use for the loaded data (default: "float32").
 
     Example:
         ```python
         import keras
         from mlpotion.frameworks.keras.data.loaders import CSVDataLoader
 
-        model = keras.Sequential(
-            [
-                keras.layers.Input(shape=(10,)),
-                keras.layers.Dense(16, activation="relu"),
-                keras.layers.Dense(1, activation="sigmoid"),
-            ]
-        )
+        # Define a simple model
+        model = keras.Sequential([
+            keras.layers.Dense(10, input_shape=(5,), activation='relu'),
+            keras.layers.Dense(1, activation='sigmoid')
+        ])
+        model.compile(optimizer='adam', loss='binary_crossentropy')
 
-        model.compile(
-            optimizer="adam",
-            loss="binary_crossentropy",
-            metrics=["accuracy"],
-        )
-
+        # Create loader
         loader = CSVDataLoader(
             file_pattern="data/train_*.csv",
-            label_name="target",
-            batch_size=32,
-            shuffle=True,
+            label_name="target_class",
+            batch_size=64,
+            shuffle=True
         )
-        train_seq = loader.load()
 
-        model.fit(train_seq, epochs=5)
+        # Load data
+        train_sequence = loader.load()
+
+        # Train model
+        model.fit(train_sequence, epochs=10)
         ```
     """
 

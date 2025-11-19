@@ -723,7 +723,7 @@ def ml_pipeline():
 - Caching of unchanged steps
 - Full lineage tracking
 
-**Important:** ZenML is just one integration! You can extend MLPotion to work with **Prefect**, **Airflow**, **Kubeflow**, or any other orchestrator. See [Extending MLPotion](#extending-mlpotion-) above.
+**Important:** ZenML is just one integration! You can extend MLPotion to work with **Prefect**, **Airflow**, **Kubeflow**, or any other orchestrator. See [Extending MLPotion](#extending-mlpotion) above.
 
 ## Design Patterns 🎨
 

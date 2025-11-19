@@ -98,6 +98,20 @@ plugins:
       version_selector: true
       css_dir: css
       javascript_dir: js
+
+  - include-markdown:
+      encoding: ascii
+      preserve_includer_indent: false
+      dedent: false
+      trailing_newlines: true
+      comments: true
+      rewrite_relative_urls: true
+      heading_offset: 0
+      start: <!--start-->
+      end: <!--end-->
+      recursive: true
+
+
 # Disable directory URLs to make relative paths work better
 use_directory_urls: false
 
