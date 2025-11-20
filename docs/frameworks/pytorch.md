@@ -144,38 +144,6 @@ config = ModelTrainingConfig(
         "weight_decay": 0.01,
         "betas": (0.9, 0.999),
     },
-
-    # Loss function
-    loss_fn="mse",  # or custom loss
-    loss_kwargs={},
-
-    # Learning rate scheduling
-    scheduler_type="reduce_on_plateau",
-    scheduler_kwargs={
-        "patience": 10,
-        "factor": 0.5,
-        "min_lr": 1e-6,
-    },
-
-    # Early stopping
-    early_stopping=True,
-    early_stopping_patience=20,
-    early_stopping_min_delta=0.001,
-
-    # Gradient clipping
-    clip_grad_norm=1.0,
-    clip_grad_value=None,
-
-    # Mixed precision
-    use_amp=True,  # Automatic mixed precision
-
-    # Checkpointing
-    checkpoint_dir="checkpoints",
-    save_best_only=True,
-
-    # Logging
-    verbose=True,
-    log_interval=10,  # Log every N batches
 )
 
 result = trainer.train(model, train_loader, config, val_loader=val_loader)

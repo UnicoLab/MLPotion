@@ -133,44 +133,7 @@ config = ModelTrainingConfig(
     batch_size=32,
 
     # Optimizer configuration
-    optimizer_type="adam",  # or "sgd", "adamw", "rmsprop"
-    optimizer_kwargs={
-        "beta_1": 0.9,
-        "beta_2": 0.999,
-        "epsilon": 1e-7,
-    },
-
-    # Loss and metrics
-    loss="mse",  # or custom loss function
-    metrics=["mae", "mse"],
-
-    # Validation
-    validation_split=0.2,  # Use 20% for validation
-    validation_freq=1,     # Validate every epoch
-
-    # Early stopping
-    early_stopping=True,
-    early_stopping_patience=10,
-    early_stopping_monitor="val_loss",
-    early_stopping_min_delta=0.001,
-    restore_best_weights=True,
-
-    # Checkpointing
-    checkpoint_filepath="checkpoints/model_{epoch:02d}",
-    save_best_only=True,
-    checkpoint_monitor="val_loss",
-    checkpoint_mode="min",
-
-    # Learning rate scheduling
-    reduce_lr_on_plateau=True,
-    reduce_lr_patience=5,
-    reduce_lr_factor=0.5,
-    reduce_lr_min_lr=1e-6,
-
-    # Other
-    verbose=1,
-    class_weight=None,  # For imbalanced datasets
-    sample_weight_mode=None,
+    optimizer_type="adam",
 )
 ```
 
@@ -375,8 +338,6 @@ trainer = ModelTrainer()
 config = ModelTrainingConfig(
     epochs=50,
     learning_rate=0.001,
-    early_stopping=True,
-    early_stopping_patience=10,
 )
 
 result = trainer.train(model, train_data, config, validation_dataset=val_data)
@@ -452,15 +413,11 @@ tf.keras.mixed_precision.set_global_policy(policy)
 # Create model (automatically uses mixed precision)
 model = create_model()
 
-# Loss scaling for numerical stability
-optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
-optimizer = tf.keras.mixed_precision.LossScaleOptimizer(optimizer)
-
 # Train as usual
 config = ModelTrainingConfig(
     epochs=10,
     learning_rate=0.001,
-    optimizer=optimizer,  # Pass configured optimizer
+    optimizer="sgd",
 )
 
 result = trainer.train(model, dataset, config)

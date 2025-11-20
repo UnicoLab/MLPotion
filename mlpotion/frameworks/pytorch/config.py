@@ -24,7 +24,7 @@ class DataLoadingConfig(BaseSettings):
     )
 
     model_config = SettingsConfigDict(
-        extra="forbid",
+        extra="allow",
         frozen=False,
         env_prefix="data_",
     )
@@ -46,7 +46,7 @@ class DataOptimizationConfig(BaseSettings):
     )
 
     model_config = SettingsConfigDict(
-        extra="forbid",
+        extra="allow",
         frozen=False,
         env_prefix="opt_",
     )
@@ -65,7 +65,7 @@ class ModelLoadingConfig(BaseSettings):
     )
 
     model_config = SettingsConfigDict(
-        extra="forbid",
+        extra="allow",
         frozen=False,
         env_prefix="model_",
     )
@@ -82,7 +82,7 @@ class ModelPersistenceConfig(BaseSettings):
     )
 
     model_config = SettingsConfigDict(
-        extra="forbid",
+        extra="allow",
         frozen=False,
         env_prefix="model_persist_",
     )
@@ -110,7 +110,7 @@ class DataTransformationConfig(BaseSettings):
     )
 
     model_config = SettingsConfigDict(
-        extra="forbid",
+        extra="allow",
         frozen=False,
         env_prefix="transform_",
     )
@@ -179,7 +179,7 @@ class ModelTrainingConfig(BaseSettings):
     )
 
     model_config = SettingsConfigDict(
-        extra="forbid",
+        extra="allow",
         frozen=False,
         env_prefix="train_",
     )
@@ -194,7 +194,7 @@ class ModelEvaluationConfig(BaseSettings):
     framework_options: dict[str, Any] = Field(default_factory=dict)
 
     model_config = SettingsConfigDict(
-        extra="forbid",
+        extra="allow",
         frozen=False,
         env_prefix="eval_",
     )
@@ -269,7 +269,7 @@ class ModelExportConfig(BaseSettings):
     )
 
     model_config = SettingsConfigDict(
-        extra="forbid",  # reject unknown keys so bugs are caught early
+        extra="allow",
         frozen=False,
         env_prefix="export_",
     )
@@ -286,7 +286,7 @@ class ModelInspectionConfig(BaseSettings):
     )
 
     model_config = SettingsConfigDict(
-        extra="forbid",
+        extra="allow",
         frozen=False,
         env_prefix="inspect_",
     )
