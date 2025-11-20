@@ -13,7 +13,7 @@ Complete guide to using MLPotion with PyTorch - the researcher's favorite framew
 ## Installation 📥
 
 ```bash
-pip install mlpotion[pytorch]
+poetry add mlpotion -E pytorch
 ```
 
 This installs:
@@ -74,10 +74,8 @@ from mlpotion.frameworks.pytorch import CSVDataset
 dataset = CSVDataset(
     file_pattern="data.csv",        # File path or pattern
     label_name="target",            # Label column name
-    feature_columns=None,           # Auto-detect or specify
+    column_names=None,              # Auto-detect or specify
     dtype=torch.float32,            # Data type
-    normalize=False,                # Normalize features
-    transform=None,                 # Custom transform
 )
 
 # Use like any PyTorch dataset

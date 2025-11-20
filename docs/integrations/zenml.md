@@ -16,10 +16,10 @@ Transform your MLPotion pipelines into production-ready MLOps workflows with Zen
 
 ```bash
 # TensorFlow + ZenML
-pip install mlpotion[tensorflow,zenml]
+poetry add mlpotion -E tensorflow -E zenml
 
 # PyTorch + ZenML
-pip install mlpotion[pytorch,zenml]
+poetry add mlpotion -E pytorch -E zenml
 
 # Initialize ZenML (first time only)
 zenml init

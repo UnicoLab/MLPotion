@@ -14,13 +14,13 @@ Complete guide to using MLPotion with Keras 3 - the user-friendly, backend-agnos
 
 ```bash
 # Keras with TensorFlow backend (default)
-pip install mlpotion[tensorflow]
+poetry add mlpotion -E tensorflow
 
 # Keras with PyTorch backend
-pip install mlpotion[keras-pytorch]
+poetry add mlpotion -E keras-pytorch
 
 # Keras with JAX backend
-pip install mlpotion[keras-jax]
+poetry add mlpotion -E keras-jax
 ```
 
 ## Quick Example 🚀

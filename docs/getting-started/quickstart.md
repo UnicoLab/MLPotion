@@ -9,7 +9,9 @@ Let's build a simple regression pipeline with TensorFlow. Same principles apply 
 ### Step 1: Install MLPotion (30 seconds)
 
 ```bash
-pip install mlpotion[tensorflow]
+poetry add mlpotion -E tensorflow
+# OR
+pip install "mlpotion[tensorflow]"
 ```
 
 ### Step 2: Prepare Your Data (1 minute)

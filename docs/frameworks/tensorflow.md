@@ -13,7 +13,7 @@ Complete guide to using MLPotion with TensorFlow - the production-ready ML frame
 ## Installation 📥
 
 ```bash
-pip install mlpotion[tensorflow]
+poetry add mlpotion -E tensorflow
 ```
 
 This installs:
@@ -54,17 +54,20 @@ from mlpotion.frameworks.tensorflow import CSVDataLoader
 loader = CSVDataLoader(
     file_pattern="data/*.csv",      # Supports glob patterns
     label_name="target",            # Column to use as label
-    feature_columns=None,           # Auto-detect or specify
+    column_names=None,              # Auto-detect or specify list[str]
     batch_size=32,
-    shuffle=True,
-    shuffle_buffer_size=10000,
-    num_parallel_reads=4,
-    compression_type=None,          # or "GZIP", "ZLIB"
-    header=True,
-    field_delim=",",
-    use_quote_delim=True,
-    na_value="",
-    select_columns=None,            # Subset of columns
+    # Extra options passed to tf.data.experimental.make_csv_dataset
+    config={
+        "shuffle": True,
+        "shuffle_buffer_size": 10000,
+        "num_parallel_reads": 4,
+        "compression_type": None,
+        "header": True,
+        "field_delim": ",",
+        "use_quote_delim": True,
+        "na_value": "",
+        "select_columns": None,
+    }
 )
 
 dataset = loader.load()  # Returns tf.data.Dataset
@@ -83,23 +86,18 @@ from mlpotion.frameworks.tensorflow import DatasetOptimizer
 
 optimizer = DatasetOptimizer(
     batch_size=32,
-    shuffle=True,
-    shuffle_buffer_size=10000,
+    shuffle_buffer_size=10000,      # Set to enable shuffling
     cache=True,                     # Cache in memory
-    cache_filename=None,            # Or cache to disk
     prefetch=True,                  # Prefetch for performance
-    prefetch_buffer_size=tf.data.AUTOTUNE,
-    repeat=True,                    # Repeat indefinitely
-    num_parallel_calls=tf.data.AUTOTUNE,
 )
 
 optimized = optimizer.optimize(dataset)
 ```
 
 **Performance Tips:**
-- Use `cache()` for datasets that fit in memory
-- Enable `prefetch()` to overlap data loading with training
-- Set `num_parallel_calls=AUTOTUNE` for automatic optimization
+- Use `cache=True` for datasets that fit in memory
+- Enable `prefetch=True` to overlap data loading with training
+- Set `shuffle_buffer_size` to a large enough value for good randomization
 
 ## Model Training 🎓
 

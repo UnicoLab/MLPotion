@@ -7,7 +7,7 @@ Transform your MLPotion pipeline into a production-ready MLOps workflow with Zen
 ## Prerequisites 📋
 
 ```bash
-pip install mlpotion[tensorflow,zenml]
+poetry add mlpotion -E tensorflow -E zenml
 zenml init
 ```
 

@@ -5,18 +5,17 @@ Getting MLPotion installed is easier than pronouncing "scikit-learn" correctly! 
 ## TL;DR - Just Tell Me What to Run! 🏃‍♂️
 
 ```bash
-# Most common setup
-poetry add mloption[tensorflow]
+# Most common setup (using Poetry)
+poetry add mlpotion -E tensorflow
 
-...
-# or using pip
-pip install mlpotion[tensorflow]
+# ... or using pip
+pip install "mlpotion[tensorflow]"
 
 # Or for PyTorch lovers
-pip install mlpotion[pytorch]
+poetry add mlpotion -E pytorch
 
 # Or if you can't decide (we don't judge)
-pip install mlpotion[all]
+poetry add mlpotion -E all
 ```
 
 Done! Jump to [Quick Start](quickstart.md) to start brewing.
@@ -41,7 +40,7 @@ MLPotion follows a "bring your own framework" philosophy. You only install what 
 Install just the core without any ML frameworks:
 
 ```bash
-pip install mlpotion
+poetry add mlpotion
 ```
 
 **Use this when:**
@@ -69,7 +68,7 @@ pip install mlpotion
 The production workhorse setup:
 
 ```bash
-pip install mlpotion[tensorflow]
+poetry add mlpotion -E tensorflow
 ```
 
 **What's included:**
@@ -91,7 +90,7 @@ pip install mlpotion[tensorflow]
 The researcher's choice:
 
 ```bash
-pip install mlpotion[pytorch]
+poetry add mlpotion -E pytorch
 ```
 
 **What's included:**
@@ -113,7 +112,7 @@ pip install mlpotion[pytorch]
 The friendly, backend-agnostic option:
 
 ```bash
-pip install mlpotion[keras]
+poetry add mlpotion -E keras
 ```
 
 **What's included:**
@@ -134,7 +133,7 @@ pip install mlpotion[keras]
 When you can't choose or need it all:
 
 ```bash
-pip install mlpotion[all]
+poetry add mlpotion -E all
 ```
 
 **What's included:**
@@ -155,13 +154,13 @@ For the MLOps enthusiasts:
 
 ```bash
 # TensorFlow + ZenML
-pip install mlpotion[tensorflow,zenml]
+poetry add mlpotion -E tensorflow -E zenml
 
 # PyTorch + ZenML
-pip install mlpotion[pytorch,zenml]
+poetry add mlpotion -E pytorch -E zenml
 
 # Everything + ZenML (bold choice!)
-pip install mlpotion[all,zenml]
+poetry add mlpotion -E all -E zenml
 ```
 
 **What you get extra:**

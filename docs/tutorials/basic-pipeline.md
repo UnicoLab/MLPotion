@@ -17,7 +17,7 @@ A regression pipeline that:
 ## Prerequisites 📋
 
 ```bash
-pip install mlpotion[tensorflow]
+poetry add mlpotion -E tensorflow
 ```
 
 ## Step 1: Prepare Your Data 📊

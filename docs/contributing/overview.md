@@ -61,11 +61,11 @@ source venv/bin/activate  # or venv\Scripts\activate on Windows
 ### 3. Install Development Dependencies
 
 ```bash
-# Install with all extras for development
-pip install -e ".[all]"
+# Install dependencies with Poetry (includes dev dependencies and all extras)
+poetry install --with dev -E all
 
-# Install development tools
-pip install -e ".[dev]"
+# Activate the virtual environment
+poetry shell
 ```
 
 ### 4. Install Pre-commit Hooks
