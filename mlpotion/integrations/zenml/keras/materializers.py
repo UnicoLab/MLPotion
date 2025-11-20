@@ -7,6 +7,7 @@ from zenml.materializers.base_materializer import BaseMaterializer
 
 logger = get_logger(__name__)
 
+
 class KerasModelMaterializer(BaseMaterializer):
     """ZenML Materializer for Keras models.
 
@@ -14,7 +15,7 @@ class KerasModelMaterializer(BaseMaterializer):
     within ZenML pipelines. It uses the standard Keras `save` and `load_model` APIs.
     It stores the model as a `model.keras` file in the artifact store.
     """
-    
+
     ASSOCIATED_TYPES = (keras.Model,)
     ASSOCIATED_ARTIFACT_TYPE = ArtifactType.MODEL
 

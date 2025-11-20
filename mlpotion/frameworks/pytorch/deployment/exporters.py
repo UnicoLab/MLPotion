@@ -43,7 +43,7 @@ class ModelExporter(ModelExporterProtocol[nn.Module]):
             format="onnx",
             example_input=example_input
         )
-        
+
         result = exporter.export(model, config)
         ```
     """

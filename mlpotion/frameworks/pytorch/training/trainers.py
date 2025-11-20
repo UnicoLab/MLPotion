@@ -41,7 +41,7 @@ class ModelTrainer(ModelTrainerProtocol[nn.Module, DataLoader]):
 
         # Define model
         model = nn.Linear(10, 1)
-        
+
         # Define config
         config = ModelTrainingConfig(
             epochs=5,

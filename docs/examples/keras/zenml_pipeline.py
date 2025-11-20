@@ -13,7 +13,6 @@ Setup:
 import keras
 from zenml import pipeline, step
 
-from mlpotion.frameworks.keras import ModelTrainingConfig
 from mlpotion.integrations.zenml.keras.steps import (
     evaluate_model,
     export_model,
@@ -30,16 +29,18 @@ def create_model() -> keras.Model:
     Returns:
         Compiled Keras model ready for training.
     """
-    model = keras.Sequential([
-        keras.layers.Dense(64, activation="relu", input_shape=(10,)),
-        keras.layers.Dropout(0.2),
-        keras.layers.Dense(32, activation="relu"),
-        keras.layers.Dropout(0.2),
-        keras.layers.Dense(1),
-    ])
+    model = keras.Sequential(
+        [
+            keras.layers.Dense(64, activation="relu", input_shape=(10,)),
+            keras.layers.Dropout(0.2),
+            keras.layers.Dense(32, activation="relu"),
+            keras.layers.Dropout(0.2),
+            keras.layers.Dense(1),
+        ]
+    )
 
     model.compile(
-        optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
+        optimizer=keras.optimizers.Adam(learning_rate=0.001),
         loss="mse",
         metrics=["mae", "mse"],
     )
@@ -123,6 +124,7 @@ if __name__ == "__main__":
     # Initialize ZenML (if not already initialized)
     try:
         from zenml.client import Client
+
         client = Client()
         print(f"✅ ZenML initialized. Active stack: {client.active_stack_model.name}")
     except Exception as e:
@@ -135,4 +137,3 @@ if __name__ == "__main__":
 
     print("\n" + "=" * 60)
     print("Pipeline completed successfully!")
-

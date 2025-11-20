@@ -91,27 +91,33 @@ class DatasetOptimizer(DatasetOptimizerProtocol[tf.data.Dataset]):
                 buffer_size=self.shuffle_buffer_size,
                 reshuffle_each_iteration=True,
             )
-            transformations.append({
-                "type": "shuffle",
-                "params": {"buffer_size": self.shuffle_buffer_size},
-            })
+            transformations.append(
+                {
+                    "type": "shuffle",
+                    "params": {"buffer_size": self.shuffle_buffer_size},
+                }
+            )
 
         # Batch
         logger.info(f"Batching with size {self.batch_size}")
         dataset = dataset.batch(self.batch_size)
-        transformations.append({
-            "type": "batch",
-            "params": {"batch_size": self.batch_size},
-        })
+        transformations.append(
+            {
+                "type": "batch",
+                "params": {"batch_size": self.batch_size},
+            }
+        )
 
         # Prefetch last for best performance
         if self.prefetch:
             logger.info("Prefetching with AUTOTUNE")
             dataset = dataset.prefetch(buffer_size=tf.data.AUTOTUNE)
-            transformations.append({
-                "type": "prefetch",
-                "params": {"buffer_size": "AUTOTUNE"},
-            })
+            transformations.append(
+                {
+                    "type": "prefetch",
+                    "params": {"buffer_size": "AUTOTUNE"},
+                }
+            )
 
         # Preserve CSV config if it exists
         if hasattr(dataset, "_csv_config"):

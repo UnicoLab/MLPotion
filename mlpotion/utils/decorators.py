@@ -49,15 +49,20 @@ class trycatch:
                 # This includes ExportError, EvaluationError, TrainingError, etc.
                 raise
 
-            except (RuntimeError, TypeError, ValueError, AttributeError, KeyError, IndexError):
+            except (
+                RuntimeError,
+                TypeError,
+                ValueError,
+                AttributeError,
+                KeyError,
+                IndexError,
+            ):
                 # Let standard Python exceptions propagate unchanged
                 # These are often used for validation and should not be wrapped
                 raise
 
             except Exception as exc:
-                logger.error(
-                    f"❌ Unexpected error in {func.__name__}: {exc!s}"
-                )
+                logger.error(f"❌ Unexpected error in {func.__name__}: {exc!s}")
                 raise self.error(f"Unexpected error: {exc!s}") from exc
 
         return wrapper

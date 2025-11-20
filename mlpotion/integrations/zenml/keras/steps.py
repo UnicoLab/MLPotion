@@ -142,7 +142,10 @@ def train_model(
     verbose: int = 1,
     callbacks: list[Any] | None = None,
     metadata: dict[str, Any] | None = None,
-) -> Tuple[Annotated[keras.Model, "TrainedModel"], Annotated[dict[str, float], "TrainingMetrics"]]:
+) -> Tuple[
+    Annotated[keras.Model, "TrainedModel"],
+    Annotated[dict[str, float], "TrainingMetrics"],
+]:
     """Train a Keras model using `ModelTrainer`.
 
     This step configures and runs a training session. It supports validation data,
@@ -169,7 +172,7 @@ def train_model(
         epochs=epochs,
         learning_rate=learning_rate,
         verbose=verbose,
-        optimizer_type="adam", # Defaulting to adam as per previous logic
+        optimizer_type="adam",  # Defaulting to adam as per previous logic
         loss="mse",
         metrics=["mae"],
         framework_options={"callbacks": callbacks} if callbacks else {},
@@ -191,7 +194,7 @@ def train_model(
         config=config,
         validation_dataset=validation_data,
     )
-    
+
     # Result is TrainingResult object
     training_metrics = result.metrics
 
@@ -234,7 +237,7 @@ def evaluate_model(
         dataset=data,
         config=config,
     )
-    
+
     metrics = result.metrics
 
     if metadata:

@@ -56,13 +56,15 @@ def main() -> None:
 
     # 3. Create model
     print("\n3. Creating model...")
-    model = tf.keras.Sequential([
-        tf.keras.layers.Dense(64, activation="relu", input_shape=(10,)),
-        tf.keras.layers.Dropout(0.2),
-        tf.keras.layers.Dense(32, activation="relu"),
-        tf.keras.layers.Dropout(0.2),
-        tf.keras.layers.Dense(1),
-    ])
+    model = tf.keras.Sequential(
+        [
+            tf.keras.layers.Dense(64, activation="relu", input_shape=(10,)),
+            tf.keras.layers.Dropout(0.2),
+            tf.keras.layers.Dense(32, activation="relu"),
+            tf.keras.layers.Dropout(0.2),
+            tf.keras.layers.Dense(1),
+        ]
+    )
     model.compile(
         optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
         loss="mse",
@@ -86,13 +88,14 @@ def main() -> None:
         config=config,
     )
 
-    print(f"\nTraining completed!")
+    print("\nTraining completed!")
     print(f"{result=}")
 
     # 5. Evaluate model
     print("\n5. Evaluating model...")
     evaluator = ModelEvaluator()
     from mlpotion.frameworks.tensorflow import ModelEvaluationConfig
+
     eval_config = ModelEvaluationConfig(batch_size=8, verbose=1)
     eval_result = evaluator.evaluate(
         model=model,

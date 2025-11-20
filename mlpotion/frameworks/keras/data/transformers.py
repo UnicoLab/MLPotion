@@ -8,7 +8,10 @@ import keras
 from keras.utils import Sequence
 from loguru import logger
 
-from mlpotion.frameworks.keras.config import ModelLoadingConfig, DataTransformationConfig
+from mlpotion.frameworks.keras.config import (
+    ModelLoadingConfig,
+    DataTransformationConfig,
+)
 
 from mlpotion.core.exceptions import DataTransformationError
 from mlpotion.core.protocols import DataTransformer
@@ -231,7 +234,9 @@ class CSVDataTransformer(DataTransformer[CSVSequence, keras.Model]):
         # 3) Use model_path / model_loading_config via a temporary persistence
         resolved_path = self._resolve_model_path()
         if resolved_path is not None:
-            logger.info(f"Loading model from path via ModelPersistence: {resolved_path}")
+            logger.info(
+                f"Loading model from path via ModelPersistence: {resolved_path}"
+            )
             persistence = ModelPersistence(path=resolved_path)
             model, inspection = persistence.load(inspect=True)
             self.model = model
@@ -303,7 +308,9 @@ class CSVDataTransformer(DataTransformer[CSVSequence, keras.Model]):
         # (default is False, so we check the config value)
         if not self.data_output_per_batch and config.data_output_per_batch:
             self.data_output_per_batch = config.data_output_per_batch
-            logger.debug(f"Applied data_output_per_batch from config: {self.data_output_per_batch}")
+            logger.debug(
+                f"Applied data_output_per_batch from config: {self.data_output_per_batch}"
+            )
 
     # ------------------------------------------------------------------ #
     # Model inspection → input columns
@@ -317,7 +324,9 @@ class CSVDataTransformer(DataTransformer[CSVSequence, keras.Model]):
         later in `_restrict_batch_columns`.
         """
         if not self._model_inspection:
-            logger.info("No inspection metadata available; using all columns as inputs.")
+            logger.info(
+                "No inspection metadata available; using all columns as inputs."
+            )
             return None
 
         raw_names = self._model_inspection.get("input_names") or []
@@ -334,7 +343,9 @@ class CSVDataTransformer(DataTransformer[CSVSequence, keras.Model]):
             return name
 
         normalized = [_normalize(str(n)) for n in raw_names]
-        logger.info("Derived input_columns from model inspection: {cols}", cols=normalized)
+        logger.info(
+            "Derived input_columns from model inspection: {cols}", cols=normalized
+        )
         return normalized or None
 
     # ------------------------------------------------------------------ #
@@ -466,7 +477,9 @@ class CSVDataTransformer(DataTransformer[CSVSequence, keras.Model]):
             are present in the DataFrame.
         """
         if not self.input_columns:
-            logger.debug("No input_columns specified; using all DataFrame columns as inputs.")
+            logger.debug(
+                "No input_columns specified; using all DataFrame columns as inputs."
+            )
             return df
 
         requested = list(self.input_columns)

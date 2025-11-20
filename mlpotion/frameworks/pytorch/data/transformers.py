@@ -24,7 +24,9 @@ from mlpotion.frameworks.pytorch.data.loaders import (
     StreamingCSVDataset,
     CSVDataLoader,
 )
-from mlpotion.frameworks.pytorch.deployment.persistence import ModelPersistence as PyTorchModelPersistence
+from mlpotion.frameworks.pytorch.deployment.persistence import (
+    ModelPersistence as PyTorchModelPersistence,
+)
 from mlpotion.utils import trycatch
 
 
@@ -84,9 +86,7 @@ class PredictionFormatter:
 # Main transformer
 # --------------------------------------------------------------------------- #
 @dataclass(slots=True)
-class DataToCSVTransformer(
-    DataTransformer[DataLoader[Any] | None, nn.Module | None]
-):
+class DataToCSVTransformer(DataTransformer[DataLoader[Any] | None, nn.Module | None]):
     """Transform PyTorch DataLoader batches to CSV using a PyTorch model.
 
     This is the PyTorch analogue of your TF/Keras CSV transformers:
@@ -330,14 +330,18 @@ class DataToCSVTransformer(
 
         # 3) Dataset stored on instance → DataLoader
         if self.dataset is not None:
-            logger.info("Wrapping Dataset/IterableDataset stored on instance in DataLoader.")
+            logger.info(
+                "Wrapping Dataset/IterableDataset stored on instance in DataLoader."
+            )
             loader = self._build_dataloader_from_dataset(self.dataset)
             self.dataloader = loader
             return loader
 
         # 4) DataLoadingConfig → CSV dataset → DataLoader
         if self.data_loading_config is not None:
-            logger.info("Building dataset from DataLoadingConfig for PyTorch CSV loader.")
+            logger.info(
+                "Building dataset from DataLoadingConfig for PyTorch CSV loader."
+            )
             cfg = (
                 self.data_loading_config.model_dump()
                 if hasattr(self.data_loading_config, "model_dump")

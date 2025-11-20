@@ -155,7 +155,6 @@ class TestModelExporter(TestBase):
             logger.info("Asserting archive.write_out(...) was called with export path")
             archive_instance.write_out.assert_called_once_with(str(self.export_dir))
 
-
     # ------------------------------------------------------------------ #
     # Warm-up behavior
     # ------------------------------------------------------------------ #

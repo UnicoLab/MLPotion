@@ -85,7 +85,7 @@ def main() -> None:
         config=config,
     )
 
-    print(f"\nTraining completed!")
+    print("\nTraining completed!")
     print(f"Training time: {result.training_time:.2f}s")
     print(f"Final loss: {result.metrics['loss']:.4f}")
 
@@ -95,7 +95,7 @@ def main() -> None:
     eval_result = evaluator.evaluate(model, dataloader, config)
 
     print(f"Evaluation completed in {eval_result.evaluation_time:.2f}s")
-    print(f"Evaluation metrics:")
+    print("Evaluation metrics:")
     for metric_name, metric_value in eval_result.metrics.items():
         print(f"  - {metric_name}: {metric_value:.4f}")
 

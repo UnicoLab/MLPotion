@@ -18,8 +18,9 @@ class DataLoadingConfig(BaseSettings):
     model_config = SettingsConfigDict(
         extra="forbid",
         frozen=False,
-        env_prefix='data_',
+        env_prefix="data_",
     )
+
 
 class DataTransformationConfig(BaseSettings):
     """Configuration for CSV→CSV transformations using a Keras model.
@@ -95,12 +96,12 @@ class ModelLoadingConfig(BaseSettings):
 
     model_path: str = Field(..., description="Path to model")
     model: keras.Model = Field(..., description="Model to use for transformation")
-    model_input_signature: dict[str, Any] | None = None,
-    
+    model_input_signature: dict[str, Any] | None = (None,)
+
     model_config = SettingsConfigDict(
         extra="forbid",
         frozen=False,
-        env_prefix='model_',
+        env_prefix="model_",
     )
 
 
@@ -115,9 +116,8 @@ class DataOptimizationConfig(BaseSettings):
     model_config = SettingsConfigDict(
         extra="forbid",
         frozen=False,
-        env_prefix='opt_',
+        env_prefix="opt_",
     )
-
 
 
 class ModelPersistenceConfig(BaseSettings):
@@ -126,12 +126,14 @@ class ModelPersistenceConfig(BaseSettings):
     path: str = Field(..., description="Path to model")
     model: keras.Model = Field(..., description="Model to use for persistence")
     save_format: str | None = Field(default=None, description="Save format")
-    config: dict[str, Any] | None = Field(default=None, description="Extra configuration for the model persistence")
-    
+    config: dict[str, Any] | None = Field(
+        default=None, description="Extra configuration for the model persistence"
+    )
+
     model_config = SettingsConfigDict(
         extra="forbid",
         frozen=False,
-        env_prefix='model_persist_',
+        env_prefix="model_persist_",
     )
 
 
@@ -146,7 +148,7 @@ class ModelExportConfig(BaseSettings):
     model_config = SettingsConfigDict(
         extra="forbid",
         frozen=False,
-        env_prefix='export_',
+        env_prefix="export_",
     )
 
 
@@ -160,22 +162,27 @@ class ModelEvaluationConfig(BaseSettings):
     model_config = SettingsConfigDict(
         extra="forbid",
         frozen=False,
-        env_prefix='eval_',
+        env_prefix="eval_",
     )
 
 
-class ModelInspectionConfig(BaseSettings):  
+class ModelInspectionConfig(BaseSettings):
     """Configuration for model inspection."""
 
     format: Literal["saved_model", "h5", "keras"] = Field(default="saved_model")
-    signatures: list[str] | None = Field(default=None, description="Signatures to inspect")
-    config: dict[str, Any] | None = Field(default=None, description="Extra configuration for the model inspection")
+    signatures: list[str] | None = Field(
+        default=None, description="Signatures to inspect"
+    )
+    config: dict[str, Any] | None = Field(
+        default=None, description="Extra configuration for the model inspection"
+    )
 
     model_config = SettingsConfigDict(
         extra="forbid",
         frozen=False,
-        env_prefix='inspect_',
+        env_prefix="inspect_",
     )
+
 
 class ModelTrainingConfig(BaseSettings):
     """Base training configuration - framework agnostic.
@@ -193,7 +200,9 @@ class ModelTrainingConfig(BaseSettings):
     # Keras specific fields
     optimizer_type: str = Field(default="adam", description="Optimizer name")
     loss: str | keras.losses.Loss = Field(default="mse", description="Loss function")
-    metrics: list[str | keras.metrics.Metric] = Field(default_factory=lambda: ["mae"], description="List of metrics")
+    metrics: list[str | keras.metrics.Metric] = Field(
+        default_factory=lambda: ["mae"], description="List of metrics"
+    )
 
     # Framework-specific options can go here
     framework_options: dict[str, Any] = Field(
@@ -203,6 +212,6 @@ class ModelTrainingConfig(BaseSettings):
     model_config = SettingsConfigDict(
         extra="forbid",
         frozen=False,
-        env_prefix='train_',
+        env_prefix="train_",
         arbitrary_types_allowed=True,
     )

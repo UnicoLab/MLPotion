@@ -37,9 +37,9 @@ class CSVDataLoader(DataLoader[tf.data.Dataset]):
             batch_size=64,
             config={"num_epochs": 5, "shuffle": True}
         )
-        
+
         dataset = loader.load()
-        
+
         # Iterate
         for features, labels in dataset:
             print(features['some_column'].shape)
@@ -119,9 +119,7 @@ class CSVDataLoader(DataLoader[tf.data.Dataset]):
             # For absolute paths without wildcards, check if file exists directly
             if "*" not in self.file_pattern and "?" not in self.file_pattern:
                 if not pattern_path.exists():
-                    raise DataLoadingError(
-                        f"File not found: {self.file_pattern}"
-                    )
+                    raise DataLoadingError(f"File not found: {self.file_pattern}")
                 files = [pattern_path]
             else:
                 # For absolute paths with wildcards, use parent directory
@@ -156,7 +154,9 @@ class CSVDataLoader(DataLoader[tf.data.Dataset]):
                 f"Dataset must be finite; got num_epochs={self.num_epochs}"
             )
 
-        logger.info("Dataset is finite with num_epochs={num_epochs}", num_epochs=self.num_epochs)
+        logger.info(
+            "Dataset is finite with num_epochs={num_epochs}", num_epochs=self.num_epochs
+        )
 
     # -------------------------------------------------------------------------
     # Public API
@@ -312,12 +312,11 @@ class RecordDataLoader(DataLoader[tf.data.Dataset]):
 
     def _get_files_matching_pattern(self) -> list[str]:
         """Get files matching the pattern.
-        
+
         Returns:
             list[str]: List of files matching the pattern.
         """
         return tf.data.Dataset.list_files(self.file_pattern, shuffle=False)
-
 
     @trycatch(
         error=DataLoadingError,
@@ -332,7 +331,7 @@ class RecordDataLoader(DataLoader[tf.data.Dataset]):
             DataLoadingError: on failure.
         """
         filenames = self._get_files_matching_pattern()
-        
+
         ds = tf.data.TFRecordDataset(
             filenames=filenames,
             compression_type=self.config.get("compression_type", ""),
@@ -355,7 +354,9 @@ class RecordDataLoader(DataLoader[tf.data.Dataset]):
             ds = ds.shuffle(self.config["shuffle_buffer_size"])
 
         # Batch
-        ds = ds.batch(self.batch_size, drop_remainder=self.config.get("drop_remainder", False))
+        ds = ds.batch(
+            self.batch_size, drop_remainder=self.config.get("drop_remainder", False)
+        )
 
         # Prefetch
         ds = ds.prefetch(self.config.get("prefetch_buffer_size", tf.data.AUTOTUNE))

@@ -53,6 +53,7 @@ class FrameworkChecker:
         except ImportError:
             return False
 
+
 # Convenience alias for backwards compatibility
 def is_framework_available(framework: FrameworkName) -> bool:
     return FrameworkChecker.is_available(framework)

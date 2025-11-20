@@ -155,6 +155,11 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401", "F403"]  # Allow unused imports in __init__.py
 "tests/**/*.py" = ["S101"]  # Allow assert in tests
+"mlpotion/frameworks/keras/__init__.py" = ["E402"]
+"mlpotion/frameworks/pytorch/__init__.py" = ["E402"]
+"mlpotion/frameworks/tensorflow/__init__.py" = ["E402"]
+"mlpotion/integrations/zenml/__init__.py" = ["E402"]
+"mlpotion/integrations/zenml/tensorflow/__init__.py" = ["E402"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["mlpotion"]

@@ -35,7 +35,7 @@ class ModelPersistence(ModelPersistenceProtocol[nn.Module]):
         # Define model
         class MyModel(nn.Module):
             def __init__(self): super().__init__(); self.l = nn.Linear(1, 1)
-        
+
         model = MyModel()
 
         # Save
@@ -191,7 +191,9 @@ class ModelPersistence(ModelPersistenceProtocol[nn.Module]):
             missing, unexpected = model.load_state_dict(state_dict, strict=strict)
 
             if strict:
-                logger.debug("State_dict loaded with strict=True (no mismatch error raised).")
+                logger.debug(
+                    "State_dict loaded with strict=True (no mismatch error raised)."
+                )
             else:
                 if missing:
                     logger.warning(f"Missing keys in state_dict: {missing}")

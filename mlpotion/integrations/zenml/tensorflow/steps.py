@@ -178,7 +178,10 @@ def train_model(
     learning_rate: float = 0.001,
     verbose: int = 1,
     metadata: dict[str, Any] | None = None,
-) -> Tuple[Annotated[keras.Model, "TrainedModel"], Annotated[dict[str, list[float]], "TrainingHistory"]]:
+) -> Tuple[
+    Annotated[keras.Model, "TrainedModel"],
+    Annotated[dict[str, list[float]], "TrainingHistory"],
+]:
     """Train a TensorFlow/Keras model using `ModelTrainer`.
 
     This step configures and runs a training session. It supports validation data
@@ -215,7 +218,7 @@ def train_model(
         config=config,
         validation_dataset=validation_dataset,
     )
-    
+
     # Result is TrainingResult object
     training_metrics = result.metrics
 
@@ -258,7 +261,7 @@ def evaluate_model(
         dataset=dataset,
         config=config,
     )
-    
+
     metrics = result.metrics
 
     if metadata:

@@ -1,7 +1,6 @@
 """Logging utilities."""
 
 import logging
-from typing import Any
 
 
 def get_logger(name: str) -> logging.Logger:

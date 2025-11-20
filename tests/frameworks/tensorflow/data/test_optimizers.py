@@ -5,7 +5,9 @@ from loguru import logger
 
 from mlpotion.frameworks.tensorflow.config import DataOptimizationConfig
 from mlpotion.frameworks.tensorflow.data.optimizers import DatasetOptimizer
-from tests.core import TestBase  # provides temp_dir, setUpClass/tearDownClass, setUp/tearDown
+from tests.core import (
+    TestBase,
+)  # provides temp_dir, setUpClass/tearDownClass, setUp/tearDown
 
 
 class TestDatasetOptimizer(TestBase):
@@ -14,7 +16,9 @@ class TestDatasetOptimizer(TestBase):
         logger.info("Setting up DatasetOptimizer tests")
 
         # Simple 1D dataset: 10 elements [0..9]
-        self.raw_dataset = tf.data.Dataset.from_tensor_slices(tf.range(10, dtype=tf.int32))
+        self.raw_dataset = tf.data.Dataset.from_tensor_slices(
+            tf.range(10, dtype=tf.int32)
+        )
 
     # ------------------------------------------------------------------ #
     # optimize(): basic batching + prefetch (defaults)

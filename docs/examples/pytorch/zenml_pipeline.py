@@ -15,7 +15,6 @@ import torch
 import torch.nn as nn
 from zenml import pipeline, step
 
-from mlpotion.frameworks.pytorch import ModelTrainingConfig
 from mlpotion.integrations.zenml.pytorch.steps import (
     evaluate_model,
     export_model,
@@ -125,8 +124,7 @@ def pytorch_training_pipeline(
         export_path=export_path,
         export_format="torchscript",
     )
-    return None
-    # return trained_model, training_metrics, evaluation_metrics
+    return model, metrics, evaluation_metrics
 
 
 if __name__ == "__main__":
@@ -138,6 +136,7 @@ if __name__ == "__main__":
     # Initialize ZenML (if not already initialized)
     try:
         from zenml.client import Client
+
         client = Client()
         print(f"✅ ZenML initialized. Active stack: {client.active_stack_model.name}")
     except Exception as e:
@@ -150,4 +149,3 @@ if __name__ == "__main__":
 
     print("\n" + "=" * 60)
     print("Pipeline completed successfully!")
-

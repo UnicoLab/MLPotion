@@ -12,15 +12,21 @@ class DataLoadingConfig(BaseSettings):
     file_pattern: str = Field(..., description="File pattern (glob) to load")
     batch_size: int = Field(default=32, ge=1)
     shuffle: bool = Field(default=True, description="Shuffle data")
-    num_workers: int = Field(default=0, ge=0, description="Number of worker processes for data loading")
-    pin_memory: bool = Field(default=False, description="Pin memory for faster GPU transfer")
+    num_workers: int = Field(
+        default=0, ge=0, description="Number of worker processes for data loading"
+    )
+    pin_memory: bool = Field(
+        default=False, description="Pin memory for faster GPU transfer"
+    )
     drop_last: bool = Field(default=False, description="Drop the last incomplete batch")
-    config: dict[str, Any] | None = Field(default=None, description="Extra configuration for the dataset loader")
+    config: dict[str, Any] | None = Field(
+        default=None, description="Extra configuration for the dataset loader"
+    )
 
     model_config = SettingsConfigDict(
         extra="forbid",
         frozen=False,
-        env_prefix='data_',
+        env_prefix="data_",
     )
 
 
@@ -29,14 +35,20 @@ class DataOptimizationConfig(BaseSettings):
 
     batch_size: int = Field(default=32, ge=1)
     num_workers: int = Field(default=0, ge=0, description="Number of worker processes")
-    pin_memory: bool = Field(default=False, description="Pin memory for faster GPU transfer")
-    prefetch_factor: int | None = Field(default=None, ge=1, description="Number of batches to prefetch")
-    persistent_workers: bool = Field(default=False, description="Keep workers alive between epochs")
+    pin_memory: bool = Field(
+        default=False, description="Pin memory for faster GPU transfer"
+    )
+    prefetch_factor: int | None = Field(
+        default=None, ge=1, description="Number of batches to prefetch"
+    )
+    persistent_workers: bool = Field(
+        default=False, description="Keep workers alive between epochs"
+    )
 
     model_config = SettingsConfigDict(
         extra="forbid",
         frozen=False,
-        env_prefix='opt_',
+        env_prefix="opt_",
     )
 
 
@@ -45,13 +57,17 @@ class ModelLoadingConfig(BaseSettings):
 
     model_path: str = Field(..., description="Path to model")
     device: str = Field(default="cpu", description="Device to load model on")
-    map_location: str | None = Field(default=None, description="Map location for loading model")
-    config: dict[str, Any] | None = Field(default=None, description="Extra configuration for model loading")
+    map_location: str | None = Field(
+        default=None, description="Map location for loading model"
+    )
+    config: dict[str, Any] | None = Field(
+        default=None, description="Extra configuration for model loading"
+    )
 
     model_config = SettingsConfigDict(
         extra="forbid",
         frozen=False,
-        env_prefix='model_',
+        env_prefix="model_",
     )
 
 
@@ -61,30 +77,42 @@ class ModelPersistenceConfig(BaseSettings):
     path: str = Field(..., description="Path to save/load model")
     save_optimizer: bool = Field(default=False, description="Save optimizer state")
     save_scheduler: bool = Field(default=False, description="Save scheduler state")
-    config: dict[str, Any] | None = Field(default=None, description="Extra configuration for model persistence")
+    config: dict[str, Any] | None = Field(
+        default=None, description="Extra configuration for model persistence"
+    )
 
     model_config = SettingsConfigDict(
         extra="forbid",
         frozen=False,
-        env_prefix='model_persist_',
+        env_prefix="model_persist_",
     )
 
 
 class DataTransformationConfig(BaseSettings):
     """Configuration for data transformation with PyTorch models."""
 
-    file_pattern: str | None = Field(default=None, description="File pattern (glob) to load")
+    file_pattern: str | None = Field(
+        default=None, description="File pattern (glob) to load"
+    )
     model_path: str | None = Field(default=None, description="Path to model")
-    batch_size: int = Field(default=32, ge=1, description="Batch size for transformation")
+    batch_size: int = Field(
+        default=32, ge=1, description="Batch size for transformation"
+    )
     device: str = Field(default="cpu", description="Device for transformation")
-    data_output_path: str | None = Field(default=None, description="Path to save transformed data")
-    data_output_per_batch: bool = Field(default=False, description="Save data per batch")
-    config: dict[str, Any] | None = Field(default=None, description="Extra configuration for the data transformer")
+    data_output_path: str | None = Field(
+        default=None, description="Path to save transformed data"
+    )
+    data_output_per_batch: bool = Field(
+        default=False, description="Save data per batch"
+    )
+    config: dict[str, Any] | None = Field(
+        default=None, description="Extra configuration for the data transformer"
+    )
 
     model_config = SettingsConfigDict(
         extra="forbid",
         frozen=False,
-        env_prefix='transform_',
+        env_prefix="transform_",
     )
 
 
@@ -168,7 +196,7 @@ class ModelEvaluationConfig(BaseSettings):
     model_config = SettingsConfigDict(
         extra="forbid",
         frozen=False,
-        env_prefix='eval_',
+        env_prefix="eval_",
     )
 
 
@@ -243,7 +271,7 @@ class ModelExportConfig(BaseSettings):
     model_config = SettingsConfigDict(
         extra="forbid",  # reject unknown keys so bugs are caught early
         frozen=False,
-        env_prefix='export_',
+        env_prefix="export_",
     )
 
 
@@ -253,10 +281,12 @@ class ModelInspectionConfig(BaseSettings):
     format: Literal["state_dict", "torchscript", "onnx"] = Field(default="state_dict")
     show_parameters: bool = Field(default=True, description="Show model parameters")
     show_architecture: bool = Field(default=True, description="Show model architecture")
-    config: dict[str, Any] | None = Field(default=None, description="Extra configuration for model inspection")
+    config: dict[str, Any] | None = Field(
+        default=None, description="Extra configuration for model inspection"
+    )
 
     model_config = SettingsConfigDict(
         extra="forbid",
         frozen=False,
-        env_prefix='inspect_',
+        env_prefix="inspect_",
     )

@@ -1,6 +1,5 @@
 import os
 import unittest
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -12,7 +11,9 @@ from mlpotion.frameworks.tensorflow.data.loaders import (
     CSVDataLoader,
     RecordDataLoader,
 )
-from tests.core import TestBase  # provides temp_dir, setUpClass/tearDownClass, setUp/tearDown
+from tests.core import (
+    TestBase,
+)  # provides temp_dir, setUpClass/tearDownClass, setUp/tearDown
 
 
 class TestCSVDataLoader(TestBase):
@@ -161,7 +162,6 @@ class TestCSVDataLoader(TestBase):
         # original feature_0 is [0,1,2,3]
         expected = np.arange(4, dtype=np.float32) + 42.0
         np.testing.assert_allclose(np.sort(feature_vals), np.sort(expected))
-
 
 
 class TestRecordDataLoader(TestBase):

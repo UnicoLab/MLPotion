@@ -13,6 +13,7 @@ try:
     import torch
     import torch.nn as nn
     from torch.utils.data import DataLoader
+
     PYTORCH_AVAILABLE = True
 except ImportError:
     PYTORCH_AVAILABLE = False
@@ -23,6 +24,7 @@ except ImportError:
 # Check if zenml is available
 try:
     import zenml
+
     ZENML_AVAILABLE = True
 except ImportError:
     ZENML_AVAILABLE = False
@@ -44,6 +46,7 @@ from tests.core import TestBase
 
 
 if PYTORCH_AVAILABLE:
+
     class SimpleModel(nn.Module):
         """Simple PyTorch model for testing."""
 
@@ -89,7 +92,10 @@ class TestPyTorchZenMLSteps(TestBase):
 
         rng = np.random.default_rng(42)
         data = {
-            **{f"feature_{i}": rng.normal(size=self.n_samples) for i in range(self.n_features)},
+            **{
+                f"feature_{i}": rng.normal(size=self.n_samples)
+                for i in range(self.n_features)
+            },
             "target": rng.normal(size=self.n_samples),
         }
         df = pd.DataFrame(data)

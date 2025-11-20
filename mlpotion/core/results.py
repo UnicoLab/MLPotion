@@ -126,7 +126,6 @@ class InspectionResult:
     layers: list[dict[str, Any]]
 
 
-
 @dataclass
 class LoadingResult(Generic[ModelT]):
     """Result from model loading."""

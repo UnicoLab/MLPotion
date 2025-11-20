@@ -1,7 +1,6 @@
 """Custom materializers for TensorFlow types."""
 
 import json
-import json
 from pathlib import Path
 from typing import Any, Type
 
@@ -14,9 +13,15 @@ from zenml.materializers.materializer_registry import materializer_registry
 logger = get_logger(__name__)
 
 # Check if TensorFlow types are actually classes (not Mocks during testing)
-_is_tensor_real_class = isinstance(tf.Tensor, type) and not hasattr(tf.Tensor, "_mock_name")
-_is_tensorspec_real_class = isinstance(tf.TensorSpec, type) and not hasattr(tf.TensorSpec, "_mock_name")
-_is_dataset_real_class = isinstance(tf.data.Dataset, type) and not hasattr(tf.data.Dataset, "_mock_name")
+_is_tensor_real_class = isinstance(tf.Tensor, type) and not hasattr(
+    tf.Tensor, "_mock_name"
+)
+_is_tensorspec_real_class = isinstance(tf.TensorSpec, type) and not hasattr(
+    tf.TensorSpec, "_mock_name"
+)
+_is_dataset_real_class = isinstance(tf.data.Dataset, type) and not hasattr(
+    tf.data.Dataset, "_mock_name"
+)
 
 # Use object as fallback for ASSOCIATED_TYPES when types are mocked
 _TensorForTypes = tf.Tensor if _is_tensor_real_class else object
@@ -30,7 +35,7 @@ class TensorMaterializer(BaseMaterializer):
     This materializer handles the serialization and deserialization of `tf.Tensor` objects.
     It saves tensors as binary protobuf files (`tensor.pb`) using `tf.io.serialize_tensor`.
     """
-    
+
     ASSOCIATED_TYPES = (_TensorForTypes,)
     ASSOCIATED_ARTIFACT_TYPE = ArtifactType.DATA
 
@@ -46,7 +51,9 @@ class TensorMaterializer(BaseMaterializer):
         logger.info("Loading TensorFlow tensor...")
         try:
             tensor_path = Path(self.uri) / "tensor.pb"
-            return tf.io.parse_tensor(tf.io.read_file(str(tensor_path)), out_type=tf.float32)
+            return tf.io.parse_tensor(
+                tf.io.read_file(str(tensor_path)), out_type=tf.float32
+            )
         except Exception as e:
             logger.error(f"Failed to load tensor: {e}")
             raise
@@ -75,7 +82,7 @@ if _is_tensor_real_class:
             key=tf.Tensor,
             type_=TensorMaterializer,
             artifact_type=ArtifactType.DATA,
-            )
+        )
     except Exception:
         pass  # Registration may fail in test environments
 
@@ -86,7 +93,7 @@ class TensorSpecMaterializer(BaseMaterializer):
     This materializer handles the serialization and deserialization of `tf.TensorSpec` objects.
     It saves the spec as a JSON file (`spec.json`) containing shape, dtype, and other metadata.
     """
-    
+
     ASSOCIATED_TYPES = (_TensorSpecForTypes,)
     ASSOCIATED_ARTIFACT_TYPE = ArtifactType.DATA
 
@@ -294,7 +301,9 @@ class TFRecordDatasetMaterializer(BaseMaterializer):
 
         element_spec = self._deserialize_element_spec(metadata["element_spec"])
         num_leaves = metadata["num_leaves"]
-        concrete_shapes = metadata.get("concrete_shapes", None)  # May be None for older versions
+        concrete_shapes = metadata.get(
+            "concrete_shapes", None
+        )  # May be None for older versions
 
         logger.info("Loaded element_spec: %s", element_spec)
         logger.info("Expected number of leaves: %s", num_leaves)
@@ -328,7 +337,9 @@ class TFRecordDatasetMaterializer(BaseMaterializer):
                         # We have the actual shape from when the data was saved
                         concrete_shape = concrete_shapes[i]
                         # Replace None with -1 for reshape
-                        target_shape = [d if d is not None else -1 for d in concrete_shape]
+                        target_shape = [
+                            d if d is not None else -1 for d in concrete_shape
+                        ]
                         tensor = tf.reshape(tensor, target_shape)
                         # Set the shape with proper None values
                         tensor.set_shape(concrete_shape)
@@ -341,11 +352,15 @@ class TFRecordDatasetMaterializer(BaseMaterializer):
                             elif leaf_spec.shape.rank > 1:
                                 # Original was multi-dimensional - need to reshape from 1D
                                 shape_list = leaf_spec.shape.as_list()
-                                none_indices = [i for i, d in enumerate(shape_list) if d is None]
+                                none_indices = [
+                                    i for i, d in enumerate(shape_list) if d is None
+                                ]
 
                                 if len(none_indices) <= 1:
                                     # Safe to reshape with at most one -1
-                                    target_shape = [d if d is not None else -1 for d in shape_list]
+                                    target_shape = [
+                                        d if d is not None else -1 for d in shape_list
+                                    ]
                                     tensor = tf.reshape(tensor, target_shape)
                                     tensor.set_shape(leaf_spec.shape)
                         else:
@@ -375,7 +390,9 @@ class TFRecordDatasetMaterializer(BaseMaterializer):
     # Flatten / unflatten with spec
     # ------------------------------------------------------------------
 
-    def _flatten_element_spec(self, spec: Any, path: str = "") -> list[tuple[str, tf.TensorSpec]]:
+    def _flatten_element_spec(
+        self, spec: Any, path: str = ""
+    ) -> list[tuple[str, tf.TensorSpec]]:
         """Return a list of (path, TensorSpec) leaves in deterministic order."""
         leaves: list[tuple[str, tf.TensorSpec]] = []
 
@@ -398,7 +415,9 @@ class TFRecordDatasetMaterializer(BaseMaterializer):
 
         return leaves
 
-    def _flatten_data_with_spec(self, data: Any, spec: Any, out: list[tf.Tensor]) -> None:
+    def _flatten_data_with_spec(
+        self, data: Any, spec: Any, out: list[tf.Tensor]
+    ) -> None:
         """Flatten `data` into `out` according to the structure in `spec`."""
         if isinstance(spec, tf.TensorSpec):
             # Leaf: convert to tensor and append
@@ -441,13 +460,11 @@ class TFRecordDatasetMaterializer(BaseMaterializer):
             }
         elif isinstance(spec, tuple):
             return tuple(
-                self._unflatten_data_with_spec(sub_spec, flat_iter)
-                for sub_spec in spec
+                self._unflatten_data_with_spec(sub_spec, flat_iter) for sub_spec in spec
             )
         elif isinstance(spec, list):
             return [
-                self._unflatten_data_with_spec(sub_spec, flat_iter)
-                for sub_spec in spec
+                self._unflatten_data_with_spec(sub_spec, flat_iter) for sub_spec in spec
             ]
         else:
             raise ValueError(f"Unsupported spec type in unflatten: {type(spec)}")
@@ -456,7 +473,9 @@ class TFRecordDatasetMaterializer(BaseMaterializer):
     # TFRecord feature helpers
     # ------------------------------------------------------------------
 
-    def _flat_tensors_to_example(self, flat_tensors: list[tf.Tensor]) -> tf.train.Example:
+    def _flat_tensors_to_example(
+        self, flat_tensors: list[tf.Tensor]
+    ) -> tf.train.Example:
         """Convert flattened tensors into a `tf.train.Example`."""
         features: dict[str, tf.train.Feature] = {}
 
@@ -558,14 +577,10 @@ class TFRecordDatasetMaterializer(BaseMaterializer):
             }
 
         if spec_type == "tuple":
-            return tuple(
-                self._deserialize_element_spec(s) for s in spec_dict["value"]
-            )
+            return tuple(self._deserialize_element_spec(s) for s in spec_dict["value"])
 
         if spec_type == "list":
-            return [
-                self._deserialize_element_spec(s) for s in spec_dict["value"]
-            ]
+            return [self._deserialize_element_spec(s) for s in spec_dict["value"]]
 
         raise ValueError(f"Unsupported spec_type: {spec_type}")
 
@@ -766,6 +781,7 @@ class TFConfigDatasetMaterializer(BaseMaterializer):
             "_is_default": True,
             "_note": "This config was auto-generated. Update file_pattern and other params as needed.",
         }
+
 
 if _is_dataset_real_class:
     try:

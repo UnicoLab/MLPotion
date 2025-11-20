@@ -19,6 +19,7 @@ from mlpotion.frameworks.keras import (
     ModelTrainingConfig,
 )
 
+
 # =================== METHODS ===========================
 def create_model(input_dim: int = 10) -> tf.keras.Model:
     """Create a simple feedforward neural network.
@@ -29,13 +30,15 @@ def create_model(input_dim: int = 10) -> tf.keras.Model:
     Returns:
         Compiled Keras model.
     """
-    model = tf.keras.Sequential([
-        tf.keras.layers.Dense(64, activation="relu", input_shape=(input_dim,)),
-        tf.keras.layers.Dropout(0.2),
-        tf.keras.layers.Dense(32, activation="relu"),
-        tf.keras.layers.Dropout(0.2),
-        tf.keras.layers.Dense(1),
-    ])
+    model = tf.keras.Sequential(
+        [
+            tf.keras.layers.Dense(64, activation="relu", input_shape=(input_dim,)),
+            tf.keras.layers.Dropout(0.2),
+            tf.keras.layers.Dense(32, activation="relu"),
+            tf.keras.layers.Dropout(0.2),
+            tf.keras.layers.Dense(1),
+        ]
+    )
 
     model.compile(
         optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
@@ -116,4 +119,3 @@ logger.info(f"Model loaded successfully: {type(loaded_model)}")
 logger.info("\n" + "=" * 60)
 logger.info("Complete!")
 logger.info("=" * 60)
-

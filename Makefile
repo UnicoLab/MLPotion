@@ -186,19 +186,19 @@ coverage:
 .PHONY: format
 ## Format code with black and isort
 format:
-	poetry run black mlpotion tests examples
-	poetry run isort mlpotion tests examples
+	poetry run black mlpotion tests docs/examples
+	poetry run isort mlpotion tests docs/examples
 	@echo "✅ Code formatted!"
 
 .PHONY: lint
 ## Run linting with ruff
 lint:
-	poetry run ruff check mlpotion tests examples
+	pre-commit run --all-files
 
 .PHONY: lint-fix
 ## Run linting and auto-fix issues
 lint-fix:
-	poetry run ruff check --fix mlpotion tests examples
+	pre-commit run --all-files --fix
 
 .PHONY: typecheck
 ## Run type checking with mypy
@@ -307,27 +307,27 @@ version-major:
 .PHONY: run-example-tensorflow
 ## Run TensorFlow example
 run-example-tensorflow:
-	$(PYTHON) examples/tensorflow/basic_usage.py
+	$(PYTHON) docs/examples/tensorflow/basic_usage.py
 
 .PHONY: run-example-pytorch
 ## Run PyTorch example
 run-example-pytorch:
-	$(PYTHON) examples/pytorch/basic_usage.py
+	$(PYTHON) docs/examples/pytorch/basic_usage.py
 
 .PHONY: run-example-keras
 ## Run Keras example
 run-example-keras:
-	$(PYTHON) examples/keras/basic_usage.py
+	$(PYTHON) docs/examples/keras/basic_usage.py
 
 .PHONY: run-zenml-tensorflow
 ## Run TensorFlow ZenML pipeline example
 run-zenml-tensorflow:
-	$(PYTHON) examples/tensorflow/zenml_pipeline.py
+	$(PYTHON) docs/examples/tensorflow/zenml_pipeline.py
 
 .PHONY: run-zenml-pytorch
 ## Run PyTorch ZenML pipeline example
 run-zenml-pytorch:
-	$(PYTHON) examples/pytorch/zenml_pipeline.py
+	$(PYTHON) docs/examples/pytorch/zenml_pipeline.py
 
 # ------------------------------------
 # Cleaning

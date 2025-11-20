@@ -1,5 +1,4 @@
 import unittest
-from pathlib import Path
 from unittest.mock import patch
 
 import numpy as np
@@ -21,9 +20,9 @@ class TestCSVSequence(TestBase):
         self.batch_size = 4
 
         rng = np.random.default_rng(42)
-        self.features = rng.normal(
-            size=(self.n_samples, self.n_features)
-        ).astype("float32")
+        self.features = rng.normal(size=(self.n_samples, self.n_features)).astype(
+            "float32"
+        )
         self.labels = rng.integers(0, 2, size=(self.n_samples,)).astype("float32")
 
     def test_len_and_getitem_with_labels(self) -> None:
@@ -43,7 +42,9 @@ class TestCSVSequence(TestBase):
         total_seen = 0
         for idx in range(len(seq)):
             batch_x, batch_y = seq[idx]
-            logger.info(f"Batch {idx}: x.shape={batch_x.shape}, y.shape={batch_y.shape}")
+            logger.info(
+                f"Batch {idx}: x.shape={batch_x.shape}, y.shape={batch_y.shape}"
+            )
 
             self.assertIsInstance(batch_x, np.ndarray)
             self.assertIsInstance(batch_y, np.ndarray)
@@ -220,7 +221,6 @@ class TestCSVDataLoader(TestBase):
         # We have feature_0, feature_1, target → 3 numeric columns
         expected_num_features = self.n_features + 1  # +1 for 'target'
         self.assertEqual(batch_x.shape[1], expected_num_features)
-
 
     # ------------------------------------------------------------------ #
     # Column selection

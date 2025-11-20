@@ -152,7 +152,9 @@ class CSVDataset(Dataset[tuple[torch.Tensor, torch.Tensor] | torch.Tensor]):
             self._features_df = df
 
         if self._features_df is None:
-            raise DataLoadingError("Internal error: features DataFrame is None after split.")
+            raise DataLoadingError(
+                "Internal error: features DataFrame is None after split."
+            )
 
         self._feature_cols = list(self._features_df.columns)
 

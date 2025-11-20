@@ -31,7 +31,7 @@ class ModelInspector(ModelInspectorProtocol[ModelLike]):
 
         model = keras.Sequential([keras.layers.Dense(1, input_shape=(10,))])
         inspector = ModelInspector()
-        
+
         info = inspector.inspect(model)
         print(f"Total params: {info['parameters']['total']}")
         print(f"Inputs: {info['inputs']}")
@@ -40,7 +40,6 @@ class ModelInspector(ModelInspectorProtocol[ModelLike]):
 
     include_layers: bool = True
     include_signatures: bool = True
-
 
     @trycatch(
         error=ModelInspectorError,

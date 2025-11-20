@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import keras
 import numpy as np
@@ -75,9 +75,7 @@ class TestModelEvaluator(TestBase):
     # ------------------------------------------------------------------ #
     def test_evaluate_raises_if_uncompiled_and_no_compile_params(self) -> None:
         """Uncompiled model should raise error."""
-        logger.info(
-            "Testing evaluate() with uncompiled model"
-        )
+        logger.info("Testing evaluate() with uncompiled model")
 
         # Fresh uncompiled model
         model = keras.Sequential(
@@ -88,9 +86,11 @@ class TestModelEvaluator(TestBase):
         )
 
         config = ModelEvaluationConfig(batch_size=8, verbose=0)
-        
+
         with self.assertRaises((RuntimeError, ValueError)):
-            self.evaluator.evaluate(model=model, dataset=(self.x, self.y), config=config)
+            self.evaluator.evaluate(
+                model=model, dataset=(self.x, self.y), config=config
+            )
 
     # ------------------------------------------------------------------ #
     # Precompiled model: compile_params should be ignored (no recompile)
@@ -109,7 +109,7 @@ class TestModelEvaluator(TestBase):
         )
 
         config = ModelEvaluationConfig(verbose=0)
-        
+
         result = self.evaluator.evaluate(
             model=self.model,
             dataset=(self.x, self.y),
@@ -266,7 +266,9 @@ class TestModelEvaluator(TestBase):
             optimizer = object()
 
         self.assertFalse(self.evaluator._is_compiled(DummyUncompiled()))  # both None
-        self.assertTrue(self.evaluator._is_compiled(DummyCompiledLoss()))  # compiled_loss set
+        self.assertTrue(
+            self.evaluator._is_compiled(DummyCompiledLoss())
+        )  # compiled_loss set
         self.assertTrue(
             self.evaluator._is_compiled(DummyCompiledOptimizer())
         )  # optimizer set

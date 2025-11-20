@@ -86,10 +86,12 @@ class TestModelTrainer(TestBase):
 
         # Config with default optimizer_type and loss
         config = ModelTrainingConfig(epochs=1, batch_size=8, verbose=0)
-        
+
         with patch.object(self.trainer, "_is_compiled", return_value=False):
             # Should compile with defaults and train successfully
-            result = self.trainer.train(model=self.model, dataset=(self.x, self.y), config=config)
+            result = self.trainer.train(
+                model=self.model, dataset=(self.x, self.y), config=config
+            )
             self.assertIn("loss", result.history)
 
     # ------------------------------------------------------------------ #
@@ -288,8 +290,12 @@ class TestModelTrainer(TestBase):
             optimizer = object()
 
         self.assertFalse(self.trainer._is_compiled(DummyUncompiled()))  # both None
-        self.assertTrue(self.trainer._is_compiled(DummyCompiledLoss()))  # compiled_loss set
-        self.assertTrue(self.trainer._is_compiled(DummyCompiledOptimizer()))  # optimizer set
+        self.assertTrue(
+            self.trainer._is_compiled(DummyCompiledLoss())
+        )  # compiled_loss set
+        self.assertTrue(
+            self.trainer._is_compiled(DummyCompiledOptimizer())
+        )  # optimizer set
 
 
 if __name__ == "__main__":

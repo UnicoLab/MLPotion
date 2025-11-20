@@ -122,9 +122,7 @@ class ModelExporter(ModelExporterProtocol[Model]):
     # ------------------------------------------------------------------ #
     def _validate_model(self, model: Model) -> None:
         if not isinstance(model, keras.Model):
-            raise TypeError(
-                f"ModelExporter expects a keras.Model, got {type(model)!r}"
-            )
+            raise TypeError(f"ModelExporter expects a keras.Model, got {type(model)!r}")
 
     def _validate_config(self, config: Mapping[str, Any] | None) -> None:
         if config is not None and not isinstance(config, Mapping):

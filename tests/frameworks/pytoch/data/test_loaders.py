@@ -1,9 +1,7 @@
 import os
 import tempfile
 import unittest
-from pathlib import Path
 
-import numpy as np
 import pandas as pd
 import torch
 from torch.utils.data import Dataset, IterableDataset, RandomSampler, SequentialSampler
@@ -110,7 +108,9 @@ class TestCSVDataLoader(unittest.TestCase):
     # ------------------------------------------------------------------ #
     # Worker-related options in _build_loader_kwargs
     # ------------------------------------------------------------------ #
-    def test_build_loader_kwargs_omits_worker_options_when_num_workers_zero(self) -> None:
+    def test_build_loader_kwargs_omits_worker_options_when_num_workers_zero(
+        self,
+    ) -> None:
         """persistent_workers & prefetch_factor should not be set when num_workers == 0."""
         dataset = _SimpleDataset()
         factory = CSVDataLoader[int](
@@ -133,7 +133,9 @@ class TestCSVDataLoader(unittest.TestCase):
         self.assertNotIn("persistent_workers", kwargs)
         self.assertNotIn("prefetch_factor", kwargs)
 
-    def test_build_loader_kwargs_sets_worker_options_when_num_workers_positive(self) -> None:
+    def test_build_loader_kwargs_sets_worker_options_when_num_workers_positive(
+        self,
+    ) -> None:
         """persistent_workers & prefetch_factor should be passed when num_workers > 0."""
         dataset = _SimpleDataset()
         factory = CSVDataLoader[int](
@@ -208,7 +210,9 @@ class TestCSVDataset(unittest.TestCase):
         paths.extend([p1, p2])
         return paths
 
-    def test_pytorch_csv_dataset_loads_files_and_splits_features_and_labels(self) -> None:
+    def test_pytorch_csv_dataset_loads_files_and_splits_features_and_labels(
+        self,
+    ) -> None:
         """CSVDataset should load CSVs, expose correct length and tensors."""
         with tempfile.TemporaryDirectory() as tmpdir:
             self._create_temp_csvs(tmpdir)
@@ -252,7 +256,9 @@ class TestCSVDataset(unittest.TestCase):
             # All columns (f1, f2, label) are treated as features when label_name=None
             self.assertEqual(item0.shape, (3,))
 
-    def test_pytorch_csv_dataset_column_selection_and_missing_column_error(self) -> None:
+    def test_pytorch_csv_dataset_column_selection_and_missing_column_error(
+        self,
+    ) -> None:
         """column_names should restrict features and raise for missing columns."""
         with tempfile.TemporaryDirectory() as tmpdir:
             self._create_temp_csvs(tmpdir)

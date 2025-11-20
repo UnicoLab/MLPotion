@@ -22,21 +22,20 @@ from zenml.materializers.materializer_registry import materializer_registry
 
 # model materializer
 from mlpotion.integrations.zenml.keras.materializers import KerasModelMaterializer
-materializer_registry.register_materializer_type(
-    keras.Model,
-    KerasModelMaterializer
+from mlpotion.integrations.zenml.tensorflow.materializers import (
+    TFConfigDatasetMaterializer,
 )
+
+materializer_registry.register_materializer_type(keras.Model, KerasModelMaterializer)
 # dataset materializers
 # Try CSV materializer first (lightweight, stores only config)
 # Falls back to TFRecord materializer if CSV config not available
-from mlpotion.integrations.zenml.tensorflow.materializers import TFConfigDatasetMaterializer
+
 
 # Register CSV materializer with higher priority
 materializer_registry.register_materializer_type(
-    tf.data.Dataset,
-    TFConfigDatasetMaterializer
+    tf.data.Dataset, TFConfigDatasetMaterializer
 )
-
 
 
 __all__ = [

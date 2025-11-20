@@ -30,7 +30,9 @@ class TrainingConfig(BaseSettings):
     epochs: int = Field(default=10, ge=1, description="Number of training epochs")
     batch_size: int = Field(default=32, ge=1, description="Batch size for training")
     learning_rate: float = Field(default=0.001, gt=0.0, description="Learning rate")
-    validation_split: float = Field(default=0.0, ge=0.0, le=1.0, description="Validation split ratio")
+    validation_split: float = Field(
+        default=0.0, ge=0.0, le=1.0, description="Validation split ratio"
+    )
     shuffle: bool = Field(default=True, description="Shuffle training data")
     verbose: int = Field(default=1, ge=0, le=2, description="Verbosity level")
 
@@ -42,7 +44,7 @@ class TrainingConfig(BaseSettings):
     model_config = SettingsConfigDict(
         extra="forbid",
         frozen=False,
-        env_prefix='train_',
+        env_prefix="train_",
     )
 
 
@@ -57,12 +59,14 @@ class EvaluationConfig(BaseSettings):
 
     batch_size: int = Field(default=32, ge=1, description="Batch size for evaluation")
     verbose: int = Field(default=1, ge=0, le=2, description="Verbosity level")
-    framework_options: dict[str, Any] = Field(default_factory=dict, description="Framework-specific options")
+    framework_options: dict[str, Any] = Field(
+        default_factory=dict, description="Framework-specific options"
+    )
 
     model_config = SettingsConfigDict(
         extra="forbid",
         frozen=False,
-        env_prefix='eval_',
+        env_prefix="eval_",
     )
 
 
@@ -78,11 +82,15 @@ class ExportConfig(BaseSettings):
 
     export_path: str = Field(..., description="Path to export model")
     format: str = Field(default="default", description="Export format")
-    include_optimizer: bool = Field(default=False, description="Include optimizer state")
-    metadata: dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
+    include_optimizer: bool = Field(
+        default=False, description="Include optimizer state"
+    )
+    metadata: dict[str, Any] = Field(
+        default_factory=dict, description="Additional metadata"
+    )
 
     model_config = SettingsConfigDict(
         extra="forbid",
         frozen=False,
-        env_prefix='export_',
+        env_prefix="export_",
     )

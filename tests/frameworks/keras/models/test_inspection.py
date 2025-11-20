@@ -2,7 +2,6 @@ import unittest
 from unittest.mock import patch
 
 import keras
-import numpy as np
 from loguru import logger
 
 from mlpotion.frameworks.keras.models.inspection import ModelInspector

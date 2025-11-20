@@ -186,7 +186,9 @@ class TestModelPersistence(TestBase):
         persistence = ModelPersistence(path=path)
 
         with self.assertRaises(ModelPersistenceError):
-            _ = persistence.load(model_class=SmallNet, model_kwargs={"unknown_arg": 123})
+            _ = persistence.load(
+                model_class=SmallNet, model_kwargs={"unknown_arg": 123}
+            )
 
 
 if __name__ == "__main__":

@@ -88,7 +88,7 @@ class ModelEvaluator(ModelEvaluatorProtocol[Model, Sequence]):
             "verbose": config.verbose,
             "return_dict": True,
         }
-        
+
         # Add any framework-specific options
         eval_kwargs.update(config.framework_options)
 
@@ -96,17 +96,20 @@ class ModelEvaluator(ModelEvaluatorProtocol[Model, Sequence]):
         # unless we provide compile params, but EvaluationConfig doesn't typically carry them.
         # The user should ensure the model is compiled (e.g. after loading or training).
         if not self._is_compiled(model):
-             logger.warning("Model is not compiled. Evaluation might fail if loss/metrics are not defined.")
+            logger.warning(
+                "Model is not compiled. Evaluation might fail if loss/metrics are not defined."
+            )
 
         logger.info("Evaluating Keras model...")
         logger.debug(f"Evaluation data type: {type(dataset)!r}")
         logger.debug(f"Evaluation parameters: {eval_kwargs}")
 
         import time
+
         start_time = time.time()
 
         result = self._call_evaluate(model=model, data=dataset, eval_kwargs=eval_kwargs)
-        
+
         evaluation_time = time.time() - start_time
 
         # At this point, result should be a dict[str, float]
@@ -120,7 +123,7 @@ class ModelEvaluator(ModelEvaluatorProtocol[Model, Sequence]):
 
         metrics = {str(k): float(v) for k, v in result.items()}
         logger.info(f"Evaluation result: {metrics}")
-        
+
         return EvaluationResult(
             metrics=metrics,
             config=config,

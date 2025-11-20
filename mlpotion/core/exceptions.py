@@ -24,6 +24,7 @@ class TrainingError(MLPotionError):
 
     pass
 
+
 class DataTransformationError(MLPotionError):
     """Raised when an error occurs during data transformation operations."""
 
@@ -53,6 +54,7 @@ class ValidationError(MLPotionError):
 
     pass
 
+
 class ModelPersistenceError(MLPotionError):
     """Raised when an error occurs during model saving or loading."""
 
@@ -64,15 +66,18 @@ class ModelEvaluatorError(MLPotionError):
 
     pass
 
+
 class ModelTrainerError(MLPotionError):
     """Raised when an error occurs specifically within a ModelTrainer component."""
 
     pass
 
+
 class ModelInspectorError(MLPotionError):
     """Raised when an error occurs during model inspection."""
 
     pass
+
 
 class ModelExporterError(MLPotionError):
     """Raised when an error occurs specifically within a ModelExporter component."""

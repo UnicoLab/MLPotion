@@ -37,7 +37,9 @@ class TestModelExporter(TestBase):
     # ------------------------------------------------------------------ #
     # TorchScript exports
     # ------------------------------------------------------------------ #
-    @pytest.mark.skip(reason="TorchScript script mode may fail with 'could not get source code' in test environments")
+    @pytest.mark.skip(
+        reason="TorchScript script mode may fail with 'could not get source code' in test environments"
+    )
     def test_export_torchscript_script_creates_pt_file(self) -> None:
         """TorchScript script mode should create a .pt file and return ExportResult."""
         out_base = self.temp_dir / "script_model"

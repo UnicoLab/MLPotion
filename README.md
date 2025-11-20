@@ -1,86 +1,125 @@
 # MLPotion 🧪
 
 <p align="center">
-  <img src="docs/logo.png" width="350"/>
+  <img src="docs/logo.png" width="350" alt="MLPotion Logo"/>
+  <br>
+  <em>Modular Components for Machine Learning Pipelines</em>
+  <br>
+  <br>
   <p align="center"><strong>Provided and maintained by <a href="https://unicolab.ai">🦄 UnicoLab</a></strong></p>
 </p>
 
-**ML-Potion** helps you brew your own machine-learning magic ✨—exactly the way you want it. Instead of forcing you into a rigid framework, it gives you a chest of mix-and-match building blocks (atoms, steps, components) you can snap together into fully custom training or inference pipelines.
-
-Whether you're a fan of **Keras, TensorFlow, PyTorch**, or you’re bold enough to bring your own framework, everything is designed to be modular, composable, and delightfully flexible. Build pipelines by hand like a wizard mixing ingredients… or drop them straight into **ZenML** to get production-ready steps with clean, tested foundations.
-
-If you prefer a “just-give-me-the-spell” workflow, ML-Potion also includes ready-made steps for common use cases—simple, predictable, and still fully customizable.
-And when you need that special custom twist, we want you to contribute it back. 🧪 Your creation might become someone else’s favorite spell.
-
-*Craft. Combine. Conjure.*
-
-With ML-Potion, your ML pipeline becomes a potion worth sharing. 🚀
-
-
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-[![Type checked: mypy](https://img.shields.io/badge/type%20checked-mypy-blue.svg)](http://mypy-lang.org/)
-[![ZenML](https://img.shields.io/badge/built%20with-ZenML-blue.svg)](https://zenml.io)
-[![Keras 3](https://img.shields.io/badge/keras-3.0+-red.svg)](https://keras.io)
-[![TensorFlow](https://img.shields.io/badge/TensorFlow-2.18+-red.svg)](https://keras.io)
-[![PyToch](https://img.shields.io/badge/PyTorch-2.0+-red.svg)](https://keras.io)
-[![🦄 UnicoLab](https://img.shields.io/badge/UnicoLab-Enterprise%20AI-blue.svg)](https://unicolab.ai)
 ---
 
-## ✨ Features
+<p align="center">
+  <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.10+-blue.svg" alt="Python 3.10+"></a>
+  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
+  <a href="https://github.com/psf/black"><img src="https://img.shields.io/badge/code%20style-black-000000.svg" alt="Code style: black"></a>
+  <a href="http://mypy-lang.org/"><img src="https://img.shields.io/badge/type%20checked-mypy-blue.svg" alt="Type checked: mypy"></a>
+  <br>
+  <a href="https://zenml.io"><img src="https://img.shields.io/badge/built%20with-ZenML-blue.svg" alt="ZenML"></a>
+  <a href="https://keras.io"><img src="https://img.shields.io/badge/keras-3.0+-red.svg" alt="Keras 3"></a>
+  <a href="https://tensorflow.org"><img src="https://img.shields.io/badge/TensorFlow-2.15+-orange.svg" alt="TensorFlow"></a>
+  <a href="https://pytorch.org"><img src="https://img.shields.io/badge/PyTorch-2.0+-ee4c2c.svg" alt="PyTorch"></a>
+</p>
 
-- 🎯 Framework-agnostic core — Works even without installing any ML framework
-- 🔧 Modular installation — Only install what you need (tensorflow, pytorch, zenml, etc.)
-- 🛡️ Type-safe — Full Python 3.10+ typing and mypy-friendly design
-- 🧪 Testable architecture — Protocols and abstractions make mocking trivial
-- 📦 No framework lock-in — Use standalone or integrate with ZenML, Prefect, Airflow, etc.
-- 🚀 Production-ready — Robust error handling, logging, and consistent interfaces
-- 📖 Well-documented — Rich examples, docstrings, and guides to help you get started
+---
+
+## 🧪 The Formula for Better Pipelines
+
+**MLPotion** is a library of composable, framework-agnostic building blocks for machine learning.
+
+Instead of writing the same boilerplate training loops, data loaders, and evaluation scripts for every project, MLPotion provides standardized "atoms" that you can mix and match to build robust pipelines. It bridges the gap between experimental code and production systems.
+
+### 🌟 Key Ingredients
+
+*   **🧩 Modular Architecture**: Components are designed to be used independently or together. Swap out a data loader or a trainer without rewriting your entire codebase.
+*   **♻️ Reusability**: Built on fully tested, production-ready components. Stop reinventing the wheel and trust in standardized atoms for your pipelines.
+*   **🔌 Integrations**: Designed to be extensible to any MLOps tool. Currently, **ZenML** is fully implemented with reusable steps. Contributions for other integrations are welcome!
+*   **🧠 ML Frameworks**: Components available for **Keras**, **PyTorch**, and **TensorFlow**. The architecture is extensible to any other framework—contributions are welcome!
 
 ---
 
 ## 📦 Installation
 
-### Core Package (No Frameworks)
+Install only what you need to keep your environment clean.
 
+### Core (Base Protocols)
+Perfect for defining custom implementations or lightweight usage.
 ```bash
-pip install mlpotion
+poetry add mlpotion
 ```
 
-### With TensorFlow
-
+### For Framework Users
 ```bash
-pip install mlpotion[tensorflow]
+# TensorFlow / Keras
+poetry add mlpotion -E tensorflow
+
+# PyTorch
+poetry add mlpotion -E pytorch
 ```
 
-### With PyTorch
-
+### For MLOps (ZenML)
+Combine your framework with ZenML capabilities.
 ```bash
-pip install mlpotion[pytorch]
+poetry add mlpotion -E tensorflow -E zenml
+# OR
+poetry add mlpotion -E pytorch -E zenml
 ```
 
-### With Both Frameworks
-
+### The Full Lab
 ```bash
-pip install mlpotion[tensorflow,pytorch]
-```
-
-### With ZenML Integration
-
-```bash
-pip install mlpotion[tensorflow,zenml]
-pip install mlpotion[pytorch,zenml]
-```
-
-### Everything
-
-```bash
-pip install mlpotion[all]
+poetry add mlpotion -E all
 ```
 
 ---
 
+## ⚡ Quickstart
+
+Here is a simple example of defining a training configuration and running a trainer using Keras components.
+
+```python
+from mlpotion.frameworks.keras.training import ModelTrainer
+from mlpotion.frameworks.keras.config import ModelTrainingConfig
+
+# 1. Define your configuration 📝
+# Strongly typed configs ensure you never miss a parameter
+config = ModelTrainingConfig(
+    epochs=10,
+    batch_size=32,
+    optimizer="adam",
+    loss="sparse_categorical_crossentropy"
+)
+
+# 2. Initialize the Trainer 🧪
+trainer = ModelTrainer(config=config)
+
+# 3. Run the pipeline 🚀
+# (Assuming 'my_model' and datasets are ready)
+history = trainer.train(
+    model=my_model,
+    train_data=train_ds,
+    val_data=val_ds
+)
+
+print(f"✅ Training complete! Final accuracy: {history.history['accuracy'][-1]:.4f}")
+```
+
+> **ZenML User?**
+> Drop this logic directly into a pipeline step:
+> ```python
+> from mlpotion.integrations.zenml.tensorflow.steps import train_model
+> ```
+
+---
+
+## 🤝 Contributing
+
+We welcome fellow chemists to the lab! 🥼
+If you have a new component, a bug fix, or an idea for an improvement, please open an issue or submit a pull request.
+
+---
+
 <p align="center">
-  <strong>Built with ❤️ for the ML community by 🦄 UnicoLab.ai</strong>
+  <strong>Built with ❤️ by <a href="https://unicolab.ai">UnicoLab.ai</a></strong>
 </p>

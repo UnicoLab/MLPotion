@@ -177,7 +177,9 @@ def train_model(
     verbose: int = 1,
     max_batches_per_epoch: int | None = None,
     metadata: dict[str, Any] | None = None,
-) -> Tuple[Annotated[nn.Module, "TrainedModel"], Annotated[dict[str, float], "TrainingMetrics"]]:
+) -> Tuple[
+    Annotated[nn.Module, "TrainedModel"], Annotated[dict[str, float], "TrainingMetrics"]
+]:
     """Train a PyTorch model using `ModelTrainer`.
 
     This step configures and runs a training session. It supports validation data,

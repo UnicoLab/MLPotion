@@ -15,7 +15,6 @@ from mlpotion.frameworks.keras.deployment.persistence import ModelPersistence
 from tests.core import TestBase  # provides temp_dir, setUp/tearDown
 
 
-
 class TestCSVDataTransformer(TestBase):
     def setUp(self) -> None:
         super().setUp()
@@ -89,7 +88,9 @@ class TestCSVDataTransformer(TestBase):
 
         self.assertTrue(out_path.exists(), f"Output file {out_path} not found")
         df = pd.read_csv(out_path)
-        logger.info(f"Transformed CSV shape: {df.shape}, columns: {df.columns.tolist()}")
+        logger.info(
+            f"Transformed CSV shape: {df.shape}, columns: {df.columns.tolist()}"
+        )
 
         # Sequence yields only features as input (2 columns) + prediction
         self.assertGreaterEqual(df.shape[0], self.n_samples)
@@ -150,7 +151,6 @@ class TestCSVDataTransformer(TestBase):
             total_rows += len(batch_df)
 
         self.assertEqual(total_rows, self.n_samples)
-
 
     # ------------------------------------------------------------------ #
     # _iter_batches: numpy with batch_size

@@ -12,6 +12,7 @@ from loguru import logger
 try:
     import tensorflow as tf
     import keras
+
     TF_AVAILABLE = True
 except ImportError:
     TF_AVAILABLE = False
@@ -21,6 +22,7 @@ except ImportError:
 # Check if zenml is available
 try:
     import zenml
+
     ZENML_AVAILABLE = True
 except ImportError:
     ZENML_AVAILABLE = False
@@ -47,8 +49,6 @@ from tests.core import TestBase
 @pytest.mark.skipif(not TF_AVAILABLE, reason="TensorFlow/Keras not installed")
 @pytest.mark.integration
 @pytest.mark.tensorflow
-
-
 class TestTensorFlowZenMLSteps(TestBase):
     """Test TensorFlow ZenML integration steps."""
 
@@ -71,7 +71,10 @@ class TestTensorFlowZenMLSteps(TestBase):
 
         rng = np.random.default_rng(42)
         data = {
-            **{f"feature_{i}": rng.normal(size=self.n_samples) for i in range(self.n_features)},
+            **{
+                f"feature_{i}": rng.normal(size=self.n_samples)
+                for i in range(self.n_features)
+            },
             "target": rng.normal(size=self.n_samples),
         }
         df = pd.DataFrame(data)
@@ -80,8 +83,10 @@ class TestTensorFlowZenMLSteps(TestBase):
 
         # Create a simple model that accepts dict inputs
         # This matches the default behavior of make_csv_dataset
-        inputs = {f"feature_{i}": keras.Input(shape=(1,), name=f"feature_{i}")
-                  for i in range(self.n_features)}
+        inputs = {
+            f"feature_{i}": keras.Input(shape=(1,), name=f"feature_{i}")
+            for i in range(self.n_features)
+        }
         concatenated = keras.layers.Concatenate()(list(inputs.values()))
         x = keras.layers.Dense(16, activation="relu")(concatenated)
         x = keras.layers.Dense(8, activation="relu")(x)
@@ -265,7 +270,9 @@ class TestTensorFlowZenMLSteps(TestBase):
 
         logger.info("✓ inspect_model step working correctly")
 
-    @pytest.mark.skip(reason="DataToCSVTransformer config needs refactoring for ZenML step usage")
+    @pytest.mark.skip(
+        reason="DataToCSVTransformer config needs refactoring for ZenML step usage"
+    )
     def test_transform_data_step(self) -> None:
         """Test transform_data ZenML step."""
         logger.info("Testing transform_data step")

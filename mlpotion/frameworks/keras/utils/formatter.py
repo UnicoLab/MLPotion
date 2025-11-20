@@ -82,7 +82,9 @@ class PredictionFormatter:
         if prediction_columns_added > 0:
             self.predicted_rows_count += len(df)
         else:
-            logger.warning("No prediction columns were added. Check model output format.")
+            logger.warning(
+                "No prediction columns were added. Check model output format."
+            )
 
         logger.debug(
             f"Added predictions for {len(df)} rows, "
@@ -108,7 +110,9 @@ class PredictionFormatter:
             return {"prediction": predictions}
 
         # Anything iterable but not list/tuple/dict → try to treat as first output
-        if isinstance(predictions, Iterable) and not isinstance(predictions, (str, bytes)):
+        if isinstance(predictions, Iterable) and not isinstance(
+            predictions, (str, bytes)
+        ):
             preds_list = list(predictions)
             if len(preds_list) == 1:
                 return {"prediction": preds_list[0]}
@@ -169,9 +173,7 @@ class PredictionFormatter:
         # Now we have 1D values
         if len(values) == len(df):
             df[name] = values
-            logger.debug(
-                f"Added prediction column '{name}' with {len(values)} values."
-            )
+            logger.debug(f"Added prediction column '{name}' with {len(values)} values.")
             return True
 
         if len(values) == 1:

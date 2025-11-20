@@ -24,9 +24,9 @@ class TestDataToCSVTransformer(TestBase):
         self.n_samples = 10
         self.n_features = 2
         rng = np.random.default_rng(123)
-        self.features = rng.normal(
-            size=(self.n_samples, self.n_features)
-        ).astype("float32")
+        self.features = rng.normal(size=(self.n_samples, self.n_features)).astype(
+            "float32"
+        )
 
         # tf.data.Dataset of dict features
         self.dataset_features_only = tf.data.Dataset.from_tensor_slices(
@@ -373,7 +373,9 @@ class TestDataToCSVTransformer(TestBase):
 
     def test_batch_mapping_to_dataframe_multi_dim_feature(self) -> None:
         """Multi-dimensional features should become multiple columns name_0, name_1,..."""
-        logger.info("Testing _batch_mapping_to_dataframe with multi-dimensional tensors")
+        logger.info(
+            "Testing _batch_mapping_to_dataframe with multi-dimensional tensors"
+        )
 
         features: Mapping[str, tf.Tensor] = {
             "vec": tf.constant([[1.0, 2.0], [3.0, 4.0]], dtype=tf.float32),
@@ -763,7 +765,9 @@ class TestDataToCSVTransformer(TestBase):
 
         self.assertTrue(out_path.exists(), f"Output file {out_path} not found")
         df = pd.read_csv(out_path)
-        logger.info(f"Transformed CSV shape: {df.shape}, columns: {df.columns.tolist()}")
+        logger.info(
+            f"Transformed CSV shape: {df.shape}, columns: {df.columns.tolist()}"
+        )
 
         self.assertEqual(df.shape[0], self.n_samples)
         self.assertIn("prediction", df.columns)

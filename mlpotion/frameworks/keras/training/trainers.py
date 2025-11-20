@@ -35,7 +35,7 @@ class ModelTrainer(ModelTrainerProtocol[Model, Sequence]):
         # Prepare data
         X_train = np.random.rand(100, 10)
         y_train = np.random.randint(0, 2, 100)
-        
+
         # Define model
         model = keras.Sequential([
             keras.layers.Dense(1, activation='sigmoid')
@@ -59,7 +59,7 @@ class ModelTrainer(ModelTrainerProtocol[Model, Sequence]):
                 "verbose": 1
             }
         )
-        
+
         print(history['loss'])
         ```
     """
@@ -121,7 +121,7 @@ class ModelTrainer(ModelTrainerProtocol[Model, Sequence]):
             "shuffle": config.shuffle,
             "validation_split": config.validation_split,
         }
-        
+
         if validation_dataset is not None:
             fit_kwargs["validation_data"] = validation_dataset
 
@@ -133,15 +133,16 @@ class ModelTrainer(ModelTrainerProtocol[Model, Sequence]):
         logger.debug(f"Fit parameters: {fit_kwargs}")
 
         import time
+
         start_time = time.time()
 
         history_obj = self._call_fit(model=model, data=dataset, fit_kwargs=fit_kwargs)
-        
+
         training_time = time.time() - start_time
 
         # Convert History object to dict[str, list[float]]
         history_dict = self._history_to_dict(history_obj)
-        
+
         # Extract final metrics
         final_metrics = {}
         for k, v in history_dict.items():
@@ -150,14 +151,14 @@ class ModelTrainer(ModelTrainerProtocol[Model, Sequence]):
 
         logger.info("Training completed.")
         logger.debug(f"Training history: {history_dict}")
-        
+
         return TrainingResult(
             model=model,
             history=history_dict,
             metrics=final_metrics,
             config=config,
             training_time=training_time,
-            best_epoch=None, # Keras history doesn't explicitly track "best" unless using callbacks
+            best_epoch=None,  # Keras history doesn't explicitly track "best" unless using callbacks
         )
 
     def _get_optimizer(self, config: ModelTrainingConfig) -> Any:
@@ -176,12 +177,14 @@ class ModelTrainer(ModelTrainerProtocol[Model, Sequence]):
                         opt_cls = keras.optimizers.SGD
                     elif config.optimizer_type.lower() == "rmsprop":
                         opt_cls = keras.optimizers.RMSprop
-                
+
                 if opt_cls:
                     return opt_cls(learning_rate=config.learning_rate)
             except Exception as e:
-                logger.warning(f"Failed to instantiate optimizer {config.optimizer_type} with LR {config.learning_rate}: {e}")
-        
+                logger.warning(
+                    f"Failed to instantiate optimizer {config.optimizer_type} with LR {config.learning_rate}: {e}"
+                )
+
         return config.optimizer_type
 
     # ------------------------------------------------------------------ #
@@ -189,9 +192,7 @@ class ModelTrainer(ModelTrainerProtocol[Model, Sequence]):
     # ------------------------------------------------------------------ #
     def _validate_model(self, model: Model) -> None:
         if not isinstance(model, keras.Model):
-            raise TypeError(
-                f"ModelTrainer expects a keras.Model, got {type(model)!r}"
-            )
+            raise TypeError(f"ModelTrainer expects a keras.Model, got {type(model)!r}")
 
     def _is_compiled(self, model: Model) -> bool:
         """Best-effort check whether the model appears compiled."""
@@ -263,12 +264,9 @@ class ModelTrainer(ModelTrainerProtocol[Model, Sequence]):
         if isinstance(history, keras.callbacks.History):
             hist = history.history or {}
             return {
-                str(name): [float(v) for v in values]
-                for name, values in hist.items()
+                str(name): [float(v) for v in values] for name, values in hist.items()
             }
 
         # Fallback: no history available
-        logger.warning(
-            "No valid History object; returning empty history dict."
-        )
+        logger.warning("No valid History object; returning empty history dict.")
         return {}

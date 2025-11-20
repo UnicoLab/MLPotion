@@ -11,6 +11,7 @@ from loguru import logger
 # Check if keras is available
 try:
     import keras
+
     KERAS_AVAILABLE = True
 except ImportError:
     KERAS_AVAILABLE = False
@@ -19,6 +20,7 @@ except ImportError:
 # Check if zenml is available
 try:
     import zenml
+
     ZENML_AVAILABLE = True
 except ImportError:
     ZENML_AVAILABLE = False
@@ -45,8 +47,6 @@ from tests.core import TestBase
 @pytest.mark.skipif(not KERAS_AVAILABLE, reason="Keras not installed")
 @pytest.mark.integration
 @pytest.mark.keras
-
-
 class TestKerasZenMLSteps(TestBase):
     """Test Keras ZenML integration steps."""
 
@@ -69,7 +69,10 @@ class TestKerasZenMLSteps(TestBase):
 
         rng = np.random.default_rng(42)
         data = {
-            **{f"feature_{i}": rng.normal(size=self.n_samples) for i in range(self.n_features)},
+            **{
+                f"feature_{i}": rng.normal(size=self.n_samples)
+                for i in range(self.n_features)
+            },
             "target": rng.normal(size=self.n_samples),
         }
         df = pd.DataFrame(data)
@@ -77,11 +80,15 @@ class TestKerasZenMLSteps(TestBase):
         logger.info(f"Created CSV file: {self.csv_file}")
 
         # Create a simple model
-        self.model = keras.Sequential([
-            keras.layers.Dense(16, activation="relu", input_shape=(self.n_features,)),
-            keras.layers.Dense(8, activation="relu"),
-            keras.layers.Dense(1),
-        ])
+        self.model = keras.Sequential(
+            [
+                keras.layers.Dense(
+                    16, activation="relu", input_shape=(self.n_features,)
+                ),
+                keras.layers.Dense(8, activation="relu"),
+                keras.layers.Dense(1),
+            ]
+        )
         logger.info("Created simple Keras model")
 
     def test_load_data_step(self) -> None:
@@ -231,7 +238,9 @@ class TestKerasZenMLSteps(TestBase):
 
         logger.info("✓ inspect_model step working correctly")
 
-    @pytest.mark.skip(reason="KerasCSVToCSVTransformer config needs refactoring for ZenML step usage")
+    @pytest.mark.skip(
+        reason="KerasCSVToCSVTransformer config needs refactoring for ZenML step usage"
+    )
     def test_transform_data_step(self) -> None:
         """Test transform_data ZenML step."""
         logger.info("Testing transform_data step")

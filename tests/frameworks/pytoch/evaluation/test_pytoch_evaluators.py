@@ -8,7 +8,9 @@ from torch.utils.data import DataLoader, TensorDataset
 from mlpotion.core.exceptions import EvaluationError
 from mlpotion.core.results import EvaluationResult
 from mlpotion.frameworks.pytorch.evaluation.evaluators import ModelEvaluator
-from tests.core import TestBase  # optional; gives temp_dir etc., but not strictly needed
+from tests.core import (
+    TestBase,
+)  # optional; gives temp_dir etc., but not strictly needed
 
 
 class DummyEvalConfig:
