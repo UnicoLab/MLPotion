@@ -110,7 +110,7 @@ config = ModelTrainingConfig(
     epochs=10,
     learning_rate=0.001,
     batch_size=32,
-    optimizer_type="adam",
+    optimizer="adam",  # Can be string or optimizer instance
     loss="mse",
     metrics=["mae"],
     verbose=1,
@@ -126,35 +126,126 @@ print(f"Training time: {result.training_time:.2f}s")
 ### Advanced Training Configuration
 
 ```python
+import keras
+
+# Using string optimizer name
 config = ModelTrainingConfig(
-    # Training parameters
     epochs=100,
     learning_rate=0.001,
     batch_size=32,
+    optimizer="adam",
+    loss="mse",
+    metrics=["mae"],
+)
 
-    # Optimizer configuration
-    optimizer_type="adam",
+# Using custom optimizer instance
+custom_optimizer = keras.optimizers.Adam(
+    learning_rate=0.001,
+    beta_1=0.9,
+    beta_2=0.999,
+    clipnorm=1.0,
+)
+
+config = ModelTrainingConfig(
+    epochs=100,
+    batch_size=32,
+    optimizer=custom_optimizer,  # Pass optimizer instance
+    loss="mse",
+    metrics=["mae"],
+)
+
+# Using custom loss and metrics
+custom_loss = keras.losses.Huber(delta=1.0)
+custom_metric = keras.metrics.MeanAbsoluteError(name="mae")
+
+config = ModelTrainingConfig(
+    epochs=100,
+    learning_rate=0.001,
+    batch_size=32,
+    optimizer="adam",
+    loss=custom_loss,  # Custom loss instance
+    metrics=[custom_metric, "mse"],  # Mix of instances and strings
 )
 ```
 
-### Custom Callbacks
+### Callbacks and TensorBoard
 
 ```python
-import tensorflow as tf
+import keras
 
-# Create custom callbacks
-tensorboard_callback = tf.keras.callbacks.TensorBoard(
-    log_dir="logs",
-    histogram_freq=1,
+# Method 1: Pass callback instances directly
+early_stopping = keras.callbacks.EarlyStopping(
+    monitor="val_loss",
+    patience=5,
+    restore_best_weights=True,
 )
 
-csv_logger = tf.keras.callbacks.CSVLogger("training.log")
+csv_logger = keras.callbacks.CSVLogger("training.log")
 
-# Pass to trainer
+config = ModelTrainingConfig(
+    epochs=100,
+    learning_rate=0.001,
+    callbacks=[early_stopping, csv_logger],  # Pass instances
+    use_tensorboard=True,  # TensorBoard enabled by default
+    tensorboard_log_dir="logs/my_experiment",  # Optional custom path
+)
+
+# Method 2: Pass callback configs as dicts
+config = ModelTrainingConfig(
+    epochs=100,
+    learning_rate=0.001,
+    callbacks=[
+        {
+            "name": "EarlyStopping",
+            "params": {
+                "monitor": "val_loss",
+                "patience": 5,
+                "restore_best_weights": True,
+            }
+        },
+        {
+            "name": "ReduceLROnPlateau",
+            "params": {
+                "monitor": "val_loss",
+                "factor": 0.5,
+                "patience": 3,
+            }
+        },
+    ],
+    use_tensorboard=True,
+)
+
+# Method 3: Mix of instances and dicts
+config = ModelTrainingConfig(
+    epochs=100,
+    learning_rate=0.001,
+    callbacks=[
+        early_stopping,  # Instance
+        {"name": "CSVLogger", "params": {"filename": "training.log"}},  # Dict
+    ],
+)
+
+# Disable TensorBoard if needed
 config = ModelTrainingConfig(
     epochs=10,
     learning_rate=0.001,
-    custom_callbacks=[tensorboard_callback, csv_logger],
+    use_tensorboard=False,  # Disable TensorBoard
+    callbacks=[early_stopping],
+)
+
+# Custom TensorBoard configuration
+config = ModelTrainingConfig(
+    epochs=100,
+    learning_rate=0.001,
+    use_tensorboard=True,
+    tensorboard_log_dir="logs/experiment_1",
+    tensorboard_params={
+        "histogram_freq": 1,
+        "write_graph": True,
+        "write_images": True,
+        "update_freq": "epoch",
+        "profile_batch": "10,20",
+    },
 )
 ```
 
@@ -374,10 +465,11 @@ for lr, bs, opt in product(learning_rates, batch_sizes, optimizers):
         epochs=30,
         learning_rate=lr,
         batch_size=bs,
-        optimizer_type=opt,
+        optimizer=opt,
         verbose=0,
-        early_stopping=True,
-        early_stopping_patience=5,
+        callbacks=[
+            {"name": "EarlyStopping", "params": {"patience": 5}},
+        ],
     )
 
     # Optimize dataset with new batch size
@@ -462,30 +554,39 @@ result = custom_trainer.train(model, dataset, config)
 ### TensorBoard Integration
 
 ```python
-import tensorflow as tf
 from mlpotion.frameworks.tensorflow import ModelTrainer, ModelTrainingConfig
 
-# Create TensorBoard callback
-tensorboard = tf.keras.callbacks.TensorBoard(
-    log_dir="logs",
-    histogram_freq=1,
-    write_graph=True,
-    write_images=True,
-    update_freq="epoch",
-    profile_batch="10,20",
-)
-
+# TensorBoard is enabled by default
 config = ModelTrainingConfig(
     epochs=50,
     learning_rate=0.001,
-    custom_callbacks=[tensorboard],
+    use_tensorboard=True,  # Default is True
+    tensorboard_log_dir="logs/my_experiment",  # Optional
 )
 
 trainer = ModelTrainer()
 result = trainer.train(model, dataset, config)
 
-# View results
+# View results in terminal:
 # tensorboard --logdir=logs
+
+# Advanced TensorBoard configuration
+config = ModelTrainingConfig(
+    epochs=50,
+    learning_rate=0.001,
+    use_tensorboard=True,
+    tensorboard_log_dir="logs/advanced",
+    tensorboard_params={
+        "histogram_freq": 1,
+        "write_graph": True,
+        "write_images": True,
+        "update_freq": "epoch",
+        "profile_batch": "10,20",
+        "embeddings_freq": 1,
+    },
+)
+
+result = trainer.train(model, dataset, config)
 ```
 
 ### TensorFlow Datasets Integration

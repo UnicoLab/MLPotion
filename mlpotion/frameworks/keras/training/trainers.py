@@ -103,10 +103,10 @@ class ModelTrainer(ModelTrainerProtocol[Model, Sequence]):
         # they should probably compile it before passing it, but our config implies we control it.
         # However, to be safe and flexible:
         if not self._is_compiled(model):
-            if not config.optimizer_type or not config.loss:
+            if not config.optimizer or not config.loss:
                 raise RuntimeError(
-                    "Model is not compiled and config does not provide optimizer_type and loss. "
-                    "Either compile the model beforehand or provide optimizer_type and loss in config."
+                    "Model is not compiled and config does not provide optimizer and loss. "
+                    "Either compile the model beforehand or provide optimizer and loss in config."
                 )
             logger.info("Compiling model with config parameters.")
             model.compile(**compile_params)
@@ -120,6 +120,7 @@ class ModelTrainer(ModelTrainerProtocol[Model, Sequence]):
             "verbose": config.verbose,
             "shuffle": config.shuffle,
             "validation_split": config.validation_split,
+            "callbacks": self._prepare_callbacks(config),
         }
 
         if validation_dataset is not None:
@@ -163,29 +164,89 @@ class ModelTrainer(ModelTrainerProtocol[Model, Sequence]):
 
     def _get_optimizer(self, config: ModelTrainingConfig) -> Any:
         """Get optimizer from config."""
+        optimizer = config.optimizer
+
+        # If it's not a string, assume it's an optimizer instance or class
+        if not isinstance(optimizer, str):
+            return optimizer
+
         # If learning_rate is specified, we might need to instantiate the optimizer
         # instead of just passing the string name, to apply the LR.
         if config.learning_rate:
             try:
                 # Try to get the optimizer class from the string name
-                opt_cls = getattr(keras.optimizers, config.optimizer_type, None)
+                opt_cls = getattr(keras.optimizers, optimizer, None)
                 if opt_cls is None:
                     # Fallback for common names if case differs or alias
-                    if config.optimizer_type.lower() == "adam":
+                    if optimizer.lower() == "adam":
                         opt_cls = keras.optimizers.Adam
-                    elif config.optimizer_type.lower() == "sgd":
+                    elif optimizer.lower() == "sgd":
                         opt_cls = keras.optimizers.SGD
-                    elif config.optimizer_type.lower() == "rmsprop":
+                    elif optimizer.lower() == "rmsprop":
                         opt_cls = keras.optimizers.RMSprop
 
                 if opt_cls:
                     return opt_cls(learning_rate=config.learning_rate)
             except Exception as e:
                 logger.warning(
-                    f"Failed to instantiate optimizer {config.optimizer_type} with LR {config.learning_rate}: {e}"
+                    f"Failed to instantiate optimizer {optimizer} with LR {config.learning_rate}: {e}"
                 )
 
-        return config.optimizer_type
+        return optimizer
+
+    def _prepare_callbacks(
+        self, config: ModelTrainingConfig
+    ) -> list[keras.callbacks.Callback]:
+        """Prepare callbacks from config."""
+        callbacks = []
+
+        # Process user-provided callbacks
+        for cb in config.callbacks:
+            if isinstance(cb, dict):
+                # Expect {'name': 'ClassName', 'params': {...}}
+                name = cb.get("name")
+                params = cb.get("params", {})
+                if not name:
+                    logger.warning(f"Skipping invalid callback config: {cb}")
+                    continue
+
+                # Try to find the callback in keras.callbacks
+                cb_cls = getattr(keras.callbacks, name, None)
+                if cb_cls:
+                    try:
+                        callbacks.append(cb_cls(**params))
+                    except Exception as e:
+                        logger.warning(f"Failed to instantiate callback {name}: {e}")
+                else:
+                    logger.warning(f"Callback {name} not found in keras.callbacks")
+            elif isinstance(cb, keras.callbacks.Callback):
+                callbacks.append(cb)
+            else:
+                logger.warning(f"Skipping unknown callback type: {type(cb)}")
+
+        # TensorBoard
+        if config.use_tensorboard:
+            # Default log dir if not provided
+            log_dir = config.tensorboard_log_dir
+            if not log_dir:
+                import os
+                from datetime import datetime
+
+                log_dir = os.path.join(
+                    "logs", "fit", datetime.now().strftime("%Y%m%d-%H%M%S")
+                )
+
+            # Merge params
+            tb_params = config.tensorboard_params.copy()
+            tb_params["log_dir"] = log_dir
+
+            try:
+                callbacks.append(keras.callbacks.TensorBoard(**tb_params))
+                logger.info(f"TensorBoard logging enabled at {log_dir}")
+            except Exception as e:
+                logger.warning(f"Failed to initialize TensorBoard callback: {e}")
+
+        return callbacks
 
     # ------------------------------------------------------------------ #
     # Internal helpers
@@ -195,10 +256,9 @@ class ModelTrainer(ModelTrainerProtocol[Model, Sequence]):
             raise TypeError(f"ModelTrainer expects a keras.Model, got {type(model)!r}")
 
     def _is_compiled(self, model: Model) -> bool:
-        """Best-effort check whether the model appears compiled."""
-        has_compiled_loss = getattr(model, "compiled_loss", None) is not None
-        has_optimizer = getattr(model, "optimizer", None) is not None
-        return bool(has_compiled_loss or has_optimizer)
+        """Check whether the model is compiled."""
+        # Use the built-in compiled attribute which is more reliable
+        return getattr(model, "compiled", False)
 
     def _ensure_compiled(
         self,

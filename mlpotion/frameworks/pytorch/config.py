@@ -139,9 +139,9 @@ class ModelTrainingConfig(BaseSettings):
         gt=0,
         description="Learning rate for the optimizer.",
     )
-    optimizer: str | None = Field(
+    optimizer: str | Any = Field(
         default="adam",
-        description="Optimizer name (e.g. 'adam', 'sgd', 'adamw', 'rmsprop').",
+        description="Optimizer name (e.g. 'adam', 'sgd', 'adamw', 'rmsprop') or optimizer instance.",
     )
     loss_fn: Any = Field(
         default="mse",
@@ -157,6 +157,26 @@ class ModelTrainingConfig(BaseSettings):
     verbose: bool = Field(
         default=True,
         description="Whether to log per-epoch metrics.",
+    )
+
+    # Callbacks - similar to Keras
+    callbacks: list[Any] = Field(
+        default_factory=list,
+        description="List of callback objects or dicts with 'name' and 'params' keys.",
+    )
+
+    # TensorBoard support
+    use_tensorboard: bool = Field(
+        default=False,
+        description="Enable TensorBoard logging (requires tensorboard package).",
+    )
+    tensorboard_log_dir: str | None = Field(
+        default=None,
+        description="Directory for TensorBoard logs. If None, uses default.",
+    )
+    tensorboard_params: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Extra parameters for TensorBoard SummaryWriter.",
     )
 
     # Batching limits
@@ -182,6 +202,7 @@ class ModelTrainingConfig(BaseSettings):
         extra="allow",
         frozen=False,
         env_prefix="train_",
+        arbitrary_types_allowed=True,
     )
 
 

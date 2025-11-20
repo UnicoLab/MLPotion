@@ -126,27 +126,143 @@ print(f"Training time: {result.training_time:.2f}s")
 print(f"Final loss: {result.metrics['loss']:.4f}")
 ```
 
-### Advanced Training
+### Advanced Training Configuration
 
 ```python
+import torch
 import torch.nn as nn
-import torch.optim as optim
 
+# Using string optimizer name
 config = ModelTrainingConfig(
-    # Training parameters
     epochs=100,
     learning_rate=0.001,
     device="cuda" if torch.cuda.is_available() else "cpu",
+    optimizer="adamw",  # String name
+    loss_fn="mse",
+    verbose=True,
+)
 
-    # Optimizer
-    optimizer="adamw",  # or "adam", "sgd", "rmsprop"
-    optimizer_kwargs={
-        "weight_decay": 0.01,
-        "betas": (0.9, 0.999),
+# Using custom optimizer instance
+custom_optimizer = torch.optim.Adam(
+    model.parameters(),
+    lr=0.001,
+    betas=(0.9, 0.999),
+    weight_decay=0.01,
+    amsgrad=True,
+)
+
+config = ModelTrainingConfig(
+    epochs=100,
+    device="cuda",
+    optimizer=custom_optimizer,  # Pass optimizer instance
+    loss_fn="mse",
+)
+
+# Using custom loss function
+custom_loss = nn.SmoothL1Loss(beta=1.0)
+
+config = ModelTrainingConfig(
+    epochs=100,
+    learning_rate=0.001,
+    optimizer="adam",
+    loss_fn=custom_loss,  # Custom loss instance
+)
+
+result = trainer.train(model, train_loader, config, validation_dataloader=val_loader)
+```
+
+### Callbacks and TensorBoard
+
+```python
+# Custom callback class
+class TrainingCallback:
+    def on_train_begin(self):
+        print("🚀 Training started!")
+
+    def on_epoch_end(self, epoch, metrics):
+        print(f"Epoch {epoch + 1} completed: {metrics}")
+        # Add custom logic (e.g., save checkpoint, adjust LR)
+
+    def on_train_end(self):
+        print("✅ Training completed!")
+
+# Early stopping callback example
+class EarlyStopping:
+    def __init__(self, patience=5, min_delta=0.001):
+        self.patience = patience
+        self.min_delta = min_delta
+        self.best_loss = float('inf')
+        self.counter = 0
+        self.should_stop = False
+
+    def on_epoch_end(self, epoch, metrics):
+        val_loss = metrics.get('val_loss')
+        if val_loss is None:
+            return
+
+        if val_loss < self.best_loss - self.min_delta:
+            self.best_loss = val_loss
+            self.counter = 0
+        else:
+            self.counter += 1
+            if self.counter >= self.patience:
+                print(f"Early stopping triggered at epoch {epoch + 1}")
+                self.should_stop = True
+
+# Configure with callbacks and TensorBoard
+config = ModelTrainingConfig(
+    epochs=100,
+    learning_rate=0.001,
+    optimizer="adam",
+    loss_fn="mse",
+
+    # Add callbacks
+    callbacks=[
+        TrainingCallback(),
+        EarlyStopping(patience=10),
+    ],
+
+    # Enable TensorBoard
+    use_tensorboard=True,
+    tensorboard_log_dir="logs/pytorch_experiment",
+    tensorboard_params={
+        "comment": "My experiment",
+        "flush_secs": 30,
     },
 )
 
-result = trainer.train(model, train_loader, config, val_loader=val_loader)
+trainer = ModelTrainer()
+result = trainer.train(model, train_loader, config, validation_dataloader=val_loader)
+
+# View TensorBoard logs
+# tensorboard --logdir=logs/pytorch_experiment
+```
+
+### Custom Loss Functions
+
+```python
+# Method 1: Use nn.Module
+class CustomLoss(nn.Module):
+    def __init__(self, alpha=0.5):
+        super().__init__()
+        self.alpha = alpha
+
+    def forward(self, predictions, targets):
+        mse = nn.functional.mse_loss(predictions, targets)
+        mae = nn.functional.l1_loss(predictions, targets)
+        return self.alpha * mse + (1 - self.alpha) * mae
+
+# Method 2: Use callable function
+def custom_loss_fn(predictions, targets):
+    return torch.mean((predictions - targets) ** 2) + 0.1 * torch.mean(torch.abs(predictions - targets))
+
+# Use in config
+config = ModelTrainingConfig(
+    epochs=50,
+    learning_rate=0.001,
+    optimizer="adam",
+    loss_fn=CustomLoss(alpha=0.7),  # or custom_loss_fn
+)
 ```
 
 ### Custom Training Loop

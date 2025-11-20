@@ -116,7 +116,16 @@ class ModelTrainer(ModelTrainerProtocol[nn.Module, DataLoader]):
             if validation_dataloader is not None:
                 history["val_loss"] = []
 
+            # Initialize callbacks and TensorBoard
+            callbacks = self._prepare_callbacks(config)
+            tensorboard_writer = self._setup_tensorboard(config)
+
             start_time = time.time()
+
+            # Call on_train_begin callbacks
+            for callback in callbacks:
+                if hasattr(callback, "on_train_begin"):
+                    callback.on_train_begin()
 
             for epoch in range(config.epochs):
                 model.train()
@@ -178,6 +187,19 @@ class ModelTrainer(ModelTrainerProtocol[nn.Module, DataLoader]):
                         msg += f" - val_loss: {val_loss:.4f}"
                     logger.info(msg)
 
+                # TensorBoard logging
+                if tensorboard_writer is not None:
+                    tensorboard_writer.add_scalar("loss", avg_loss, epoch)
+                    if val_loss is not None:
+                        tensorboard_writer.add_scalar("val_loss", val_loss, epoch)
+
+                # Call on_epoch_end callbacks
+                for callback in callbacks:
+                    if hasattr(callback, "on_epoch_end"):
+                        callback.on_epoch_end(
+                            epoch, {"loss": avg_loss, "val_loss": val_loss}
+                        )
+
             training_time = time.time() - start_time
 
             # Final metrics
@@ -186,6 +208,15 @@ class ModelTrainer(ModelTrainerProtocol[nn.Module, DataLoader]):
                 metrics["val_loss"] = float(history["val_loss"][-1])
 
             best_epoch = self._find_best_epoch(history)
+
+            # Call on_train_end callbacks
+            for callback in callbacks:
+                if hasattr(callback, "on_train_end"):
+                    callback.on_train_end()
+
+            # Close TensorBoard writer
+            if tensorboard_writer is not None:
+                tensorboard_writer.close()
 
             logger.info("Training completed in {t:.2f}s", t=training_time)
             logger.info("Final metrics: {metrics}", metrics=metrics)
@@ -213,7 +244,18 @@ class ModelTrainer(ModelTrainerProtocol[nn.Module, DataLoader]):
         config: ModelTrainingConfig,
     ) -> torch.optim.Optimizer:
         """Create optimizer from config."""
-        name = (config.optimizer or "adam").lower()
+        optimizer = config.optimizer
+
+        # If it's already an optimizer instance, return it
+        if isinstance(optimizer, torch.optim.Optimizer):
+            return optimizer
+
+        # Otherwise treat as string
+        name = (
+            (optimizer or "adam").lower()
+            if isinstance(optimizer, str)
+            else str(optimizer).lower()
+        )
         lr = config.learning_rate
 
         if name == "adam":
@@ -225,7 +267,7 @@ class ModelTrainer(ModelTrainerProtocol[nn.Module, DataLoader]):
         if name == "rmsprop":
             return torch.optim.RMSprop(model.parameters(), lr=lr)
 
-        raise TrainingError(f"Unknown optimizer: {config.optimizer!r}")
+        raise TrainingError(f"Unknown optimizer: {optimizer!r}")
 
     def _create_loss_fn(
         self,
@@ -266,6 +308,68 @@ class ModelTrainer(ModelTrainerProtocol[nn.Module, DataLoader]):
                 keys=list(loss_map.keys()),
             )
         return loss_map.get(name, nn.MSELoss())
+
+    # ------------------------------------------------------------------ #
+    # Callbacks and TensorBoard helpers
+    # ------------------------------------------------------------------ #
+    def _prepare_callbacks(self, config: ModelTrainingConfig) -> list[Any]:
+        """Prepare callbacks from config."""
+        callbacks = []
+
+        # Process user-provided callbacks
+        for cb in config.callbacks:
+            if isinstance(cb, dict):
+                # Expect {'name': 'ClassName', 'params': {...}}
+                name = cb.get("name")
+                if not name:
+                    logger.warning(f"Skipping invalid callback config: {cb}")
+                    continue
+
+                # For PyTorch, we don't have a standard callback module like Keras
+                # Users should pass instances directly or implement custom callbacks
+                logger.warning(
+                    f"Dict-based callback '{name}' not supported in PyTorch. "
+                    "Please pass callback instances directly."
+                )
+            else:
+                # Assume it's a callback instance
+                callbacks.append(cb)
+
+        return callbacks
+
+    def _setup_tensorboard(self, config: ModelTrainingConfig) -> Any:
+        """Setup TensorBoard writer if enabled."""
+        if not config.use_tensorboard:
+            return None
+
+        try:
+            from torch.utils.tensorboard import SummaryWriter
+
+            log_dir = config.tensorboard_log_dir
+            if not log_dir:
+                import os
+                from datetime import datetime
+
+                log_dir = os.path.join(
+                    "logs", "fit", datetime.now().strftime("%Y%m%d-%H%M%S")
+                )
+
+            # Merge params
+            tb_params = config.tensorboard_params.copy()
+            tb_params["log_dir"] = log_dir
+
+            writer = SummaryWriter(**tb_params)
+            logger.info(f"TensorBoard logging enabled at {log_dir}")
+            return writer
+        except ImportError:
+            logger.warning(
+                "TensorBoard requested but torch.utils.tensorboard not available. "
+                "Install tensorboard package to enable logging."
+            )
+            return None
+        except Exception as e:
+            logger.warning(f"Failed to initialize TensorBoard writer: {e}")
+            return None
 
     # ------------------------------------------------------------------ #
     # Validation / metrics helpers
