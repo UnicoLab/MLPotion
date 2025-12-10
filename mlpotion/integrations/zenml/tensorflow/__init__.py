@@ -18,6 +18,8 @@ from mlpotion.integrations.zenml.tensorflow.steps import (
 )
 
 # import and register materializers
+from zenml.enums import ArtifactType
+from zenml.logger import get_logger
 from zenml.materializers.materializer_registry import materializer_registry
 
 # model materializer
@@ -26,16 +28,25 @@ from mlpotion.integrations.zenml.tensorflow.materializers import (
     TFConfigDatasetMaterializer,
 )
 
+logger = get_logger(__name__)
+
 materializer_registry.register_materializer_type(keras.Model, KerasModelMaterializer)
 # dataset materializers
 # Try CSV materializer first (lightweight, stores only config)
 # Falls back to TFRecord materializer if CSV config not available
 
 
-# Register CSV materializer with higher priority
-materializer_registry.register_materializer_type(
-    tf.data.Dataset, TFConfigDatasetMaterializer
-)
+# Register CSV materializer with higher priority (overwrite any existing registration)
+# This ensures it's used instead of TFRecord materializer
+try:
+    materializer_registry.register_and_overwrite_type(
+        key=tf.data.Dataset,
+        type_=TFConfigDatasetMaterializer,
+        artifact_type=ArtifactType.DATA,
+    )
+    logger.info("Registered TFConfigDatasetMaterializer for tf.data.Dataset")
+except Exception as e:
+    logger.warning(f"Failed to register TFConfigDatasetMaterializer: {e}")
 
 
 __all__ = [

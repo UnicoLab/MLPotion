@@ -637,15 +637,31 @@ class TFConfigDatasetMaterializer(BaseMaterializer):
 
         logger.info("Recreating dataset with config: %s", config)
 
-        # Extract the make_csv_dataset parameters
-        dataset = tf.data.experimental.make_csv_dataset(
-            file_pattern=config["file_pattern"],
-            batch_size=config["batch_size"],
-            label_name=config.get("label_name"),
-            column_names=config.get("column_names"),
-            num_epochs=config.get("num_epochs", 1),
-            **config.get("extra_params", {}),
-        )
+        # Use CSVDataLoader to recreate the dataset
+        # This ensures we handle empty lines correctly (unlike make_csv_dataset)
+        from mlpotion.frameworks.tensorflow.data.loaders import CSVDataLoader
+
+        # Extract parameters for CSVDataLoader
+        loader_config = {
+            "file_pattern": config["file_pattern"],
+            "batch_size": config["batch_size"],
+            "label_name": config.get("label_name"),
+            "column_names": config.get("column_names"),
+        }
+
+        # Handle num_epochs and other config
+        extra_params = config.get("extra_params", {})
+        if "num_epochs" in config:
+            extra_params["num_epochs"] = config["num_epochs"]
+        elif "num_epochs" not in extra_params:
+            extra_params["num_epochs"] = 1
+
+        if extra_params:
+            loader_config["config"] = extra_params
+
+        # Create loader and load dataset
+        loader = CSVDataLoader(**loader_config)
+        dataset = loader.load()
 
         # Apply any transformations that were recorded
         transformations = config.get("transformations", [])
@@ -685,7 +701,10 @@ class TFConfigDatasetMaterializer(BaseMaterializer):
         config_path = Path(self.uri) / "config.json"
         config_path.parent.mkdir(parents=True, exist_ok=True)
 
+        logger.info("🔵 TFConfigDatasetMaterializer.save() called")
         logger.info("Saving CSV dataset config to: %s", config_path)
+        logger.debug("Dataset type: %s", type(data))
+        logger.debug("URI: %s", self.uri)
 
         # Try to extract configuration from the dataset
         # This requires the dataset to have been created with our loader
@@ -694,23 +713,33 @@ class TFConfigDatasetMaterializer(BaseMaterializer):
 
         if config is None:
             logger.warning(
-                "Could not extract CSV config from dataset. "
+                "❌ Could not extract CSV config from dataset. "
                 "This materializer only works with datasets created from CSV files. "
                 "Falling back to TFRecord materializer."
+            )
+            logger.debug(
+                "Dataset attributes: %s",
+                [attr for attr in dir(data) if not attr.startswith("__")],
             )
             # Fall back to TFRecord materializer
             from mlpotion.integrations.zenml.tensorflow.materializers import (
                 TFRecordDatasetMaterializer,
             )
 
-            tfrecord_materializer = TFRecordDatasetMaterializer(self.uri)
-            tfrecord_materializer.save(data)
+            logger.info("🔄 Falling back to TFRecordDatasetMaterializer")
+            try:
+                tfrecord_materializer = TFRecordDatasetMaterializer(self.uri)
+                tfrecord_materializer.save(data)
+                logger.info("✅ Successfully saved dataset as TFRecord")
+            except Exception as e:
+                logger.error(f"Failed to save as TFRecord: {e}")
+                raise
             return
 
         with open(config_path, "w", encoding="utf-8") as f:
             json.dump(config, f, indent=2)
 
-        logger.info("✅ Successfully saved CSV dataset config")
+        logger.info("✅ Successfully saved CSV dataset config to: %s", config_path)
 
     def _extract_config_from_dataset(self, dataset: tf.data.Dataset) -> dict | None:
         """Extract CSV loading configuration from dataset.
@@ -726,27 +755,50 @@ class TFConfigDatasetMaterializer(BaseMaterializer):
         Returns:
             Configuration dict or None if this isn't a CSV dataset.
         """
-        # Try to get metadata that was attached by TFCSVDataLoader
+        # Try to get metadata that was attached by CSVDataLoader
+        # Check multiple ways in case the attribute is stored differently
+        logger.debug("Checking for _csv_config attribute on dataset")
+
+        # Method 1: hasattr check
         if hasattr(dataset, "_csv_config"):
-            return dataset._csv_config
+            config = dataset._csv_config
+            logger.info("✅ Found _csv_config via hasattr: %s", config)
+            return config
+
+        # Method 2: getattr with default
+        try:
+            config = getattr(dataset, "_csv_config", None)
+            if config is not None:
+                logger.info("✅ Found _csv_config via getattr: %s", config)
+                return config
+        except Exception as e:
+            logger.debug("getattr failed: %s", e)
+
+        # Method 3: Check __dict__ directly (in case attribute is set but hasattr fails)
+        try:
+            if hasattr(dataset, "__dict__") and "_csv_config" in dataset.__dict__:
+                config = dataset.__dict__["_csv_config"]
+                logger.info("✅ Found _csv_config in __dict__: %s", config)
+                return config
+        except Exception as e:
+            logger.debug("__dict__ check failed: %s", e)
+
+        logger.debug("❌ _csv_config not found after all checks")
 
         # Try to infer from dataset structure
         # This is a heuristic approach for datasets without explicit metadata
+        # NOTE: We only infer if we're confident it's a CSV dataset.
+        # For datasets created from tensor_slices or other sources, we return None
+        # to allow fallback to TFRecord.
         try:
             # Check if this looks like a CSV dataset
-            element_spec = dataset.element_spec
+            _ = dataset.element_spec
 
             # CSV datasets typically have (OrderedDict, label) or just OrderedDict structure
-            if isinstance(element_spec, tuple) and len(element_spec) == 2:
-                features_spec, label_spec = element_spec
-                if isinstance(features_spec, dict):
-                    # This looks like a CSV dataset with labels
-                    logger.info("Detected CSV-like dataset structure with labels")
-                    return self._create_default_config(element_spec)
-            elif isinstance(element_spec, dict):
-                # CSV dataset without labels
-                logger.info("Detected CSV-like dataset structure without labels")
-                return self._create_default_config(element_spec)
+            # But we should be more conservative - only infer if we're very confident
+            # For now, we'll only return config if _csv_config exists, not infer
+            # This ensures proper fallback behavior
+            pass
 
         except Exception as e:
             logger.debug("Failed to infer CSV config: %s", e)

@@ -172,7 +172,7 @@ def train_model(
         epochs=epochs,
         learning_rate=learning_rate,
         verbose=verbose,
-        optimizer_type="adam",  # Defaulting to adam as per previous logic
+        optimizer="adam",  # Defaulting to adam as per previous logic
         loss="mse",
         metrics=["mae"],
         framework_options={"callbacks": callbacks} if callbacks else {},

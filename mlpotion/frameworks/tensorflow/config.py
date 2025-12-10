@@ -170,10 +170,30 @@ class ModelTrainingConfig(BaseSettings):
     verbose: int = Field(default=1, ge=0, le=2, description="Verbosity level")
 
     # Keras/TF specific fields
-    optimizer_type: str = Field(default="adam", description="Optimizer name")
+    optimizer: str | Any = Field(
+        default="adam", description="Optimizer name or instance"
+    )
     loss: str | keras.losses.Loss = Field(default="mse", description="Loss function")
     metrics: list[str | keras.metrics.Metric] = Field(
         default_factory=lambda: ["mae"], description="List of metrics"
+    )
+
+    # Callbacks
+    callbacks: list[Any] = Field(
+        default_factory=list,
+        description="List of callbacks. Can be Keras Callback objects or dicts like {'name': 'EarlyStopping', 'params': {...}}",
+    )
+
+    # TensorBoard
+    use_tensorboard: bool = Field(
+        default=True, description="Enable TensorBoard logging"
+    )
+    tensorboard_log_dir: str | None = Field(
+        default=None,
+        description="Directory for TensorBoard logs. If None, uses default.",
+    )
+    tensorboard_params: dict[str, Any] = Field(
+        default_factory=dict, description="Extra parameters for TensorBoard callback"
     )
 
     # Framework-specific options can go here

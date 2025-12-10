@@ -207,7 +207,7 @@ def train_model(
         epochs=epochs,
         learning_rate=learning_rate,
         verbose=verbose,
-        optimizer_type="adam",
+        optimizer="adam",
         loss="mse",
         metrics=["mae"],
     )

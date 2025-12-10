@@ -28,15 +28,25 @@ zenml init
 ## Quick Example 🚀
 
 ```python
-from zenml import pipeline
+from zenml import pipeline, step
 from mlpotion.integrations.zenml.tensorflow.steps import (
     load_data,
     train_model,
     evaluate_model,
 )
 
+# custom model init step
+@step
+def init_model() -> keras.Model:
+    """Initialize the model."""
+    model = keras.Sequential([
+        keras.layers.Dense(10, input_shape=(3,)),
+        keras.layers.Dense(1),
+    ])
+    return model
+
 @pipeline
-def ml_pipeline(model):
+def ml_pipeline():
     """Simple ML pipeline with MLPotion + ZenML."""
     # Load data into tf.data.Dataset
     dataset = load_data(
@@ -44,6 +54,8 @@ def ml_pipeline(model):
         batch_size=32,
         label_name="target",
     )
+    # load model
+    model = init_model()
 
     # Train model
     trained_model, history = train_model(
@@ -63,8 +75,8 @@ def ml_pipeline(model):
 
 # Run the pipeline
 import keras
-model = keras.Sequential([...])  # Your model
-metrics = ml_pipeline(model=model)
+
+metrics = ml_pipeline()
 print(f"Loss: {metrics['loss']:.4f}")
 print(f"MAE: {metrics['mae']:.4f}")
 ```
@@ -132,9 +144,18 @@ from mlpotion.integrations.zenml.tensorflow.steps import (
 )
 import keras
 
+# custom model init step
+@step
+def init_model() -> keras.Model:
+    """Initialize the model."""
+    model = keras.Sequential([
+        keras.layers.Dense(10, input_shape=(3,)),
+        keras.layers.Dense(1),
+    ])
+    return model
+
 @pipeline
 def production_ml_pipeline(
-    model: keras.Model,
     train_data: str,
     test_data: str,
     model_name: str,
@@ -161,6 +182,8 @@ def production_ml_pipeline(
         prefetch=True,
         shuffle_buffer_size=1000,
     )
+    # init model
+    model = init_model()
 
     # Train model
     trained_model, history = train_model(
@@ -192,12 +215,8 @@ def production_ml_pipeline(
 
     return metrics, export_path
 
-# Run with tracking and versioning
-model = keras.Sequential([
-    keras.layers.Dense(64, activation="relu"),
-    keras.layers.Dense(1),
-])
 
+# running the pipeline
 result = production_ml_pipeline(
     model=model,
     train_data="s3://bucket/train.csv",
@@ -219,9 +238,18 @@ from mlpotion.integrations.zenml.pytorch.steps import (
 )
 import torch.nn as nn
 
+@step
+def init_model() -> nn.Module:
+    """Initialize the model."""
+    model = nn.Sequential(
+        nn.Linear(10, 64),
+        nn.ReLU(),
+        nn.Linear(64, 1),
+    )
+    return model
+
 @pipeline
 def pytorch_ml_pipeline(
-    model: nn.Module,
     train_data: str,
     test_data: str,
     model_name: str,
@@ -242,6 +270,8 @@ def pytorch_ml_pipeline(
         label_name="target",
         shuffle=False,
     )
+    # init model
+    model = init_model()
 
     # Train model
     trained_model, train_metrics = train_model(
@@ -271,14 +301,7 @@ def pytorch_ml_pipeline(
     return eval_metrics, export_path
 
 # Run the pipeline
-model = nn.Sequential(
-    nn.Linear(10, 64),
-    nn.ReLU(),
-    nn.Linear(64, 1),
-)
-
 result = pytorch_ml_pipeline(
-    model=model,
     train_data="data/train.csv",
     test_data="data/test.csv",
     model_name="pytorch-model-v1",
