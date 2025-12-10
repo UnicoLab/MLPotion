@@ -27,6 +27,7 @@ zenml init
 
 ## Quick Example 🚀
 
+
 ```python
 from zenml import pipeline, step
 from mlpotion.integrations.zenml.tensorflow.steps import (
@@ -86,7 +87,15 @@ def ml_pipeline():
     return metrics
 
 # Run the pipeline
-metrics = ml_pipeline()
+# Note: ZenML pipelines return a PipelineRunResponse, not the actual return values
+run = ml_pipeline()
+
+# Access step outputs from the pipeline run
+# Get the step run by step name and load the artifact
+evaluate_step = run.steps["evaluate_model"]
+metrics = evaluate_step.output.load()  # Use .load() to get the actual value
+
+# Now you can access the metrics dictionary
 print(f"Loss: {metrics['loss']:.4f}")
 print(f"MAE: {metrics['mae']:.4f}")
 ```
@@ -237,14 +246,25 @@ def production_ml_pipeline(
     return metrics, export_path
 
 
-# running the pipeline
-result = production_ml_pipeline(
-    model=model,
+# Run the pipeline
+# Note: ZenML pipelines return a PipelineRunResponse, not the actual return values
+run = production_ml_pipeline(
     train_data="s3://bucket/train.csv",
     test_data="s3://bucket/test.csv",
     model_name="my-model-v1",
     epochs=50,
 )
+
+# Access step outputs from the pipeline run
+# Use .load() to get the actual artifact values
+evaluate_step = run.steps["evaluate_model"]
+metrics = evaluate_step.output.load()
+
+export_step = run.steps["export_model"]
+export_path = export_step.output.load()
+
+print(f"Metrics: {metrics}")
+print(f"Export path: {export_path}")
 ```
 
 ### PyTorch Example
@@ -322,13 +342,26 @@ def pytorch_ml_pipeline(
     return eval_metrics, export_path
 
 # Run the pipeline
-result = pytorch_ml_pipeline(
+# Note: ZenML pipelines return a PipelineRunResponse, not the actual return values
+run = pytorch_ml_pipeline(
     train_data="data/train.csv",
     test_data="data/test.csv",
     model_name="pytorch-model-v1",
     epochs=50,
 )
+
+# Access step outputs from the pipeline run
+# Use .load() to get the actual artifact values
+evaluate_step = run.steps["evaluate_model"]
+eval_metrics = evaluate_step.output.load()
+
+export_step = run.steps["export_model"]
+export_path = export_step.output.load()
+
+print(f"Evaluation metrics: {eval_metrics}")
+print(f"Export path: {export_path}")
 ```
+
 
 ## Benefits of ZenML Integration 🌟
 
