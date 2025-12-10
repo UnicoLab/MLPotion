@@ -474,6 +474,85 @@ class TestTensorFlowZenMLSteps(TestBase):
 
         logger.info("✓ transform_data step working correctly")
 
+    def test_documentation_example_pipeline(self) -> None:
+        """Test the exact pipeline from the documentation.
+
+        This test verifies that the documentation example works correctly,
+        including the model with dict inputs and the full pipeline flow.
+        """
+        logger.info("Testing documentation example pipeline")
+
+        # Create CSV file matching documentation example
+        csv_file = self.test_subdir / "data.csv"
+        with open(csv_file, "w", encoding="utf-8") as f:
+            f.write("feature_1,feature_2,feature_3,target\n")
+            # Add sample data
+            for i in range(50):
+                f.write(f"0.{i%10+1},0.{(i+1)%10+2},0.{(i+2)%10+3},1.{i%10}\n")
+
+        logger.info(f"Created CSV file: {csv_file} with 50 rows")
+
+        # Initialize model (matching documentation example)
+        def init_model() -> keras.Model:
+            """Initialize the model matching documentation example."""
+            inputs = {
+                "feature_1": keras.Input(shape=(1,), name="feature_1"),
+                "feature_2": keras.Input(shape=(1,), name="feature_2"),
+                "feature_3": keras.Input(shape=(1,), name="feature_3"),
+            }
+            concatenated = keras.layers.Concatenate()(list(inputs.values()))
+            x = keras.layers.Dense(10, activation="relu")(concatenated)
+            outputs = keras.layers.Dense(1)(x)
+            model = keras.Model(inputs=inputs, outputs=outputs)
+            return model
+
+        model = init_model()
+        logger.info("✓ Model initialized (matching documentation)")
+
+        # Load data (matching documentation example)
+        dataset = load_data(
+            file_path=str(csv_file),
+            batch_size=32,
+            label_name="target",
+        )
+
+        # Verify dataset has _csv_config (for CSV config materializer)
+        self.assertTrue(hasattr(dataset, "_csv_config"))
+        self.assertEqual(dataset._csv_config["label_name"], "target")
+        self.assertEqual(dataset._csv_config["batch_size"], 32)
+        logger.info("✓ Dataset loaded with _csv_config attached")
+
+        # Train model (matching documentation example)
+        trained_model, history = train_model(
+            model=model,
+            dataset=dataset,
+            epochs=2,  # Use 2 for faster testing (doc uses 10)
+            learning_rate=0.001,
+        )
+
+        self.assertIsInstance(trained_model, keras.Model)
+        self.assertIsInstance(history, dict)
+        self.assertIn("loss", history)
+        logger.info("✓ Model trained successfully")
+
+        # Evaluate model (matching documentation example)
+        metrics = evaluate_model(
+            model=trained_model,
+            dataset=dataset,
+        )
+
+        self.assertIsInstance(metrics, dict)
+        self.assertIn("loss", metrics)
+        self.assertIn("mae", metrics)
+        logger.info(
+            f"✓ Model evaluated: Loss={metrics['loss']:.4f}, MAE={metrics['mae']:.4f}"
+        )
+
+        # Verify metrics are reasonable
+        self.assertIsInstance(metrics["loss"], (float, np.floating))
+        self.assertIsInstance(metrics["mae"], (float, np.floating))
+        logger.info("✅ Documentation example pipeline test completed successfully")
+
 
 if __name__ == "__main__":
     unittest.main()

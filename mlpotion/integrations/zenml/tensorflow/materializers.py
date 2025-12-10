@@ -81,7 +81,6 @@ if _is_tensor_real_class:
         materializer_registry.register_and_overwrite_type(
             key=tf.Tensor,
             type_=TensorMaterializer,
-            artifact_type=ArtifactType.DATA,
         )
     except Exception:
         pass  # Registration may fail in test environments
@@ -146,7 +145,6 @@ if _is_tensorspec_real_class:
         materializer_registry.register_and_overwrite_type(
             key=tf.TensorSpec,
             type_=TensorSpecMaterializer,
-            artifact_type=ArtifactType.DATA,
         )
     except Exception:
         pass  # Registration may fail in test environments
@@ -840,7 +838,6 @@ if _is_dataset_real_class:
         materializer_registry.register_and_overwrite_type(
             key=tf.data.Dataset,
             type_=TFConfigDatasetMaterializer,
-            artifact_type=ArtifactType.DATA,
         )
     except Exception:
         pass  # Registration may fail in test environments

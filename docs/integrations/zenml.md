@@ -34,15 +34,27 @@ from mlpotion.integrations.zenml.tensorflow.steps import (
     train_model,
     evaluate_model,
 )
+import keras
 
 # custom model init step
 @step
 def init_model() -> keras.Model:
-    """Initialize the model."""
-    model = keras.Sequential([
-        keras.layers.Dense(10, input_shape=(3,)),
-        keras.layers.Dense(1),
-    ])
+    """Initialize the model.
+
+    Note: When using label_name with load_data, the dataset returns
+    (features_dict, labels) where features_dict is a dictionary.
+    The model must accept dict inputs matching the CSV column names.
+    """
+    # Create model that accepts dict inputs (matching CSV columns)
+    inputs = {
+        "feature_1": keras.Input(shape=(1,), name="feature_1"),
+        "feature_2": keras.Input(shape=(1,), name="feature_2"),
+        "feature_3": keras.Input(shape=(1,), name="feature_3"),
+    }
+    concatenated = keras.layers.Concatenate()(list(inputs.values()))
+    x = keras.layers.Dense(10, activation="relu")(concatenated)
+    outputs = keras.layers.Dense(1)(x)
+    model = keras.Model(inputs=inputs, outputs=outputs)
     return model
 
 @pipeline
@@ -74,8 +86,6 @@ def ml_pipeline():
     return metrics
 
 # Run the pipeline
-import keras
-
 metrics = ml_pipeline()
 print(f"Loss: {metrics['loss']:.4f}")
 print(f"MAE: {metrics['mae']:.4f}")
@@ -147,11 +157,22 @@ import keras
 # custom model init step
 @step
 def init_model() -> keras.Model:
-    """Initialize the model."""
-    model = keras.Sequential([
-        keras.layers.Dense(10, input_shape=(3,)),
-        keras.layers.Dense(1),
-    ])
+    """Initialize the model.
+
+    Note: When using label_name with load_data, the dataset returns
+    (features_dict, labels) where features_dict is a dictionary.
+    The model must accept dict inputs matching the CSV column names.
+    """
+    # Create model that accepts dict inputs (matching CSV columns)
+    inputs = {
+        "feature_1": keras.Input(shape=(1,), name="feature_1"),
+        "feature_2": keras.Input(shape=(1,), name="feature_2"),
+        "feature_3": keras.Input(shape=(1,), name="feature_3"),
+    }
+    concatenated = keras.layers.Concatenate()(list(inputs.values()))
+    x = keras.layers.Dense(10, activation="relu")(concatenated)
+    outputs = keras.layers.Dense(1)(x)
+    model = keras.Model(inputs=inputs, outputs=outputs)
     return model
 
 @pipeline
