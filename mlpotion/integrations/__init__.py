@@ -2,6 +2,7 @@
 
 This module contains integrations with:
 - zenml: ZenML pipeline orchestration
+- flowyml: FlowyML pipeline orchestration (assets, context, callbacks)
 
 Each integration is only available if the framework is installed.
 """

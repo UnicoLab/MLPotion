@@ -27,3 +27,8 @@ data_*.csv
 
 site/
 .claude
+.zen/
+.flowyml/
+*.ipynb
+*tfevents*
+*.h5

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "mlpotion"
-version = "v1.0.2"
+version = "v1.0.1"
 description = "Atomic Steps for ML Pipelines, framework agnostic, modular"
 authors = ["Piotr Laczkowski <piotr@unicolab.ai>"]
 license = "MIT"
@@ -48,6 +48,7 @@ jax = {version = "^0.4.0", optional = true, extras = ["cpu"]}
 
 # Optional integration dependencies
 zenml = {version = ">0.80.0", optional = true, extras = ["local"]}
+flowyml = {version = ">=1.0.0", optional = true}
 pydantic-settings = "^2.12.0"
 loguru = "^0.7.3"
 
@@ -64,13 +65,16 @@ keras-jax = ["keras", "jax"]
 
 # Integration extras
 zenml = ["zenml"]
+flowyml = ["flowyml"]
 
 # Combined extras
 tensorflow-zenml = ["tensorflow", "keras", "zenml"]
 pytorch-zenml = ["torch", "torchvision", "zenml"]
+tensorflow-flowyml = ["tensorflow", "keras", "flowyml"]
+pytorch-flowyml = ["torch", "torchvision", "flowyml"]
 
 # Everything
-all = ["tensorflow", "keras", "torch", "torchvision", "jax", "zenml"]
+all = ["tensorflow", "keras", "torch", "torchvision", "jax", "zenml", "flowyml"]
 
 [tool.poetry.group.dev.dependencies]
 # Testing
@@ -92,6 +96,7 @@ isort = "^5.12"
 pre-commit = "^3.5"
 ipykernel = "^7.1.0"
 sqlalchemy = "^2.0.44"
+flowyml = {path = "FlowyML"}
 
 [tool.poetry.group.docs]
 optional = true
@@ -160,6 +165,9 @@ ignore = [
 "mlpotion/frameworks/tensorflow/__init__.py" = ["E402"]
 "mlpotion/integrations/zenml/__init__.py" = ["E402"]
 "mlpotion/integrations/zenml/tensorflow/__init__.py" = ["E402"]
+"mlpotion/integrations/flowyml/__init__.py" = ["E402"]
+"mlpotion/integrations/flowyml/keras/__init__.py" = ["E402"]
+"mlpotion/integrations/flowyml/tensorflow/__init__.py" = ["E402"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["mlpotion"]
@@ -188,6 +196,7 @@ module = [
     "keras.*",
     "jax.*",
     "zenml.*",
+    "flowyml.*",
     "pandas.*",
     "numpy.*",
 ]
