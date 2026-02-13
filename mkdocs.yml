@@ -47,9 +47,15 @@ nav:
     - PyTorch: frameworks/pytorch.md
     - Keras: frameworks/keras.md
   - 🔄 Integrations:
+    - FlowyML:
+      - Overview: integrations/flowyml.md
     - ZenML: integrations/zenml.md
   - 🎓 Tutorials:
     - Basic Pipeline: tutorials/basic-pipeline.md
+    - FlowyML Quick Start: tutorials/flowyml-quickstart.md
+    - FlowyML Custom Pipelines: tutorials/flowyml-custom-pipeline.md
+    - FlowyML Experiment Tracking: tutorials/flowyml-experiment-tracking.md
+    - FlowyML Scheduled Retraining: tutorials/flowyml-scheduled-retraining.md
     - ZenML Pipeline: tutorials/zenml-integration.md
     - Multi-Framework: tutorials/multi-framework.md
   - 📖 API Reference:
@@ -57,6 +63,7 @@ nav:
     - TensorFlow: api/frameworks/tensorflow.md
     - PyTorch: api/frameworks/pytorch.md
     - Keras: api/frameworks/keras.md
+    - FlowyML: api/integrations/flowyml.md
     - ZenML: api/integrations/zenml.md
   - 🤝 Contributing:
     - Overview: contributing/overview.md
