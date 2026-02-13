@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "mlpotion"
-version = "1.0.2"
+version = "1.1.0"
 description = "Atomic Steps for ML Pipelines, framework agnostic, modular"
 authors = ["Piotr Laczkowski <piotr@unicolab.ai>"]
 license = "MIT"

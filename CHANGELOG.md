@@ -2,6 +2,19 @@
 
 <!-- version list -->
 
+## v1.1.0 (2026-02-13)
+
+### Bug Fixes
+
+- Dependencies on local folder
+  ([`f2e430c`](https://github.com/UnicoLab/MLPotion/commit/f2e430c9bae8af19a2428f564f45b4f6b32639ca))
+
+### Features
+
+- Adding flowyml reusable steps
+  ([`093df08`](https://github.com/UnicoLab/MLPotion/commit/093df08e333ebe4c42531791a945b6ab07396e93))
+
+
 ## v1.0.2 (2025-12-10)
 
 ### Bug Fixes
