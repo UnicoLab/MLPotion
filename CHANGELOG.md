@@ -2,6 +2,19 @@
 
 <!-- version list -->
 
+## v1.2.0 (2026-03-24)
+
+### Bug Fixes
+
+- **deps**: Bump framework deps for Python 3.12/3.13 compatibility
+  ([`d3244bb`](https://github.com/UnicoLab/MLPotion/commit/d3244bb7bfd1c7652ad75dd89155125d647a6456))
+
+### Features
+
+- **build**: Extend Python version support to >=3.10,<4.0
+  ([`ef2e3fd`](https://github.com/UnicoLab/MLPotion/commit/ef2e3fd1c60c67adef13dc57d98fc37e556e8b28))
+
+
 ## v1.1.0 (2026-02-13)
 
 ### Bug Fixes
