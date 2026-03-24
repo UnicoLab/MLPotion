@@ -158,6 +158,10 @@ class ModelPersistence(ModelPersistenceProtocol[nn.Module]):
 
         logger.info("Loading PyTorch model from {path}", path=str(path))
 
+        # torch 2.6+ changed the default of weights_only from False to True.
+        # We default to False for backward compatibility (full-model loading),
+        # but callers can override via torch_load_kwargs.
+        torch_load_kwargs.setdefault("weights_only", False)
         checkpoint = torch.load(path, map_location=map_location, **torch_load_kwargs)
 
         # Case 1: full model was saved
