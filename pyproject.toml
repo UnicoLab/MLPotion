@@ -18,6 +18,8 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Typing :: Typed",
@@ -25,7 +27,7 @@ classifiers = [
 packages = [{include = "mlpotion"}]
 
 [tool.poetry.dependencies]
-python = "^3.10,<3.12"
+python = ">=3.10,<4.0"
 
 # Core dependencies (always installed)
 pydantic = "^2.5"
@@ -47,7 +49,7 @@ torchvision = {version = "^0.16", optional = true}
 jax = {version = "^0.4.0", optional = true, extras = ["cpu"]}
 
 # Optional integration dependencies
-zenml = {version = ">0.80.0", optional = true, extras = ["local"]}
+zenml = {version = ">0.80.0", optional = true, extras = ["local"], python = ">=3.10,<3.14"}
 flowyml = {version = ">=1.0.0", optional = true}
 pydantic-settings = "^2.12.0"
 loguru = "^0.7.3"
@@ -118,7 +120,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.black]
 line-length = 88
-target-version = ['py310', 'py311']
+target-version = ['py310', 'py311', 'py312', 'py313']
 include = '\.pyi?$'
 extend-exclude = '''
 /(
